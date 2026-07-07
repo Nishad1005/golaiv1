@@ -11,6 +11,7 @@ Aksure is a mobile-first operational control system for manufacturing warehouses
 1. **One-stop solution for warehouse people** — the daily driver for everyone on the floor, not a companion app.
 2. **Zones and shelves are created from client input**, and the app generates printable barcode labels for every shelf.
 3. **Scan-first item onboarding**: every item enters stock by being scanned at a shelf. If the scanned barcode matches a known item code/barcode, use it; if unknown, the app auto-assigns a code (`ITM-NNNNN` via the `sequences` table) and creates the item in the master on the spot. The `items` table therefore has both `code` (canonical) and `barcode` (physical label if different).
+   **Existing codes are kept verbatim**: if the client already has a code for an item (their own or from another ERP), Aksure stores it exactly as-is — never renamed, normalized, or renumbered (changing codes causes operational delays and breaks ERP reconciliation). Auto-assignment happens ONLY when an item has no code at all. This applies to CSV import, capture-time creation, and manual entry alike.
 4. **The killer feature is the item locator**: type an item name/code/barcode anywhere → see exact zone + shelf + quantity. Implemented as `ItemLocator` component on every role's home screen, querying `items → stock_balances → shelves → zones`.
 
 ## Architecture

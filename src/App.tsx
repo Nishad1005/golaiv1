@@ -10,6 +10,10 @@ import { StorekeeperHome } from './pages/home/StorekeeperHome'
 import { PlannerHome } from './pages/home/PlannerHome'
 import { ManagerHome } from './pages/home/ManagerHome'
 import { AdminHome } from './pages/home/AdminHome'
+import { ZonesShelves } from './pages/admin/ZonesShelves'
+import { Items } from './pages/admin/Items'
+import { Parties } from './pages/admin/Parties'
+import { Users } from './pages/admin/Users'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -67,12 +71,21 @@ export default function App() {
   }
 
   const Home = HOME_BY_ROLE[profile.role]
+  const isAdminish = profile.role === 'admin' || profile.role === 'manager'
 
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          {isAdminish && (
+            <>
+              <Route path="/admin/zones" element={<ZonesShelves />} />
+              <Route path="/admin/items" element={<Items />} />
+              <Route path="/admin/parties" element={<Parties />} />
+              {profile.role === 'admin' && <Route path="/admin/users" element={<Users />} />}
+            </>
+          )}
           <Route path="*" element={<ComingSoon />} />
         </Route>
         <Route path="/login" element={<Navigate to="/" replace />} />
