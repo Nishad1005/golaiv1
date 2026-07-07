@@ -1,4 +1,4 @@
-import { LayoutDashboard, BadgeCheck, Search, FileBarChart } from 'lucide-react'
+import { LayoutDashboard, BadgeCheck, ClipboardCheck, Search, FileBarChart } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 
@@ -11,6 +11,12 @@ export function ManagerHome() {
       <div className="grid gap-3 sm:grid-cols-2">
         <ModuleTile
           icon={BadgeCheck}
+          title="Release Requests"
+          subtitle="Approve requests, track fulfillment"
+          to="/release"
+        />
+        <ModuleTile
+          icon={ClipboardCheck}
           title="Pending Adjustments"
           subtitle="Approve or reject quantity corrections"
           to="/adjust"

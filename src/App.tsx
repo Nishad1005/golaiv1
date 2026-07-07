@@ -20,6 +20,10 @@ import { Adjustments } from './pages/store/Adjustments'
 import { GrnList } from './pages/grn/GrnList'
 import { GateEntry } from './pages/grn/GateEntry'
 import { GrnDetail } from './pages/grn/GrnDetail'
+import { ReleaseRequestList } from './pages/release/ReleaseRequestList'
+import { ReleaseRequestNew } from './pages/release/ReleaseRequestNew'
+import { ReleaseRequestDetail } from './pages/release/ReleaseRequestDetail'
+import { Returns } from './pages/release/Returns'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -97,6 +101,12 @@ export default function App() {
           {(profile.role === 'security' || isAdminish) && (
             <Route path="/grn/new" element={<GateEntry />} />
           )}
+          <Route path="/release" element={<ReleaseRequestList />} />
+          <Route path="/release/:id" element={<ReleaseRequestDetail />} />
+          {(profile.role === 'planner' || isAdminish) && (
+            <Route path="/release/new" element={<ReleaseRequestNew />} />
+          )}
+          {(profile.role !== 'security') && <Route path="/returns" element={<Returns />} />}
           {isAdminish && (
             <>
               <Route path="/admin/zones" element={<ZonesShelves />} />

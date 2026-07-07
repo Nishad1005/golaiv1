@@ -37,13 +37,13 @@ export function StorekeeperHome() {
           icon={PackageOpen}
           title="Release Requests to Fulfill"
           subtitle="Approved requests from production"
-          comingInPhase={4}
+          to="/release"
         />
         <ModuleTile
           icon={Undo2}
           title="Returns"
-          subtitle="Material coming back from production"
-          comingInPhase={4}
+          subtitle="Scan issuance label, put material back"
+          to="/returns"
         />
         <ModuleTile
           icon={ClipboardList}

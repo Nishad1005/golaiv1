@@ -13,13 +13,13 @@ export function PlannerHome() {
           icon={FilePlus2}
           title="New Release Request"
           subtitle="Request material against an SO reference"
-          comingInPhase={4}
+          to="/release/new"
         />
         <ModuleTile
           icon={History}
-          title="Issuance History"
-          subtitle="Material received by department"
-          comingInPhase={4}
+          title="Release Requests"
+          subtitle="Status, approvals, issuance history"
+          to="/release"
         />
         <ModuleTile
           icon={AlertTriangle}
