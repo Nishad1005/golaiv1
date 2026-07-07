@@ -17,9 +17,9 @@ export function ManagerHome() {
         />
         <ModuleTile
           icon={LayoutDashboard}
-          title="Today's KPIs"
-          subtitle="GRNs, dispatches, issuances, exceptions"
-          comingInPhase={3}
+          title="Receiving (GRN)"
+          subtitle="All GRNs with full photo + audit trail"
+          to="/grn"
         />
         <ModuleTile
           icon={Search}

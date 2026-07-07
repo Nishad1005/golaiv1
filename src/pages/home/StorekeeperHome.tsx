@@ -29,9 +29,9 @@ export function StorekeeperHome() {
         />
         <ModuleTile
           icon={PackageCheck}
-          title="GRNs to Verify"
-          subtitle="Material at gate awaiting verification"
-          comingInPhase={3}
+          title="Receiving (GRN)"
+          subtitle="Verify material at gate, put away to shelves"
+          to="/grn"
         />
         <ModuleTile
           icon={PackageOpen}

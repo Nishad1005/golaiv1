@@ -17,6 +17,9 @@ import { Users } from './pages/admin/Users'
 import { Capture } from './pages/store/Capture'
 import { Transfer } from './pages/store/Transfer'
 import { Adjustments } from './pages/store/Adjustments'
+import { GrnList } from './pages/grn/GrnList'
+import { GateEntry } from './pages/grn/GateEntry'
+import { GrnDetail } from './pages/grn/GrnDetail'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -88,6 +91,11 @@ export default function App() {
               <Route path="/transfer" element={<Transfer />} />
               <Route path="/adjust" element={<Adjustments />} />
             </>
+          )}
+          <Route path="/grn" element={<GrnList />} />
+          <Route path="/grn/:id" element={<GrnDetail />} />
+          {(profile.role === 'security' || isAdminish) && (
+            <Route path="/grn/new" element={<GateEntry />} />
           )}
           {isAdminish && (
             <>

@@ -11,19 +11,19 @@ export function SecurityHome() {
           icon={LogIn}
           title="New Gate Entry"
           subtitle="Vehicle arriving with material (GRN Stage 1)"
-          comingInPhase={3}
+          to="/grn/new"
+        />
+        <ModuleTile
+          icon={Truck}
+          title="Gate Entries"
+          subtitle="All GRNs — vehicles in, status, photos"
+          to="/grn"
         />
         <ModuleTile
           icon={LogOut}
           title="Gate-Out Dispatch"
           subtitle="Approved DCs waiting for vehicle"
           comingInPhase={5}
-        />
-        <ModuleTile
-          icon={Truck}
-          title="Today's Vehicle Log"
-          subtitle="All gate entries and exits today"
-          comingInPhase={3}
         />
       </div>
     </div>
