@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-cream text-ink antialiased;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Five-second rule: big primary action buttons for floor/gate operators */
+  .btn-primary {
+    @apply min-h-tap inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-6 text-base font-semibold text-cream transition-colors hover:bg-ink-700 active:bg-ink-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply min-h-tap inline-flex items-center justify-center gap-2 rounded-xl border-2 border-tan bg-white px-6 text-base font-semibold text-ink transition-colors hover:bg-cream active:bg-cream-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .card {
+    @apply rounded-2xl border border-tan/30 bg-white p-4 shadow-sm;
+  }
+  .input-field {
+    @apply min-h-tap w-full rounded-xl border-2 border-tan/50 bg-white px-4 text-base text-ink placeholder:text-ink-300 focus:border-tan-dark focus:outline-none;
+  }
+  .label-text {
+    @apply mb-1 block text-sm font-medium text-ink-500;
+  }
+}

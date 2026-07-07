@@ -1,0 +1,51 @@
+import { ScanBarcode, ArrowLeftRight, PackageCheck, PackageOpen, Undo2, ClipboardList } from 'lucide-react'
+import { ItemLocator } from '../../components/ItemLocator'
+import { ModuleTile } from '../../components/ModuleTile'
+
+/** Task-centric home: GRNs to verify, RRs to fulfill, DCs to pick (PRD 7.4). */
+export function StorekeeperHome() {
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-bold">My Tasks</h1>
+      <ItemLocator />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ModuleTile
+          icon={ScanBarcode}
+          title="Capture"
+          subtitle="Scan shelf, scan items, record stock"
+          comingInPhase={2}
+        />
+        <ModuleTile
+          icon={ArrowLeftRight}
+          title="Internal Transfer"
+          subtitle="Move items between shelves"
+          comingInPhase={2}
+        />
+        <ModuleTile
+          icon={PackageCheck}
+          title="GRNs to Verify"
+          subtitle="Material at gate awaiting verification"
+          comingInPhase={3}
+        />
+        <ModuleTile
+          icon={PackageOpen}
+          title="Release Requests to Fulfill"
+          subtitle="Approved requests from production"
+          comingInPhase={4}
+        />
+        <ModuleTile
+          icon={Undo2}
+          title="Returns"
+          subtitle="Material coming back from production"
+          comingInPhase={4}
+        />
+        <ModuleTile
+          icon={ClipboardList}
+          title="Dispatches to Pick"
+          subtitle="Outbound orders awaiting picking"
+          comingInPhase={5}
+        />
+      </div>
+    </div>
+  )
+}
