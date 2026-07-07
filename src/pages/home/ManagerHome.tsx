@@ -11,9 +11,9 @@ export function ManagerHome() {
       <div className="grid gap-3 sm:grid-cols-2">
         <ModuleTile
           icon={BadgeCheck}
-          title="Pending Approvals"
-          subtitle="Release requests, dispatches, adjustments"
-          comingInPhase={4}
+          title="Pending Adjustments"
+          subtitle="Approve or reject quantity corrections"
+          to="/adjust"
         />
         <ModuleTile
           icon={LayoutDashboard}

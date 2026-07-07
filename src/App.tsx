@@ -14,6 +14,9 @@ import { ZonesShelves } from './pages/admin/ZonesShelves'
 import { Items } from './pages/admin/Items'
 import { Parties } from './pages/admin/Parties'
 import { Users } from './pages/admin/Users'
+import { Capture } from './pages/store/Capture'
+import { Transfer } from './pages/store/Transfer'
+import { Adjustments } from './pages/store/Adjustments'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -72,12 +75,20 @@ export default function App() {
 
   const Home = HOME_BY_ROLE[profile.role]
   const isAdminish = profile.role === 'admin' || profile.role === 'manager'
+  const isStoreish = profile.role === 'storekeeper' || isAdminish
 
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          {isStoreish && (
+            <>
+              <Route path="/capture" element={<Capture />} />
+              <Route path="/transfer" element={<Transfer />} />
+              <Route path="/adjust" element={<Adjustments />} />
+            </>
+          )}
           {isAdminish && (
             <>
               <Route path="/admin/zones" element={<ZonesShelves />} />

@@ -1,4 +1,4 @@
-import { ScanBarcode, ArrowLeftRight, PackageCheck, PackageOpen, Undo2, ClipboardList } from 'lucide-react'
+import { ScanBarcode, ArrowLeftRight, PackageCheck, PackageOpen, PencilRuler, Undo2, ClipboardList } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 
@@ -13,13 +13,19 @@ export function StorekeeperHome() {
           icon={ScanBarcode}
           title="Capture"
           subtitle="Scan shelf, scan items, record stock"
-          comingInPhase={2}
+          to="/capture"
         />
         <ModuleTile
           icon={ArrowLeftRight}
           title="Internal Transfer"
           subtitle="Move items between shelves"
-          comingInPhase={2}
+          to="/transfer"
+        />
+        <ModuleTile
+          icon={PencilRuler}
+          title="Adjust Quantity"
+          subtitle="Correct a count with a reason (manager approves)"
+          to="/adjust"
         />
         <ModuleTile
           icon={PackageCheck}

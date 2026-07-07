@@ -36,8 +36,8 @@ export function AdminHome() {
         <ModuleTile
           icon={Printer}
           title="Label Printing"
-          subtitle="Shelf label PDFs from your zone layout"
-          comingInPhase={2}
+          subtitle="Shelf label PDFs — per zone, from Zones & Shelves"
+          to="/admin/zones"
         />
         <ModuleTile
           icon={Settings}
