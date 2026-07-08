@@ -1,4 +1,4 @@
-import { LayoutDashboard, BadgeCheck, ClipboardCheck, Search, Send, ShieldAlert, FileBarChart } from 'lucide-react'
+import { LayoutDashboard, BadgeCheck, ClipboardCheck, ClipboardList, Search, Send, ShieldAlert, FileBarChart } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 
@@ -43,13 +43,19 @@ export function ManagerHome() {
           icon={Search}
           title="SO-wise Movement"
           subtitle="Trace every transaction for an SO number"
-          comingInPhase={6}
+          to="/so-movement"
+        />
+        <ModuleTile
+          icon={ClipboardList}
+          title="Stock Counts"
+          subtitle="Plan cycle counts, approve variances"
+          to="/counts"
         />
         <ModuleTile
           icon={FileBarChart}
-          title="Reports"
-          subtitle="Stock, variance, activity exports"
-          comingInPhase={6}
+          title="ERP Export"
+          subtitle="Quantity CSVs for Tally / SAP reconciliation"
+          to="/export"
         />
       </div>
     </div>

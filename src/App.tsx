@@ -28,6 +28,11 @@ import { DispatchList } from './pages/dispatch/DispatchList'
 import { DispatchNew } from './pages/dispatch/DispatchNew'
 import { DispatchDetail } from './pages/dispatch/DispatchDetail'
 import { QcHolds } from './pages/dispatch/QcHolds'
+import { CountList } from './pages/counts/CountList'
+import { CountDetail } from './pages/counts/CountDetail'
+import { Alerts } from './pages/manager/Alerts'
+import { SoMovement } from './pages/manager/SoMovement'
+import { Export } from './pages/manager/Export'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -116,6 +121,19 @@ export default function App() {
           {isStoreish && <Route path="/dispatch/new" element={<DispatchNew />} />}
           {(profile.role !== 'security' && profile.role !== 'planner') && (
             <Route path="/qc" element={<QcHolds />} />
+          )}
+          <Route path="/alerts" element={<Alerts />} />
+          {isStoreish && (
+            <>
+              <Route path="/counts" element={<CountList />} />
+              <Route path="/counts/:id" element={<CountDetail />} />
+            </>
+          )}
+          {isAdminish && (
+            <>
+              <Route path="/so-movement" element={<SoMovement />} />
+              <Route path="/export" element={<Export />} />
+            </>
           )}
           {isAdminish && (
             <>

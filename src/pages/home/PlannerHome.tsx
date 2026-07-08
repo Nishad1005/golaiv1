@@ -23,9 +23,9 @@ export function PlannerHome() {
         />
         <ModuleTile
           icon={AlertTriangle}
-          title="Low Stock Alerts"
-          subtitle="Items below reorder point"
-          comingInPhase={6}
+          title="Alerts"
+          subtitle="Low stock, out of stock, approvals"
+          to="/alerts"
         />
       </div>
     </div>

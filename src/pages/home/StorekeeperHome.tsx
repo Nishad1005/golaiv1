@@ -1,4 +1,4 @@
-import { ScanBarcode, ArrowLeftRight, PackageCheck, PackageOpen, PencilRuler, Undo2, ClipboardList } from 'lucide-react'
+import { ScanBarcode, ArrowLeftRight, ListChecks, PackageCheck, PackageOpen, PencilRuler, Undo2, ClipboardList } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 
@@ -50,6 +50,12 @@ export function StorekeeperHome() {
           title="Dispatch"
           subtitle="Pick against SO, seal cartons, print labels"
           to="/dispatch"
+        />
+        <ModuleTile
+          icon={ListChecks}
+          title="Stock Counts"
+          subtitle="Execute assigned cycle counts"
+          to="/counts"
         />
       </div>
     </div>
