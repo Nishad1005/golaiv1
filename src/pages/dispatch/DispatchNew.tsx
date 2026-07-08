@@ -151,7 +151,7 @@ export function DispatchNew() {
     },
     onSuccess: (row) => {
       const customerName = customers?.find((c) => c.id === customerId)?.name ?? customerNote ?? null
-      generateCartonLabelsPdf(
+      void generateCartonLabelsPdf(
         lines.map((l) => ({
           cartonBarcode: l.cartonBarcode,
           dcNumber: row.dc_number,

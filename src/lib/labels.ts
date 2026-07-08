@@ -1,5 +1,12 @@
 import { jsPDF } from 'jspdf'
 import JsBarcode from 'jsbarcode'
+import QRCode from 'qrcode'
+
+// Labels carry BOTH symbologies: Code128 for USB laser scanners on the floor,
+// QR for phone/webcam cameras (1D codes decode poorly on webcams).
+function qrDataUrl(value: string): Promise<string> {
+  return QRCode.toDataURL(value, { margin: 0, width: 256 })
+}
 
 export interface ShelfLabel {
   code: string // e.g. Z02-S012
@@ -78,7 +85,7 @@ export interface IssuanceLabel {
  * One label per A6-ish quadrant on A4 (2 × 2 per page). "FOR: SO-XXXX" is the
  * dominant element; the barcode encodes the issuance number for return scans.
  */
-export function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: string): void {
+export async function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: string): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const cols = 2
   const rows = 2
@@ -86,6 +93,10 @@ export function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: str
   const marginY = 8
   const cellW = (210 - marginX * 2) / cols
   const cellH = (297 - marginY * 2) / rows
+  const qrByNumber = new Map<string, string>()
+  for (const l of labels) {
+    if (!qrByNumber.has(l.issNumber)) qrByNumber.set(l.issNumber, await qrDataUrl(l.issNumber))
+  }
 
   labels.forEach((label, i) => {
     const idx = i % (cols * rows)
@@ -127,9 +138,10 @@ export function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: str
     cy += 6
 
     const img = barcodeDataUrl(label.issNumber)
-    doc.addImage(img, 'PNG', x + 12, cy, cellW - 24, 16)
+    doc.addImage(img, 'PNG', x + 12, cy, cellW - 52, 16)
+    doc.addImage(qrByNumber.get(label.issNumber)!, 'PNG', x + cellW - 34, cy - 2, 24, 24)
     doc.setFontSize(9)
-    doc.text(label.issNumber, x + cellW / 2, cy + 21, { align: 'center' })
+    doc.text(label.issNumber, x + (cellW - 40) / 2, cy + 21, { align: 'center' })
   })
 
   doc.save(fileName)
@@ -144,8 +156,12 @@ export interface CartonLabel {
 }
 
 /** Dispatch carton labels: scanned by security at gate-out (2 × 3 per A4). */
-export function generateCartonLabelsPdf(labels: CartonLabel[], fileName: string): void {
+export async function generateCartonLabelsPdf(labels: CartonLabel[], fileName: string): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const cartonQrs = new Map<string, string>()
+  for (const l of labels) {
+    if (!cartonQrs.has(l.cartonBarcode)) cartonQrs.set(l.cartonBarcode, await qrDataUrl(l.cartonBarcode))
+  }
   const cols = 2
   const rows = 3
   const marginX = 8
@@ -179,9 +195,10 @@ export function generateCartonLabelsPdf(labels: CartonLabel[], fileName: string)
     doc.text(doc.splitTextToSize(label.contents, cellW - 16), x + 8, y + 38)
 
     const img = barcodeDataUrl(label.cartonBarcode)
-    doc.addImage(img, 'PNG', x + 12, y + cellH - 32, cellW - 24, 16)
+    doc.addImage(img, 'PNG', x + 12, y + cellH - 32, cellW - 52, 16)
+    doc.addImage(cartonQrs.get(label.cartonBarcode)!, 'PNG', x + cellW - 34, y + cellH - 36, 24, 24)
     doc.setFontSize(9)
-    doc.text(label.cartonBarcode, x + cellW / 2, y + cellH - 11, { align: 'center' })
+    doc.text(label.cartonBarcode, x + (cellW - 40) / 2, y + cellH - 11, { align: 'center' })
   })
 
   doc.save(fileName)

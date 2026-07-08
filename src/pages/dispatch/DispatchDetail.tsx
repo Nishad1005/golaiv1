@@ -96,7 +96,7 @@ export function DispatchDetail() {
   const gateExit = dc.dispatch_gate_exits[0]
 
   const reprintCartons = () => {
-    generateCartonLabelsPdf(
+    void generateCartonLabelsPdf(
       dc.dispatch_lines
         .filter((l) => l.carton_barcode)
         .map((l) => ({

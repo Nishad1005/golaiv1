@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { X } from 'lucide-react'
 
 interface CameraScannerProps {
@@ -13,13 +13,27 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
   const doneRef = useRef(false)
 
   useEffect(() => {
-    const scanner = new Html5Qrcode('golai-camera-scanner')
+    const scanner = new Html5Qrcode('golai-camera-scanner', {
+      // Explicit formats + the browser's native BarcodeDetector (when
+      // available) decode 1D codes like Code128 far more reliably than the
+      // JS fallback — this is what shelf/issuance/carton labels use.
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+      ],
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false,
+    })
     scannerRef.current = scanner
 
     void scanner
       .start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 280, height: 160 } },
+        { fps: 12, qrbox: { width: 300, height: 200 } },
         (decoded) => {
           if (doneRef.current) return
           doneRef.current = true

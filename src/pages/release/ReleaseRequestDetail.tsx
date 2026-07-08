@@ -106,7 +106,7 @@ export function ReleaseRequestDetail() {
   }
 
   const printIssuanceLabels = (iss: RrDetail['issuances'][number]) => {
-    generateIssuanceLabelsPdf(
+    void generateIssuanceLabelsPdf(
       iss.issuance_lines.map((l) => ({
         itemCode: l.items.code,
         itemName: l.items.name,
