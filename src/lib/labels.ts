@@ -134,3 +134,55 @@ export function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: str
 
   doc.save(fileName)
 }
+
+export interface CartonLabel {
+  cartonBarcode: string
+  dcNumber: string
+  soRef: string | null
+  customerName: string | null
+  contents: string // e.g. "2 pcs × Aara 3-seater sofa"
+}
+
+/** Dispatch carton labels: scanned by security at gate-out (2 × 3 per A4). */
+export function generateCartonLabelsPdf(labels: CartonLabel[], fileName: string): void {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const cols = 2
+  const rows = 3
+  const marginX = 8
+  const marginY = 8
+  const cellW = (210 - marginX * 2) / cols
+  const cellH = (297 - marginY * 2) / rows
+
+  labels.forEach((label, i) => {
+    const idx = i % (cols * rows)
+    if (i > 0 && idx === 0) doc.addPage()
+    const col = idx % cols
+    const row = Math.floor(idx / cols)
+    const x = marginX + col * cellW
+    const y = marginY + row * cellH
+
+    doc.setDrawColor(120)
+    doc.roundedRect(x + 2, y + 2, cellW - 4, cellH - 4, 2, 2)
+
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text(label.dcNumber, x + cellW / 2, y + 14, { align: 'center' })
+
+    doc.setFontSize(12)
+    doc.text(label.soRef ? `SO: ${label.soRef}` : '', x + cellW / 2, y + 22, { align: 'center' })
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    if (label.customerName) {
+      doc.text(label.customerName, x + cellW / 2, y + 29, { align: 'center' })
+    }
+    doc.text(doc.splitTextToSize(label.contents, cellW - 16), x + 8, y + 38)
+
+    const img = barcodeDataUrl(label.cartonBarcode)
+    doc.addImage(img, 'PNG', x + 12, y + cellH - 32, cellW - 24, 16)
+    doc.setFontSize(9)
+    doc.text(label.cartonBarcode, x + cellW / 2, y + cellH - 11, { align: 'center' })
+  })
+
+  doc.save(fileName)
+}

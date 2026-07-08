@@ -1,4 +1,4 @@
-import { LayoutDashboard, BadgeCheck, ClipboardCheck, Search, FileBarChart } from 'lucide-react'
+import { LayoutDashboard, BadgeCheck, ClipboardCheck, Search, Send, ShieldAlert, FileBarChart } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 
@@ -26,6 +26,18 @@ export function ManagerHome() {
           title="Receiving (GRN)"
           subtitle="All GRNs with full photo + audit trail"
           to="/grn"
+        />
+        <ModuleTile
+          icon={Send}
+          title="Dispatch (DC)"
+          subtitle="Approve picked dispatches, track gate-out"
+          to="/dispatch"
+        />
+        <ModuleTile
+          icon={ShieldAlert}
+          title="QC Hold"
+          subtitle="Inspect quarantined items — release or reject"
+          to="/qc"
         />
         <ModuleTile
           icon={Search}

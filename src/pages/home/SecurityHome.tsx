@@ -23,7 +23,7 @@ export function SecurityHome() {
           icon={LogOut}
           title="Gate-Out Dispatch"
           subtitle="Approved DCs waiting for vehicle"
-          comingInPhase={5}
+          to="/dispatch"
         />
       </div>
     </div>

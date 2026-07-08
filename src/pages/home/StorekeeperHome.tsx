@@ -47,9 +47,9 @@ export function StorekeeperHome() {
         />
         <ModuleTile
           icon={ClipboardList}
-          title="Dispatches to Pick"
-          subtitle="Outbound orders awaiting picking"
-          comingInPhase={5}
+          title="Dispatch"
+          subtitle="Pick against SO, seal cartons, print labels"
+          to="/dispatch"
         />
       </div>
     </div>

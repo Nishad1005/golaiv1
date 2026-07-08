@@ -24,6 +24,10 @@ import { ReleaseRequestList } from './pages/release/ReleaseRequestList'
 import { ReleaseRequestNew } from './pages/release/ReleaseRequestNew'
 import { ReleaseRequestDetail } from './pages/release/ReleaseRequestDetail'
 import { Returns } from './pages/release/Returns'
+import { DispatchList } from './pages/dispatch/DispatchList'
+import { DispatchNew } from './pages/dispatch/DispatchNew'
+import { DispatchDetail } from './pages/dispatch/DispatchDetail'
+import { QcHolds } from './pages/dispatch/QcHolds'
 import type { UserRole } from './lib/types'
 
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
@@ -107,6 +111,12 @@ export default function App() {
             <Route path="/release/new" element={<ReleaseRequestNew />} />
           )}
           {(profile.role !== 'security') && <Route path="/returns" element={<Returns />} />}
+          <Route path="/dispatch" element={<DispatchList />} />
+          <Route path="/dispatch/:id" element={<DispatchDetail />} />
+          {isStoreish && <Route path="/dispatch/new" element={<DispatchNew />} />}
+          {(profile.role !== 'security' && profile.role !== 'planner') && (
+            <Route path="/qc" element={<QcHolds />} />
+          )}
           {isAdminish && (
             <>
               <Route path="/admin/zones" element={<ZonesShelves />} />
