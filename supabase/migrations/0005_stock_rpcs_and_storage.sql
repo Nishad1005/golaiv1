@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0005: atomic stock RPCs + photo storage
+-- Golai v1.0 — Migration 0005: atomic stock RPCs + photo storage
 -- Business transactions and their stock-balance updates must be one atomic
 -- unit, so the app calls these functions instead of separate inserts.
 

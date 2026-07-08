@@ -30,7 +30,7 @@ export function AdminHome() {
         <ModuleTile
           icon={Users}
           title="Users & Roles"
-          subtitle="Assign the five Aksure roles"
+          subtitle="Assign the five Golai roles"
           to="/admin/users"
         />
         <ModuleTile

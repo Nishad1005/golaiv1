@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'ai.aksure.app',
-  appName: 'Aksure',
+  appId: 'com.golai.app',
+  appName: 'Golai',
   webDir: 'dist',
   plugins: {
     PushNotifications: {

@@ -203,7 +203,7 @@ export function Items() {
             <li>
               {preview.withCode} already have a code — <b>kept exactly as-is</b> (never renamed)
             </li>
-            <li>{preview.needCode} have no code — Aksure will auto-assign ITM- codes</li>
+            <li>{preview.needCode} have no code — Golai will auto-assign ITM- codes</li>
           </ul>
           <div className="flex gap-2">
             <button className="btn-primary" onClick={() => runImport.mutate()} disabled={runImport.isPending}>

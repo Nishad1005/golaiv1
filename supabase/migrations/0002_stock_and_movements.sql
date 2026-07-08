@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0002: stock balances, capture entries, transfers, adjustments
+-- Golai v1.0 — Migration 0002: stock balances, capture entries, transfers, adjustments
 -- PRD section 5.3 (Stock). stock_balances.qty_on_hand is the source of truth.
 
 create type adjustment_status as enum ('PENDING', 'APPROVED', 'REJECTED');

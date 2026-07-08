@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0003: GRN/receiving, release requests, issuances,
+-- Golai v1.0 — Migration 0003: GRN/receiving, release requests, issuances,
 -- returns, dispatch. PRD sections 5.4, 5.5, 5.6.
 -- SO/PO references are ALWAYS free text — no sales_orders/purchase_orders tables.
 

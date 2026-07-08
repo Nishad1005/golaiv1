@@ -1,4 +1,4 @@
-package ai.aksure.app;
+package com.golai.app;
 
 import com.getcapacitor.BridgeActivity;
 

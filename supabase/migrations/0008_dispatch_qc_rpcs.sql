@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0008: Dispatch 3-stage workflow + QC hold decisions
+-- Golai v1.0 — Migration 0008: Dispatch 3-stage workflow + QC hold decisions
 -- (PRD 4.7, 4.8). Pick → manager approval → security gate-out.
 
 -- ---------------------------------------------------------------------------

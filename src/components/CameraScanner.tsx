@@ -13,7 +13,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
   const doneRef = useRef(false)
 
   useEffect(() => {
-    const scanner = new Html5Qrcode('aksure-camera-scanner')
+    const scanner = new Html5Qrcode('golai-camera-scanner')
     scannerRef.current = scanner
 
     void scanner
@@ -49,7 +49,7 @@ export function CameraScanner({ onScan, onClose }: CameraScannerProps) {
           <X className="h-6 w-6" />
         </button>
       </div>
-      <div id="aksure-camera-scanner" className="mx-auto w-full max-w-md flex-1" />
+      <div id="golai-camera-scanner" className="mx-auto w-full max-w-md flex-1" />
     </div>
   )
 }

@@ -50,7 +50,7 @@ export function Export() {
           String(b.qty_on_hand), String(b.qty_on_hold), b.last_movement_at,
         ])
       }
-      downloadCsv(rows, `aksure-stock-${new Date().toISOString().slice(0, 10)}.csv`)
+      downloadCsv(rows, `golai-stock-${new Date().toISOString().slice(0, 10)}.csv`)
       await log('export.stock_csv')
     } catch (e) {
       setError((e as Error).message)
@@ -75,7 +75,7 @@ export function Export() {
         const onHold = (it.stock_balances ?? []).reduce((s: number, b: any) => s + b.qty_on_hold, 0)
         rows.push([it.code, it.name, it.category ?? '', it.uom, String(onHand), String(onHold)])
       }
-      downloadCsv(rows, `aksure-item-totals-${new Date().toISOString().slice(0, 10)}.csv`)
+      downloadCsv(rows, `golai-item-totals-${new Date().toISOString().slice(0, 10)}.csv`)
       await log('export.item_totals_csv')
     } catch (e) {
       setError((e as Error).message)

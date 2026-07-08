@@ -1,7 +1,7 @@
 // Minimal IndexedDB wrapper for the offline layer.
 // Stores: 'queue' (pending actions), 'kv' (cached master data).
 
-const DB_NAME = 'aksure-offline'
+const DB_NAME = 'golai-offline'
 const DB_VERSION = 1
 
 let dbPromise: Promise<IDBDatabase> | null = null

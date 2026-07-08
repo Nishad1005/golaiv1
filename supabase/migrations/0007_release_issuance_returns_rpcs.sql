@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0007: Release Request → Issuance → Returns RPCs
+-- Golai v1.0 — Migration 0007: Release Request → Issuance → Returns RPCs
 -- (PRD 4.4–4.6). The central v1.0 flow: planner requests against an SO ref,
 -- manager approves, storekeeper fulfills (stock moves, labels print),
 -- unused material returns against the original issuance.

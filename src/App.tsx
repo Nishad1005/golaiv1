@@ -91,7 +91,7 @@ export default function App() {
         <div className="card max-w-sm">
           <p className="font-semibold">Account not set up</p>
           <p className="mt-1 text-sm text-ink-400">
-            Your login works, but no Aksure profile exists yet. Ask your Admin to add you to a
+            Your login works, but no Golai profile exists yet. Ask your Admin to add you to a
             warehouse and assign your role.
           </p>
           <button className="btn-secondary mt-4 w-full" onClick={() => void useAuth.getState().signOut()}>

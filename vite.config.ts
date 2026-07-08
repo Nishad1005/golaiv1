@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Aksure — Warehouse Control',
-        short_name: 'Aksure',
-        description: 'Aksure runs the floor. Your ERP runs the books.',
+        name: 'Golai — Warehouse Control',
+        short_name: 'Golai',
+        description: 'Golai runs the floor. Your ERP runs the books.',
         theme_color: '#2C1E0F',
         background_color: '#F5EEE3',
         display: 'standalone',

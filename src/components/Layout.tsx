@@ -33,9 +33,10 @@ export function Layout() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 bg-ink text-cream shadow-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-          <span className="text-lg font-bold tracking-wide">AKSURE</span>
+          <img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg" />
+          <span className="text-lg font-bold tracking-wide">GOLAI</span>
           <span className="hidden text-xs text-tan sm:block">
-            Aksure runs the floor. Your ERP runs the books.
+            Golai runs the floor. Your ERP runs the books.
           </span>
           <div className="ml-auto flex items-center gap-3">
             <Link

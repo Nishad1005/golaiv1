@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0009: stock counts (PRD 4.9) + low-stock alerts (4.10)
+-- Golai v1.0 — Migration 0009: stock counts (PRD 4.9) + low-stock alerts (4.10)
 
 -- ---------------------------------------------------------------------------
 -- Create a count plan (manager/admin). Scope is informational JSON

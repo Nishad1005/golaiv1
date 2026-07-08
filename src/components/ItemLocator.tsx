@@ -19,7 +19,7 @@ interface LocatorRow {
 }
 
 /**
- * The core promise of Aksure: type an item's name (or code / barcode) and see
+ * The core promise of Golai: type an item's name (or code / barcode) and see
  * the exact zone + shelf it sits on, with quantity. Available on every home
  * screen.
  */

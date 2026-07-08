@@ -1,7 +1,7 @@
-# Aksure
+# Golai
 
 **Operational control system for manufacturing warehouses.**
-Aksure runs the floor. Your ERP runs the books.
+Golai runs the floor. Your ERP runs the books.
 
 Scan-first stock control: zones and shelves get barcode labels, every item enters the system through the scanner (pre-assigned codes recognized, unknown items auto-coded), and anyone can type an item's name to find the exact zone and shelf it sits on.
 

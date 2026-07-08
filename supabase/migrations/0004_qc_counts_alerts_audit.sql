@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0004: QC holds, stock counts, alerts, attachments,
+-- Golai v1.0 — Migration 0004: QC holds, stock counts, alerts, attachments,
 -- settings, and the append-only audit trail. PRD sections 5.7, 4.12.
 
 create type qc_decision as enum ('RELEASE', 'REJECT');

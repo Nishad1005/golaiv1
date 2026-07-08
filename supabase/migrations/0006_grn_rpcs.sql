@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0006: GRN 3-stage workflow RPCs (PRD 4.3)
+-- Golai v1.0 — Migration 0006: GRN 3-stage workflow RPCs (PRD 4.3)
 -- Stage 1 gate entry → Stage 2 storekeeper verification → Stage 3 putaway.
 
 -- Move quantity in/out of the QC-hold bucket on a shelf.

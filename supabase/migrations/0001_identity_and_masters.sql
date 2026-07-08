@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0001: identity, multi-tenancy, master data
+-- Golai v1.0 — Migration 0001: identity, multi-tenancy, master data
 -- PRD section 5.1 (Identity & Multi-tenancy) and 5.2 (Master Data)
 
 create extension if not exists "pgcrypto";

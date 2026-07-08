@@ -1,4 +1,4 @@
--- Aksure v1.0 — Migration 0010: device push tokens (FCM via Capacitor)
+-- Golai v1.0 — Migration 0010: device push tokens (FCM via Capacitor)
 -- The mobile app registers its FCM token here; an Edge Function (deployment
 -- step) sends pushes for new alerts to each notified user's devices.
 
