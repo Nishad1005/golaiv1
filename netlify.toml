@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback: React Router owns the URLs, so every path serves index.html.
+# Without this, refreshing /grn/123 or opening a deep link returns a 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
