@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Bell, LogOut } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
+import { OfflineBanner } from './OfflineBanner'
 
 const ROLE_LABELS: Record<string, string> = {
   security: 'Security',
@@ -65,6 +66,8 @@ export function Layout() {
           </div>
         </div>
       </header>
+
+      <OfflineBanner />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
         <Outlet />

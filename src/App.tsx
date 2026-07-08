@@ -2,6 +2,9 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from './stores/auth'
+import { useOffline } from './lib/offline/queue'
+import { refreshMasterCache } from './lib/offline/masters'
+import { registerPush } from './lib/push'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { ComingSoon } from './pages/ComingSoon'
@@ -57,7 +60,17 @@ export default function App() {
 
   useEffect(() => {
     void initialize()
+    void useOffline.getState().init()
   }, [initialize])
+
+  // Cache shelves + items locally for offline scan validation (PRD 7.5),
+  // and register for push on native builds
+  useEffect(() => {
+    if (profile && navigator.onLine) {
+      void refreshMasterCache().catch(() => {})
+      void registerPush(profile.id).catch(() => {})
+    }
+  }, [profile])
 
   if (loading) return <FullScreenSpinner />
 

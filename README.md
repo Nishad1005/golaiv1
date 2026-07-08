@@ -54,6 +54,29 @@ src/pages/              Login + role-segregated home screens
 docs/superpowers/specs/ Design documents
 ```
 
+## Offline mode
+
+The app is a PWA: the shell loads with no connectivity, and the floor screens
+(Capture, Internal Transfer, GRN gate entry) keep working offline — scans are
+validated against a locally cached shelf/item master, transactions and photos
+queue in IndexedDB, and everything syncs automatically (in order, server-side
+re-validated) when the connection returns. A banner shows offline state,
+pending count, and any sync rejections.
+
+## Mobile builds (Capacitor)
+
+```sh
+npm run build && npx cap sync android   # refresh native project after web changes
+npx cap open android                    # opens Android Studio to run/build
+```
+
+- Android Studio (with SDK) is required to produce an APK / Play Store bundle.
+- iOS requires a Mac: `npm i @capacitor/ios && npx cap add ios`.
+- Push notifications need a Firebase project: place `google-services.json` in
+  `android/app/`, store the FCM server key as a Supabase Edge Function secret,
+  and deploy an edge function that sends pushes on `alerts` inserts
+  (tokens are collected in `profiles.push_token` by migration 0010).
+
 ## The five roles
 
 Each role lands on its own home screen: **Security** (gate dashboard), **Storekeeper** (task list), **Production Planner** (department status), **Manager** (KPIs + approvals), **Admin** (masters + settings).

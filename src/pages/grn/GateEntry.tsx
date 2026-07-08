@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
+import { useOffline } from '../../lib/offline/queue'
 import { PhotoInput } from '../../components/PhotoInput'
 
 const MATERIAL_TYPES = ['Fabric', 'Foam', 'Wood', 'Hardware', 'Packing Material', 'Other']
@@ -55,6 +56,34 @@ export function GateEntry() {
       if (driverPhotos.length === 0) throw new Error('Driver photo is mandatory.')
       if (!supplierId && !supplierFreetext.trim()) throw new Error('Select or type the supplier.')
 
+      // Offline: queue the whole gate entry, photos included (PRD 7.5 —
+      // GRN Stage 1 is one of the five screens that must work offline)
+      if (!navigator.onLine) {
+        await useOffline.getState().enqueue(
+          'grn_gate_entry',
+          {
+            p_supplier_id: supplierId || null,
+            p_supplier_name_freetext: supplierFreetext.trim() || null,
+            p_po_ref: poRef.trim() || null,
+            p_material_type: materialType,
+            p_cartons: Number(cartons),
+            p_vehicle_number: vehicleNumber.trim().toUpperCase(),
+            p_driver_name: driverName.trim(),
+            p_driver_phone: driverPhone.trim(),
+            p_driver_license: driverLicense.trim(),
+            p_transporter: transporter.trim() || null,
+          },
+          {
+            p_vehicle_photos: vehiclePhotos,
+            p_driver_photos: driverPhotos,
+            p_document_photos: documentPhotos,
+          },
+          'grn',
+          profile!.tenant_id,
+        )
+        return null
+      }
+
       const upload = (files: File[]) =>
         Promise.all(files.map((f) => uploadPhoto(f, profile!.tenant_id, 'grn')))
 
@@ -92,7 +121,11 @@ export function GateEntry() {
       })
       return row
     },
-    onSuccess: (row) => navigate(`/grn/${row.grn_id}`),
+    onSuccess: (row) => {
+      // Queued offline: the GRN number is allocated at sync time
+      if (row === null) navigate('/')
+      else navigate(`/grn/${row.grn_id}`)
+    },
   })
 
   return (

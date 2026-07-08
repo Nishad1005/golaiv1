@@ -6,6 +6,8 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
 import { uploadPhoto } from '../../lib/photos'
+import { useOffline } from '../../lib/offline/queue'
+import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
 import type { Item, Shelf, Zone } from '../../lib/types'
@@ -49,17 +51,30 @@ export function Capture() {
 
   const findShelf = async (code: string, manual: boolean) => {
     setShelfError(null)
-    const { data, error } = await supabase
-      .from('shelves')
-      .select('*, zones(code, name)')
-      .ilike('code', code)
-      .is('deleted_at', null)
-      .maybeSingle()
-    if (error || !data) {
+    let data: ShelfWithZone | null = null
+    if (navigator.onLine) {
+      const res = await supabase
+        .from('shelves')
+        .select('*, zones(code, name)')
+        .ilike('code', code)
+        .is('deleted_at', null)
+        .maybeSingle()
+      data = res.data as ShelfWithZone | null
+    } else {
+      const cached = await findShelfOffline(code)
+      if (cached) {
+        data = {
+          id: cached.id,
+          code: cached.code,
+          zones: { code: cached.zone_code, name: cached.zone_name },
+        } as ShelfWithZone
+      }
+    }
+    if (!data) {
       setShelfError(`Shelf "${code}" not found in the shelf master.`)
       return
     }
-    setShelf(data as ShelfWithZone)
+    setShelf(data)
     if (manual) {
       void logActivity({
         tenantId: profile!.tenant_id,
@@ -75,6 +90,15 @@ export function Capture() {
 
   const findItem = async (scan: string) => {
     setUnknownScan(null)
+    if (!navigator.onLine) {
+      const cached = await findItemOffline(scan)
+      if (cached) {
+        setItem(cached as unknown as Item)
+      } else {
+        setShelfError(`"${scan}" is not in the cached item master. Creating new items needs a connection.`)
+      }
+      return
+    }
     const { data, error } = await supabase
       .from('items')
       .select('*')
@@ -130,6 +154,23 @@ export function Capture() {
 
   const saveEntry = useMutation({
     mutationFn: async (mode: 'add' | 'set') => {
+      // Offline: queue locally with photos; server re-validates on sync (PRD 7.5)
+      if (!navigator.onLine) {
+        await useOffline.getState().enqueue(
+          'capture',
+          {
+            p_shelf_id: shelf!.id,
+            p_item_id: item!.id,
+            p_qty: Number(qty),
+            p_mode: mode,
+            p_lock_hours: 24,
+          },
+          { p_photo_urls: photos },
+          'capture',
+          profile!.tenant_id,
+        )
+        return
+      }
       const photoPaths = []
       for (const f of photos) {
         photoPaths.push(await uploadPhoto(f, profile!.tenant_id, 'capture'))

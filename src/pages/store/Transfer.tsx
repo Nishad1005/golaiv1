@@ -4,6 +4,8 @@ import { ArrowDown, CheckCircle2, Loader2, MapPin, RotateCcw } from 'lucide-reac
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
+import { useOffline } from '../../lib/offline/queue'
+import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
 import type { Item, Shelf, Zone } from '../../lib/types'
 
@@ -41,29 +43,56 @@ export function Transfer() {
     },
   })
 
+  const online = useOffline((s) => s.online)
+  // Offline the local balance is unknown; the server enforces it on sync.
   const available = item
-    ? sourceStock?.find((r) => r.items.id === item.id)?.qty_on_hand ?? 0
+    ? online
+      ? sourceStock?.find((r) => r.items.id === item.id)?.qty_on_hand ?? 0
+      : Infinity
     : 0
 
   const findShelf = async (code: string, manual: boolean, which: 'source' | 'destination') => {
     setError(null)
     if (manual) setUsedManual(true)
-    const { data } = await supabase
-      .from('shelves')
-      .select('*, zones(code, name)')
-      .ilike('code', code)
-      .is('deleted_at', null)
-      .maybeSingle()
+    let data: ShelfWithZone | null = null
+    if (navigator.onLine) {
+      const res = await supabase
+        .from('shelves')
+        .select('*, zones(code, name)')
+        .ilike('code', code)
+        .is('deleted_at', null)
+        .maybeSingle()
+      data = res.data as ShelfWithZone | null
+    } else {
+      const cached = await findShelfOffline(code)
+      if (cached) {
+        data = {
+          id: cached.id,
+          code: cached.code,
+          zones: { code: cached.zone_code, name: cached.zone_name },
+        } as ShelfWithZone
+      }
+    }
     if (!data) {
       setError(`Shelf "${code}" not found.`)
       return
     }
-    if (which === 'source') setSource(data as ShelfWithZone)
-    else setDestination(data as ShelfWithZone)
+    if (which === 'source') setSource(data)
+    else setDestination(data)
   }
 
-  const findItem = (scan: string) => {
+  const findItem = async (scan: string) => {
     setError(null)
+    if (!navigator.onLine) {
+      // Offline: accept any known item; the server re-checks stock on sync
+      const cached = await findItemOffline(scan)
+      if (!cached) {
+        setError(`"${scan}" is not in the cached item master.`)
+        return
+      }
+      setItem(cached as unknown as Item)
+      return
+    }
     const match = sourceStock?.find((r) => r.items.code === scan || r.items.barcode === scan)
     if (!match) {
       setError(`"${scan}" has no stock on ${source!.code}. Scan an item from this shelf.`)
@@ -74,6 +103,22 @@ export function Transfer() {
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (!navigator.onLine) {
+        await useOffline.getState().enqueue(
+          'transfer',
+          {
+            p_source_shelf_id: source!.id,
+            p_destination_shelf_id: destination!.id,
+            p_item_id: item!.id,
+            p_qty: Number(qty),
+            p_manual_entry: usedManual,
+          },
+          {},
+          'transfer',
+          profile!.tenant_id,
+        )
+        return
+      }
       const { data, error } = await supabase.rpc('transfer_stock', {
         p_source_shelf_id: source!.id,
         p_destination_shelf_id: destination!.id,
@@ -157,7 +202,7 @@ export function Transfer() {
       {source && !item && (
         <div className="card space-y-3">
           <p className="font-semibold">Step 2 — Scan the item to move</p>
-          <ScanInput placeholder="item barcode" onScan={(v) => findItem(v)} />
+          <ScanInput placeholder="item barcode" onScan={(v) => void findItem(v)} />
           {sourceStock && sourceStock.length === 0 && (
             <p className="text-sm text-amber-700">This shelf has no stock recorded.</p>
           )}
@@ -168,7 +213,8 @@ export function Transfer() {
         <div className="card space-y-3">
           <p className="font-semibold">{item.name}</p>
           <p className="text-sm text-ink-400">
-            {item.code} · available on {source!.code}: <b>{available} {item.uom}</b>
+            {item.code} · available on {source!.code}:{' '}
+            <b>{online ? `${available} ${item.uom}` : 'checked on sync (offline)'}</b>
           </p>
           <div>
             <label className="label-text">Quantity to move</label>
