@@ -1,10 +1,23 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, UserPlus } from 'lucide-react'
+import { Loader2, Plus, Power, Trash2, UserPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import type { Profile, UserRole } from '../../lib/types'
+
+async function invokeError(error: { message: string; context?: unknown }): Promise<string> {
+  const ctx = (error as { context?: Response }).context
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = await ctx.json()
+      if (body?.error) return body.error as string
+    } catch {
+      /* fall through */
+    }
+  }
+  return error.message
+}
 
 const ROLES: UserRole[] = ['security', 'storekeeper', 'planner', 'manager', 'admin']
 
@@ -91,6 +104,49 @@ export function Users() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
   })
 
+  // Deactivate/reactivate: safe for staff who have history — blocks their login
+  // but keeps their name on their past work.
+  const setStatus = useMutation({
+    mutationFn: async ({ user, status }: { user: Profile; status: 'active' | 'inactive' }) => {
+      const { error } = await supabase.from('profiles').update({ status }).eq('id', user.id)
+      if (error) throw error
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: status === 'active' ? 'reactivate.user' : 'deactivate.user',
+        entityType: 'profile',
+        entityId: user.id,
+      })
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+  })
+
+  // Permanent delete via edge function (service role). Refused for users with
+  // history — the function tells the admin to deactivate instead.
+  const deleteUser = useMutation({
+    mutationFn: async (user: Profile) => {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: user.id },
+      })
+      if (error) throw new Error(await invokeError(error))
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: 'delete.user',
+        entityType: 'profile',
+        entityId: user.id,
+        before: { email: user.email, role: user.role },
+      })
+    },
+    onSuccess: () => {
+      setNotice('User permanently deleted.')
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] })
+    },
+    onError: (e) => setNotice((e as Error).message),
+  })
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -160,26 +216,70 @@ export function Users() {
         <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
       ) : (
         <div className="card divide-y divide-tan/20 p-0">
-          {(users ?? []).map((u) => (
-            <div key={u.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <div className="font-medium">{u.full_name}</div>
-                <div className="truncate text-sm text-ink-400">{u.email ?? u.phone ?? ''}</div>
-              </div>
-              <select
-                className="input-field ml-auto w-auto"
-                value={u.role}
-                disabled={u.id === profile!.id || changeRole.isPending}
-                onChange={(e) => changeRole.mutate({ user: u, role: e.target.value as UserRole })}
+          {(users ?? []).map((u) => {
+            const isSelf = u.id === profile!.id
+            const inactive = u.status !== 'active'
+            return (
+              <div
+                key={u.id}
+                className={'flex flex-wrap items-center gap-3 px-4 py-3 ' + (inactive ? 'opacity-60' : '')}
               >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-medium">
+                    {u.full_name}
+                    {inactive && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                        deactivated
+                      </span>
+                    )}
+                  </div>
+                  <div className="truncate text-sm text-ink-400">{u.email ?? u.phone ?? ''}</div>
+                </div>
+                <select
+                  className="input-field ml-auto w-auto"
+                  value={u.role}
+                  disabled={isSelf || inactive || changeRole.isPending}
+                  onChange={(e) => changeRole.mutate({ user: u, role: e.target.value as UserRole })}
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+                {!isSelf && (
+                  <div className="flex gap-1">
+                    <button
+                      className="flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-ink-500 hover:bg-cream"
+                      title={inactive ? 'Reactivate — restore access' : 'Deactivate — block login, keep history'}
+                      disabled={setStatus.isPending}
+                      onClick={() =>
+                        setStatus.mutate({ user: u, status: inactive ? 'active' : 'inactive' })
+                      }
+                    >
+                      <Power className="h-4 w-4" />
+                      {inactive ? 'Reactivate' : 'Deactivate'}
+                    </button>
+                    <button
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-ink-400 hover:bg-red-50 hover:text-red-600"
+                      title="Delete permanently (only if they have no recorded activity)"
+                      disabled={deleteUser.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Permanently delete ${u.full_name}? This only works if they have no recorded transactions — otherwise deactivate them instead.`,
+                          )
+                        )
+                          deleteUser.mutate(u)
+                      }}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
           {(users ?? []).length === 0 && (
             <p className="px-4 py-8 text-center text-ink-400">No users yet.</p>
           )}

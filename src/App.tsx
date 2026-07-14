@@ -102,6 +102,24 @@ export default function App() {
     )
   }
 
+  if (profile.status !== 'active') {
+    // Deactivated by an admin — login works but access is revoked. Their name
+    // stays on their historical records; they just can't act anymore.
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4 text-center">
+        <div className="card max-w-sm">
+          <p className="font-semibold">Account deactivated</p>
+          <p className="mt-1 text-sm text-ink-400">
+            Your Golai access has been turned off. Contact your Admin if this is a mistake.
+          </p>
+          <button className="btn-secondary mt-4 w-full" onClick={() => void useAuth.getState().signOut()}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const Home = HOME_BY_ROLE[profile.role]
   const isAdminish = profile.role === 'admin' || profile.role === 'manager'
   const isStoreish = profile.role === 'storekeeper' || isAdminish
