@@ -29,12 +29,12 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-b from-cream to-ink-100 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <img src="/logo.svg" alt="Golai" className="mx-auto mb-4 h-16 w-16 rounded-2xl shadow-md" />
-          <h1 className="text-3xl font-bold tracking-wide">GOLAI</h1>
-          <p className="mt-1 text-sm text-ink-400">
+          <img src="/logo.svg" alt="Golai" className="mx-auto mb-4 h-20 w-20 rounded-2xl shadow-lg" />
+          <h1 className="text-3xl font-bold tracking-tight text-navy">Golai</h1>
+          <p className="mt-1.5 text-sm text-ink-500">
             Golai runs the floor. Your ERP runs the books.
           </p>
         </div>

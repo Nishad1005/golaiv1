@@ -60,12 +60,12 @@ export function ReleaseRequestList() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
+        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (
         <div className="space-y-2">
           {(rrs ?? []).map((rr) => (
             <Link key={rr.id} to={`/release/${rr.id}`} className="card flex items-center gap-3 hover:border-tan">
-              <PackageOpen className="h-6 w-6 shrink-0 text-tan-dark" />
+              <PackageOpen className="h-6 w-6 shrink-0 text-brand-500" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono font-semibold">{rr.rr_number}</span>

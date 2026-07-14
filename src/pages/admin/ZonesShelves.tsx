@@ -135,7 +135,7 @@ export function ZonesShelves() {
     })
   }
 
-  if (isLoading) return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-tan-dark" />
+  if (isLoading) return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
 
   return (
     <div className="space-y-4">

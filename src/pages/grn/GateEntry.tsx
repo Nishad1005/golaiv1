@@ -131,7 +131,7 @@ export function GateEntry() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Truck className="h-6 w-6 text-tan-dark" />
+        <Truck className="h-6 w-6 text-brand-500" />
         <h1 className="text-xl font-bold">New Gate Entry</h1>
       </div>
 

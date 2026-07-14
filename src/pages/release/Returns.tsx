@@ -145,7 +145,7 @@ export function Returns() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Undo2 className="h-6 w-6 text-tan-dark" />
+        <Undo2 className="h-6 w-6 text-brand-500" />
         <h1 className="text-xl font-bold">Return to Store</h1>
       </div>
 
@@ -221,7 +221,7 @@ export function Returns() {
             <div className="card space-y-3">
               <p className="font-semibold">Scan the shelf where it goes back</p>
               <ScanInput placeholder="putback shelf" onScan={(v) => submit.mutate(v)} />
-              {submit.isPending && <Loader2 className="h-5 w-5 animate-spin text-tan-dark" />}
+              {submit.isPending && <Loader2 className="h-5 w-5 animate-spin text-brand-500" />}
             </div>
           )}
 

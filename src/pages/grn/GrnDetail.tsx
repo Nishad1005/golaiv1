@@ -84,7 +84,7 @@ export function GrnDetail() {
   })
 
   if (isLoading || !grn) {
-    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-tan-dark" />
+    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
   }
 
   const gate = grn.grn_gate_entries[0]
@@ -436,7 +436,7 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
   return (
     <div className="card space-y-3">
       <div className="flex items-center gap-2">
-        <PackageCheck className="h-5 w-5 text-tan-dark" />
+        <PackageCheck className="h-5 w-5 text-brand-500" />
         <p className="font-semibold">Putaway — place each item on its shelf</p>
       </div>
       {pendingLines.map((line) => {
@@ -496,7 +496,7 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
           </div>
         )
       })}
-      {putaway.isPending && <Loader2 className="h-5 w-5 animate-spin text-tan-dark" />}
+      {putaway.isPending && <Loader2 className="h-5 w-5 animate-spin text-brand-500" />}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   )

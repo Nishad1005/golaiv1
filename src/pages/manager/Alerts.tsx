@@ -55,7 +55,7 @@ export function Alerts() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bell className="h-6 w-6 text-tan-dark" />
+          <Bell className="h-6 w-6 text-brand-500" />
           <h1 className="text-xl font-bold">Alerts</h1>
         </div>
         <button className="btn-secondary" onClick={() => setStatus.mutate({ status: 'READ' })}>
@@ -64,7 +64,7 @@ export function Alerts() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
+        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (alerts ?? []).length === 0 ? (
         <div className="card py-10 text-center text-ink-400">No alerts. All clear.</div>
       ) : (

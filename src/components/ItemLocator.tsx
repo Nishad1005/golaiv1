@@ -56,7 +56,7 @@ export function ItemLocator() {
           autoComplete="off"
         />
         {isFetching && (
-          <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-tan-dark" />
+          <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-brand-500" />
         )}
       </div>
 
@@ -79,7 +79,7 @@ export function ItemLocator() {
                   <ul className="mt-1 space-y-1">
                     {locations.map((b, i) => (
                       <li key={i} className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 shrink-0 text-tan-dark" />
+                        <MapPin className="h-4 w-4 shrink-0 text-brand-500" />
                         <span className="font-medium">
                           {b.shelves?.zones ? `${b.shelves.zones.name} (${b.shelves.zones.code})` : '—'}
                           {' · '}

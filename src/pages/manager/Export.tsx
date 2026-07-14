@@ -87,7 +87,7 @@ export function Export() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <FileBarChart className="h-6 w-6 text-tan-dark" />
+        <FileBarChart className="h-6 w-6 text-brand-500" />
         <h1 className="text-xl font-bold">ERP Export</h1>
       </div>
       <p className="text-sm text-ink-400">

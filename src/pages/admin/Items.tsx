@@ -391,7 +391,7 @@ export function Items() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
+        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (
         <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">

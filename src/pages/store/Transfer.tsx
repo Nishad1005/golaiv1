@@ -165,7 +165,7 @@ export function Transfer() {
 
   const shelfCard = (shelf: ShelfWithZone, label: string) => (
     <div className="card flex items-center gap-3 border-tan bg-cream">
-      <MapPin className="h-6 w-6 text-tan-dark" />
+      <MapPin className="h-6 w-6 text-brand-500" />
       <div>
         <div className="text-xs uppercase tracking-wide text-ink-400">{label}</div>
         <div className="font-mono text-lg font-bold">{shelf.code}</div>

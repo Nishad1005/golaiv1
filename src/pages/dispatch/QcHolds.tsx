@@ -78,7 +78,7 @@ export function QcHolds() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <ShieldAlert className="h-6 w-6 text-tan-dark" />
+        <ShieldAlert className="h-6 w-6 text-brand-500" />
         <h1 className="text-xl font-bold">QC Hold / Quarantine</h1>
       </div>
 
@@ -89,7 +89,7 @@ export function QcHolds() {
       )}
 
       {isLoading ? (
-        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
+        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (holds ?? []).length === 0 ? (
         <div className="card py-10 text-center text-ink-400">
           Nothing in quarantine. Items marked "Hold for QC" during GRN verification appear here.

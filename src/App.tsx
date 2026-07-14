@@ -50,7 +50,7 @@ const HOME_BY_ROLE: Record<UserRole, () => JSX.Element> = {
 function FullScreenSpinner() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-tan-dark" />
+      <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
     </div>
   )
 }

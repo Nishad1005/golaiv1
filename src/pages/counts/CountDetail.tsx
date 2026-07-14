@@ -84,7 +84,7 @@ export function CountDetail() {
   })
 
   if (isLoading || !count) {
-    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-tan-dark" />
+    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
   }
 
   const variances = count.stock_count_lines.filter((l) => l.variance !== 0)
@@ -243,7 +243,7 @@ function ExecutePanel({ countId }: { countId: string }) {
       ) : (
         <>
           <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-tan-dark" />
+            <MapPin className="h-5 w-5 text-brand-500" />
             <span className="font-mono font-bold">{shelf.code}</span>
             <button className="btn-secondary ml-auto" onClick={() => { setShelf(null); setItem(null) }}>
               Change shelf

@@ -31,35 +31,37 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 bg-ink text-cream shadow-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-          <img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg" />
-          <span className="text-lg font-bold tracking-wide">GOLAI</span>
-          <span className="hidden text-xs text-tan sm:block">
-            Golai runs the floor. Your ERP runs the books.
-          </span>
-          <div className="ml-auto flex items-center gap-3">
+      <header className="sticky top-0 z-20 border-b border-white/5 bg-navy text-white shadow-sm">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+          <img src="/logo.svg" alt="Golai" className="h-9 w-9 rounded-xl shadow-sm" />
+          <div className="leading-none">
+            <span className="text-lg font-bold tracking-tight">Golai</span>
+            <span className="ml-2 hidden text-xs font-medium text-ink-300 sm:inline">
+              runs the floor. Your ERP runs the books.
+            </span>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
             <Link
               to="/alerts"
-              className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-ink-700"
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-ink-200 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Alerts"
             >
               <Bell className="h-5 w-5" />
               {(unread ?? 0) > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white ring-2 ring-navy">
                   {unread! > 99 ? '99+' : unread}
                 </span>
               )}
             </Link>
             {profile && (
-              <div className="text-right leading-tight">
-                <div className="text-sm font-medium">{profile.full_name}</div>
-                <div className="text-xs text-tan">{ROLE_LABELS[profile.role]}</div>
+              <div className="hidden text-right leading-tight sm:block">
+                <div className="text-sm font-semibold">{profile.full_name}</div>
+                <div className="text-xs text-ink-300">{ROLE_LABELS[profile.role]}</div>
               </div>
             )}
             <button
               onClick={() => void signOut()}
-              className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-ink-700"
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-200 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />
@@ -70,7 +72,7 @@ export function Layout() {
 
       <OfflineBanner />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 animate-fade-in">
         <Outlet />
       </main>
     </div>

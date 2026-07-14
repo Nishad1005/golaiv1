@@ -232,7 +232,7 @@ export function Capture() {
         </div>
       ) : (
         <div className="card flex items-center gap-3 border-tan bg-cream">
-          <MapPin className="h-6 w-6 text-tan-dark" />
+          <MapPin className="h-6 w-6 text-brand-500" />
           <div>
             <div className="font-mono text-lg font-bold">{shelf.code}</div>
             <div className="text-sm text-ink-400">
@@ -267,7 +267,7 @@ export function Capture() {
           }}
         >
           <div className="flex items-center gap-2">
-            <PackagePlus className="h-5 w-5 text-tan-dark" />
+            <PackagePlus className="h-5 w-5 text-brand-500" />
             <p className="font-semibold">New item — barcode not in the master</p>
           </div>
           <p className="text-sm text-ink-400">

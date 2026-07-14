@@ -90,7 +90,7 @@ export function DispatchDetail() {
   })
 
   if (isLoading || !dc) {
-    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-tan-dark" />
+    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
   }
 
   const gateExit = dc.dispatch_gate_exits[0]
@@ -320,7 +320,7 @@ function GateOutPanel({ dc }: { dc: DcDetail }) {
       {expectedCartons.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <ScanBarcode className="h-5 w-5 text-tan-dark" />
+            <ScanBarcode className="h-5 w-5 text-brand-500" />
             <p className="font-semibold">
               Scan cartons ({scanned.length} / {expectedCartons.length})
             </p>

@@ -102,7 +102,7 @@ export function ReleaseRequestDetail() {
   })
 
   if (isLoading || !rr) {
-    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-tan-dark" />
+    return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
   }
 
   const printIssuanceLabels = (iss: RrDetail['issuances'][number]) => {

@@ -213,7 +213,7 @@ export function Users() {
       )}
 
       {isLoading ? (
-        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />
+        <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (
         <div className="card divide-y divide-tan/20 p-0">
           {(users ?? []).map((u) => {

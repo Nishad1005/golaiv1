@@ -101,7 +101,7 @@ export function SoMovement() {
         <button type="submit" className="btn-primary">Trace</button>
       </form>
 
-      {isFetching && <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-tan-dark" />}
+      {isFetching && <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />}
 
       {soRef && events && !isFetching && (
         events.length === 0 ? (
