@@ -1,12 +1,19 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Upload, Loader2, Search } from 'lucide-react'
+import { Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
 import { parseCsv, findColumn } from '../../lib/csv'
+import { generateItemLabelsPdf, type ItemLabelSize } from '../../lib/labels'
 import type { Item } from '../../lib/types'
+
+const LABEL_SIZES: { value: ItemLabelSize; label: string }[] = [
+  { value: 'a4-24', label: 'A4 sheet — 24 labels (70×37mm office stickers)' },
+  { value: 'a4-12', label: 'A4 sheet — 12 labels (105×48mm office stickers)' },
+  { value: 'thermal-50x25', label: 'Thermal printer — 50×25mm rolls' },
+]
 
 interface CsvPreview {
   total: number
@@ -30,6 +37,20 @@ export function Items() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<CsvPreview | null>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
+
+  // --- Label printing --------------------------------------------------------
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [showPrint, setShowPrint] = useState(false)
+  const [labelSize, setLabelSize] = useState<ItemLabelSize>('a4-24')
+  const [copies, setCopies] = useState('1')
+  const [printing, setPrinting] = useState(false)
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   const { data: items, isLoading } = useQuery({
     queryKey: ['items', search],
@@ -282,6 +303,83 @@ export function Items() {
         </form>
       )}
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-ink px-4 py-3 text-cream">
+          <span className="font-medium">{selected.size} selected</span>
+          <button className="ml-auto btn-secondary" onClick={() => setSelected(new Set())}>
+            <X className="h-5 w-5" /> Clear
+          </button>
+          <button className="btn-primary" onClick={() => setShowPrint(true)}>
+            <Printer className="h-5 w-5" /> Print labels
+          </button>
+        </div>
+      )}
+
+      {showPrint && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !printing && setShowPrint(false)}>
+          <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <p className="text-lg font-bold">Print item labels</p>
+            <p className="text-sm text-ink-400">
+              {selected.size} item{selected.size > 1 ? 's' : ''} · each label carries the item name,
+              its code, a Code128 barcode (USB scanners) and a QR code (phone cameras).
+            </p>
+            <div>
+              <label className="label-text">Label size</label>
+              <select className="input-field" value={labelSize} onChange={(e) => setLabelSize(e.target.value as ItemLabelSize)}>
+                {LABEL_SIZES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label-text">Copies per item</label>
+              <input type="number" min="1" className="input-field w-32" value={copies}
+                onChange={(e) => setCopies(e.target.value)} />
+              <p className="mt-1 text-xs text-ink-400">
+                One sticker per physical piece — e.g. 12 for 12 rolls of the same fabric.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="btn-primary"
+                disabled={printing}
+                onClick={async () => {
+                  setPrinting(true)
+                  try {
+                    const chosen = (items ?? []).filter((it) => selected.has(it.id))
+                    await generateItemLabelsPdf(
+                      chosen.map((it) => ({
+                        label: { code: it.code, name: it.name, uom: it.uom, category: it.category },
+                        copies: Math.max(1, Number(copies) || 1),
+                      })),
+                      labelSize,
+                      `golai-item-labels-${new Date().toISOString().slice(0, 10)}.pdf`,
+                    )
+                    await logActivity({
+                      tenantId: profile!.tenant_id,
+                      userId: profile!.id,
+                      userRole: profile!.role,
+                      action: 'print.item_labels',
+                      entityType: 'item',
+                      after: { count: chosen.length, size: labelSize, copies: Number(copies) },
+                    })
+                    setShowPrint(false)
+                  } finally {
+                    setPrinting(false)
+                  }
+                }}
+              >
+                {printing && <Loader2 className="h-5 w-5 animate-spin" />}
+                Download PDF
+              </button>
+              <button className="btn-secondary" disabled={printing} onClick={() => setShowPrint(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-300" />
         <input
@@ -299,6 +397,17 @@ export function Items() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-tan/30 text-left text-ink-400">
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5"
+                    aria-label="Select all"
+                    checked={(items ?? []).length > 0 && (items ?? []).every((i) => selected.has(i.id))}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? new Set((items ?? []).map((i) => i.id)) : new Set())
+                    }
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">Code</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Category</th>
@@ -307,7 +416,16 @@ export function Items() {
             </thead>
             <tbody className="divide-y divide-tan/20">
               {(items ?? []).map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className={selected.has(item.id) ? 'bg-cream' : ''}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5"
+                      aria-label={`Select ${item.name}`}
+                      checked={selected.has(item.id)}
+                      onChange={() => toggle(item.id)}
+                    />
+                  </td>
                   <td className="px-4 py-3 font-mono">{item.code}</td>
                   <td className="px-4 py-3 font-medium">{item.name}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
@@ -316,7 +434,7 @@ export function Items() {
               ))}
               {(items ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-ink-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-ink-400">
                     No items yet. Import the client's CSV or create items manually — existing codes
                     are always kept unchanged.
                   </td>

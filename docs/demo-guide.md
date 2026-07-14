@@ -36,7 +36,7 @@ Three facts to memorize:
 | `store@test.com` | **Storekeeper** | Store in-charge ("Rajesh") | Scan-first task tiles |
 | `security@test.com` | **Security Guard** | Gate operator ("Suresh") | Gate entries and gate-outs |
 
-**Password for all accounts:** `________` *(fill in — do not print this sheet with the password on it if it leaves your hands)*
+**Password for all accounts:** `user10` *(fill in — do not print this sheet with the password on it if it leaves your hands)*
 
 ### Before the client arrives (5 minutes)
 
@@ -120,7 +120,72 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 
 ---
 
-## 5. Appendix A — Reset between demos (Admin, Supabase SQL Editor)
+## 5. Onboarding a real client
+
+When a demo turns into a sale, this is how a client goes live — a repeatable
+process you'll follow the same way for every client.
+
+### 5.1 Who creates the logins?
+
+- **You (DBBS) create ONE account: the client's Admin.** (Supabase Auth → add
+  user, then insert their `profiles` row with role `admin` and their tenant id —
+  the same two-step you used for the demo accounts.)
+- **The client's Admin creates everyone else from inside the app** — no Supabase
+  access needed. Admin → **Users & Roles → New User** → name, email, role →
+  **Create & send invite**. The staff member gets an email to set their own
+  password and appears in the list right away. The client adds and removes their
+  own managers, storekeepers, guards, and planners as their team changes.
+- Each client is a separate **tenant**: their data is invisible to every other
+  client, enforced at the database level.
+
+### 5.2 Migrating the client's existing data (Excel → Golai)
+
+A client usually has two things: a **zone/shelf list** (often with barcodes
+already) and an **item master** (usually with no locations). That's the ideal
+input — in Golai an item's location isn't a field in the item master, it's
+created when someone scans the item onto a shelf. So:
+
+1. **Zones & shelves** — create them from the client's list (Admin → Zones &
+   Shelves), keeping their existing shelf codes/barcodes. If they have none,
+   print Golai's shelf-label PDFs (**Labels** button per zone) and stick them.
+2. **Item master** — import their Excel/CSV (Admin → Items → **Import CSV**).
+   Existing item codes are kept **exactly as-is**; only items with no code get an
+   auto `ITM-` code. At this point every item exists but sits on **no shelf** —
+   that's expected, not a problem to fix.
+3. **Print item barcode labels** (see 5.3) and stick one on each physical piece.
+4. **The client assigns locations by scanning** — a storekeeper walks the floor
+   with the app: **Capture → scan shelf → scan each item on it → enter quantity**.
+   Every scan places that item on that shelf with its real quantity. After one
+   walk-through, the item locator finds everything. This is the client's own work
+   (they know their floor) and doubles as staff training — and it's more accurate
+   than importing planned locations from a spreadsheet, because it records where
+   stock *actually* is.
+
+> Optional: if the client wants rough default zones in the import, we can map a
+> "default zone" per item — but actual stock still comes from the scan-walk.
+
+### 5.3 Printing item barcode labels
+
+For items that arrive without a barcode, Golai generates one from the item's
+code. Admin → **Items** → tick the items (or **Select all**) → **Print labels**:
+
+- **Label size**: A4 sticker sheets (24 or 12 per page) for an office printer, or
+  50×25mm for a thermal label printer (the daily-use option at scale).
+- **Copies per item**: one sticker per physical piece — e.g. 12 for 12 rolls of
+  the same fabric.
+
+Each label carries the item name, its code, a **Code128 barcode** (USB laser
+scanners) and a **QR code** (phone cameras). (Printing works on the currently
+listed items — use the search box to filter to a category/zone, then Select all,
+for large masters.)
+
+*Migration-day order:* import zones → stick shelf labels → import items → bulk
+print item labels → team walks the floor sticking item labels and scanning each
+onto its shelf.
+
+---
+
+## 6. Appendix A — Reset between demos (Admin, Supabase SQL Editor)
 
 Wipes all *transactions* but keeps zones, shelves, items, users. Run when the demo data gets messy:
 
@@ -137,7 +202,7 @@ truncate activity_log;  -- audit log is append-only; truncate is the reset-only 
 update sequences set current_value = 0;
 ```
 
-## 6. Appendix B — Minimum seed data for a fresh demo
+## 7. Appendix B — Minimum seed data for a fresh demo
 
 If the item locator finds nothing, do this once (5 minutes, as `user1@test.com`):
 

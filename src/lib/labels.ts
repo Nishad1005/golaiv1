@@ -67,6 +67,106 @@ export function generateShelfLabelsPdf(labels: ShelfLabel[], fileName = 'shelf-l
   doc.save(fileName)
 }
 
+export interface ItemLabel {
+  code: string // the item's code (client's own, verbatim), encoded in both symbologies
+  name: string
+  uom?: string
+  category?: string | null
+}
+
+/**
+ * Item barcode label size presets:
+ * - 'a4-24': 24 per A4 sheet (70×37mm) — cheap Avery-type office stickers
+ * - 'a4-12': 12 per A4 sheet (105×48mm) — larger office stickers
+ * - 'thermal-50x25': one 50×25mm label per page — direct thermal printers
+ *   (TVS-E LP46, TSC TE244 etc., the Indian warehouse standard)
+ */
+export type ItemLabelSize = 'a4-24' | 'a4-12' | 'thermal-50x25'
+
+interface SizeSpec {
+  page: [number, number] | 'a4'
+  cols: number
+  rows: number
+  marginX: number
+  marginY: number
+}
+
+const SIZE_SPECS: Record<ItemLabelSize, SizeSpec> = {
+  'a4-24': { page: 'a4', cols: 3, rows: 8, marginX: 8, marginY: 12 },
+  'a4-12': { page: 'a4', cols: 2, rows: 6, marginX: 6, marginY: 10 },
+  'thermal-50x25': { page: [50, 25], cols: 1, rows: 1, marginX: 0, marginY: 0 },
+}
+
+/**
+ * Generate item barcode labels — one physical sticker per unit/roll/box.
+ * Each label: item name, code, Code128 (USB scanners) + QR (phone cameras).
+ * `copies` lets you print N stickers for N physical pieces of the same item.
+ */
+export async function generateItemLabelsPdf(
+  items: { label: ItemLabel; copies: number }[],
+  size: ItemLabelSize,
+  fileName: string,
+): Promise<void> {
+  const spec = SIZE_SPECS[size]
+  // Expand copies into a flat list of labels to place
+  const flat: ItemLabel[] = []
+  for (const { label, copies } of items) {
+    for (let c = 0; c < Math.max(1, copies); c++) flat.push(label)
+  }
+  if (flat.length === 0) return
+
+  // Pre-render barcodes/QRs once per distinct code
+  const codes = [...new Set(flat.map((l) => l.code))]
+  const bars = new Map(codes.map((c) => [c, barcodeDataUrl(c)]))
+  const qrs = new Map<string, string>()
+  for (const c of codes) qrs.set(c, await qrDataUrl(c))
+
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: spec.page === 'a4' ? 'a4' : spec.page,
+    orientation: spec.page === 'a4' ? 'portrait' : 'landscape',
+  })
+  const pageW = spec.page === 'a4' ? 210 : spec.page[0]
+  const pageH = spec.page === 'a4' ? 297 : spec.page[1]
+  const cellW = (pageW - spec.marginX * 2) / spec.cols
+  const cellH = (pageH - spec.marginY * 2) / spec.rows
+  const perPage = spec.cols * spec.rows
+
+  flat.forEach((label, i) => {
+    const idx = i % perPage
+    if (i > 0 && idx === 0) doc.addPage(spec.page === 'a4' ? 'a4' : spec.page, spec.page === 'a4' ? 'portrait' : 'landscape')
+    const col = idx % spec.cols
+    const row = Math.floor(idx / spec.cols)
+    const x = spec.marginX + col * cellW
+    const y = spec.marginY + row * cellH
+    const pad = size === 'thermal-50x25' ? 1.5 : 2.5
+
+    // Item name (wrapped, max 2 lines)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(size === 'thermal-50x25' ? 7 : 8)
+    const nameLines = doc.splitTextToSize(label.name, cellW - pad * 2).slice(0, 2)
+    doc.text(nameLines, x + pad, y + pad + 2.5)
+
+    // Code
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(size === 'thermal-50x25' ? 6 : 7)
+    const codeY = y + pad + (nameLines.length > 1 ? 8 : 5)
+    doc.text(label.code, x + pad, codeY)
+
+    // Code128 on the left, QR on the right of the lower half
+    const barTop = codeY + 1
+    const qrSide = Math.min(cellH - (barTop - y) - pad, cellW * 0.32)
+    doc.addImage(bars.get(label.code)!, 'PNG', x + pad, barTop, cellW - qrSide - pad * 3, cellH - (barTop - y) - pad - 2.5)
+    doc.addImage(qrs.get(label.code)!, 'PNG', x + cellW - qrSide - pad, barTop, qrSide, qrSide)
+
+    // Code text under the barcode
+    doc.setFontSize(size === 'thermal-50x25' ? 5 : 6)
+    doc.text(label.code, x + pad, y + cellH - pad + 0.5)
+  })
+
+  doc.save(fileName)
+}
+
 export interface IssuanceLabel {
   itemCode: string
   itemName: string
