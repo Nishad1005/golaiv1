@@ -4,11 +4,13 @@
 // exposing the service-role key to the browser. Flow:
 //   1. Verify the caller's JWT (the logged-in admin).
 //   2. Confirm the caller's profile has role = 'admin'.
-//   3. Create the auth user (service role) and send a set-password invite email.
+//   3. Create the auth user with a temporary password (email pre-confirmed).
 //   4. Insert their profile row in the SAME tenant as the admin.
+//   5. Return the temporary password so the admin can hand it to the staff
+//      member — no email delivery required (many floor staff have no email).
 //
 // Deploy: supabase functions deploy create-user
-// Secrets used (auto-available in Supabase-hosted functions):
+// Secrets (auto-available in Supabase-hosted functions):
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -19,6 +21,14 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+// Readable, reasonably strong temporary password (no ambiguous chars).
+function tempPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  const bytes = new Uint8Array(10)
+  crypto.getRandomValues(bytes)
+  return 'Golai-' + Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
 Deno.serve(async (req) => {
@@ -49,18 +59,26 @@ Deno.serve(async (req) => {
       .select('role, tenant_id')
       .eq('id', userData.user.id)
       .single()
-    if (profErr || !caller) return json({ error: 'Profile not found' }, 403)
+    if (profErr || !caller) return json({ error: 'Profile not found for caller' }, 403)
     if (caller.role !== 'admin') return json({ error: 'Only an admin can create users' }, 403)
 
     const { email, full_name, role, phone } = await req.json()
-    if (!email || !full_name || !role) return json({ error: 'email, full_name and role are required' }, 400)
+    if (!email || !full_name || !role) {
+      return json({ error: 'Name, email and role are required' }, 400)
+    }
     if (!ALLOWED_ROLES.includes(role)) return json({ error: 'Invalid role' }, 400)
 
-    // 3. Create the auth user + send them a set-password invite (service role)
+    // 3. Create the auth user with a temp password, email pre-confirmed
     const admin = createClient(url, serviceKey)
-    const { data: created, error: createErr } = await admin.auth.admin.inviteUserByEmail(email)
+    const password = tempPassword()
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name },
+    })
     if (createErr || !created.user) {
-      return json({ error: createErr?.message ?? 'Could not create user' }, 400)
+      return json({ error: createErr?.message ?? 'Could not create login' }, 400)
     }
 
     // 4. Profile row in the admin's tenant
@@ -73,12 +91,12 @@ Deno.serve(async (req) => {
       role,
     })
     if (insertErr) {
-      // Roll back the orphaned auth user so a retry is clean
-      await admin.auth.admin.deleteUser(created.user.id)
+      await admin.auth.admin.deleteUser(created.user.id) // roll back orphan
       return json({ error: insertErr.message }, 400)
     }
 
-    return json({ id: created.user.id, email, full_name, role })
+    // 5. Hand the temp password back to the admin to share
+    return json({ id: created.user.id, email, full_name, role, temp_password: password })
   } catch (e) {
     return json({ error: (e as Error).message }, 500)
   }

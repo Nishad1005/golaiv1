@@ -25,8 +25,8 @@ export function Users() {
   })
 
   // Creates the login AND the profile via the create-user Edge Function, which
-  // holds the service-role key server-side (never in the browser). The new user
-  // gets a set-password email; they land in this admin's tenant.
+  // holds the service-role key server-side (never in the browser). Returns a
+  // temporary password the admin hands to the staff member — no email needed.
   const createUser = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('create-user', {
@@ -37,24 +37,36 @@ export function Users() {
           role: form.role,
         },
       })
+      // functions.invoke hides the body on non-2xx — read it from the response
       if (error) {
-        // Edge function returns a JSON { error } body on failure
-        const detail = (data as { error?: string } | null)?.error
-        throw new Error(detail ?? error.message)
+        let detail = error.message
+        const ctx = (error as { context?: Response }).context
+        if (ctx && typeof ctx.json === 'function') {
+          try {
+            const body = await ctx.json()
+            if (body?.error) detail = body.error
+          } catch {
+            /* keep generic message */
+          }
+        }
+        throw new Error(detail)
       }
-      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error)
+      const result = data as { id: string; email: string; temp_password: string }
       await logActivity({
         tenantId: profile!.tenant_id,
         userId: profile!.id,
         userRole: profile!.role,
         action: 'create.user',
         entityType: 'profile',
-        entityId: (data as { id: string }).id,
+        entityId: result.id,
         after: { email: form.email.trim(), role: form.role },
       })
+      return result
     },
-    onSuccess: () => {
-      setNotice(`Invite sent to ${form.email.trim()} — they'll set their own password from the email.`)
+    onSuccess: (result) => {
+      setNotice(
+        `Login created for ${result.email}. Temporary password: ${result.temp_password} — share it with them; they can change it after signing in.`,
+      )
       setForm({ full_name: '', email: '', phone: '', role: 'storekeeper' })
       setShowForm(false)
       void queryClient.invalidateQueries({ queryKey: ['profiles'] })
@@ -93,7 +105,12 @@ export function Users() {
       </p>
 
       {notice && (
-        <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</div>
+        <div className="flex items-start gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
+          <span className="flex-1">{notice}</span>
+          <button className="shrink-0 font-medium underline" onClick={() => setNotice(null)}>
+            Dismiss
+          </button>
+        </div>
       )}
 
       {showForm && (
