@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .env
+
+# internal-only docs (pricing etc.) — never publish
+docs/internal/
