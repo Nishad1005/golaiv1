@@ -24,7 +24,8 @@ export interface Zone {
   default_category: string | null
 }
 
-export type FixtureType = 'S' | 'G' | 'P' | 'R'
+/** Client-named storage place ("Shelf", "Ghoda", "Rack", …) — free text. */
+export type FixtureType = string
 
 export interface Shelf {
   id: string
@@ -70,5 +71,6 @@ export interface ItemLocation {
   qty_on_hold: number
 }
 
-// Shelf code validation per PRD 4.1: Z<zone>-<fixture><number>, e.g. Z02-S012
-export const SHELF_CODE_REGEX = /^Z(\d+)-([SGPR])(\d+)$/i
+// Shelf code format: Z<zone>-<fixture prefix><number>, e.g. Z02-S012, Z03-G001.
+// The prefix is derived from the client's own fixture name (any letters).
+export const SHELF_CODE_REGEX = /^Z(\d+)-([A-Z]+)(\d+)$/i
