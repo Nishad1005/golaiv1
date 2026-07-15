@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, Loader2, Pencil, Plus, Printer, Upload } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, Loader2, Pencil, Plus, Printer, Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { generateShelfLabelsPdf } from '../../lib/labels'
-import { parseCsv, findColumn } from '../../lib/csv'
+import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
 import { PageHeader } from '../../components/PageHeader'
 import type { Shelf, Zone } from '../../lib/types'
 
@@ -229,6 +229,13 @@ export function ZonesShelves() {
         subtitle="Define the warehouse layout in the client's own words, then print the stickers."
         actions={
           <>
+            <button
+              className="btn-secondary"
+              onClick={downloadZoneTemplate}
+              title="Download a fill-in CSV with the exact columns the import expects"
+            >
+              <FileDown className="h-5 w-5" /> CSV template
+            </button>
             <button className="btn-secondary" onClick={() => csvInput.current?.click()}>
               <Upload className="h-5 w-5" /> Import zones CSV
             </button>

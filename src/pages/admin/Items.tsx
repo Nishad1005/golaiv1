@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
+import { FileDown, Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
-import { parseCsv, findColumn } from '../../lib/csv'
+import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
 import { generateItemLabelsPdf, type ItemLabelSize } from '../../lib/labels'
 import type { Item } from '../../lib/types'
 
@@ -196,6 +196,13 @@ export function Items() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Items</h1>
         <div className="flex gap-2">
+          <button
+            className="btn-secondary"
+            onClick={downloadItemTemplate}
+            title="Download a fill-in CSV with the exact columns the import expects"
+          >
+            <FileDown className="h-5 w-5" /> CSV template
+          </button>
           <button className="btn-secondary" onClick={() => fileInput.current?.click()}>
             <Upload className="h-5 w-5" /> Import CSV
           </button>
