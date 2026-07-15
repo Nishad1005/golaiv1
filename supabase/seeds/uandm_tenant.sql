@@ -16,7 +16,7 @@ with new_tenant as (
 admin_profile as (
   insert into profiles (id, tenant_id, email, full_name, role)
   select
-    'PASTE-AUTH-USER-UUID-HERE',        -- ← UUID of merchant@uandm.co.in
+    '3fd66271-ae60-4e99-b599-178c4a940917',  -- merchant@uandm.co.in
     new_tenant.id,
     'merchant@uandm.co.in',
     'U&M Admin',
