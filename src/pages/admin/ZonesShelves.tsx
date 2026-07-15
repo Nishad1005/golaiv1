@@ -304,7 +304,7 @@ export function ZonesShelves() {
                 <Pencil className="h-5 w-5" />
               </button>
               <button className="btn-secondary" onClick={() => void printZoneLabels(zone)}
-                disabled={zoneShelves.length === 0}
+                disabled={zoneShelves.length === 0 || !tenant}
                 title="Printable stickers: company name, code, barcode + QR, zone and place name">
                 <Printer className="h-5 w-5" /> Labels
               </button>
