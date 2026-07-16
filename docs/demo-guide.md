@@ -22,7 +22,7 @@ Three facts to memorize:
 
 | | |
 |---|---|
-| **Web app** | `https://YOUR-SITE.netlify.app` *(fill in your Netlify URL)* |
+| **Web app** | `https://golaiv1.netlify.app/`  |
 | **Works on** | Any phone or laptop browser. On a phone, the browser offers **"Add to Home Screen"** — it installs like an app. |
 | **Demo company** | U&M Designs Pvt Ltd (furniture manufacturer) |
 
@@ -131,7 +131,8 @@ process you'll follow the same way for every client.
   user, then insert their `profiles` row with role `admin` and their tenant id —
   the same two-step you used for the demo accounts.)
 - **The client's Admin creates everyone else from inside the app** — no Supabase
-  access needed. Admin → **Users & Roles → New User** → name, email, role →
+  access needed. Admin → **Users & Roles → New User** → name, email **or mobile
+  number** (staff without email log in with their 10-digit mobile), role →
   **Create & send invite**. The staff member gets an email to set their own
   password and appears in the list right away. The client adds and removes their
   own managers, storekeepers, guards, and planners as their team changes.

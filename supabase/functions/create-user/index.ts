@@ -31,6 +31,21 @@ function tempPassword(): string {
   return 'Golai-' + Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
+// E.164 normalization (mirror of src/lib/phone.ts — functions can't import src/).
+// Default country +91 (India).
+function normalizePhone(input: string): string | null {
+  const trimmed = (input ?? '').trim()
+  if (!trimmed || /[a-zA-Z@]/.test(trimmed)) return null
+  const hasPlus = trimmed.startsWith('+')
+  let digits = trimmed.replace(/\D/g, '')
+  if (!digits) return null
+  if (hasPlus) return digits.length >= 8 && digits.length <= 15 ? '+' + digits : null
+  if (digits.startsWith('0')) digits = digits.slice(1)
+  if (digits.length === 10) return '+91' + digits
+  if (digits.length === 12 && digits.startsWith('91')) return '+' + digits
+  return null
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -63,18 +78,29 @@ Deno.serve(async (req) => {
     if (caller.role !== 'admin') return json({ error: 'Only an admin can create users' }, 403)
 
     const { email, full_name, role, phone } = await req.json()
-    if (!email || !full_name || !role) {
-      return json({ error: 'Name, email and role are required' }, 400)
+    if (!full_name || !role) {
+      return json({ error: 'Name and role are required' }, 400)
     }
     if (!ALLOWED_ROLES.includes(role)) return json({ error: 'Invalid role' }, 400)
 
-    // 3. Create the auth user with a temp password, email pre-confirmed
+    const cleanEmail = (email ?? '').trim() || null
+    const cleanPhone = phone ? normalizePhone(phone) : null
+    if (phone && !cleanPhone) {
+      return json({ error: 'Enter a valid mobile number (10 digits, or with country code)' }, 400)
+    }
+    if (!cleanEmail && !cleanPhone) {
+      return json({ error: 'Enter an email or a mobile number (at least one)' }, 400)
+    }
+
+    // 3. Create the auth user with a temp password. Email/phone are marked
+    //    confirmed so no verification message is ever needed — the user logs
+    //    in with the identifier + temp password the admin hands them.
     const admin = createClient(url, serviceKey)
     const password = tempPassword()
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email,
+      ...(cleanEmail ? { email: cleanEmail, email_confirm: true } : {}),
+      ...(cleanPhone ? { phone: cleanPhone, phone_confirm: true } : {}),
       password,
-      email_confirm: true,
       user_metadata: { full_name },
     })
     if (createErr || !created.user) {
@@ -85,8 +111,8 @@ Deno.serve(async (req) => {
     const { error: insertErr } = await admin.from('profiles').insert({
       id: created.user.id,
       tenant_id: caller.tenant_id,
-      email,
-      phone: phone ?? null,
+      email: cleanEmail,
+      phone: cleanPhone,
       full_name,
       role,
     })
@@ -96,7 +122,15 @@ Deno.serve(async (req) => {
     }
 
     // 5. Hand the temp password back to the admin to share
-    return json({ id: created.user.id, email, full_name, role, temp_password: password })
+    return json({
+      id: created.user.id,
+      email: cleanEmail,
+      phone: cleanPhone,
+      login_id: cleanPhone ?? cleanEmail,
+      full_name,
+      role,
+      temp_password: password,
+    })
   } catch (e) {
     return json({ error: (e as Error).message }, 500)
   }

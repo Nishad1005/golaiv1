@@ -12,9 +12,9 @@ knowledge needed.
 
 | | |
 |---|---|
-| **Web address** | `https://YOUR-SITE.netlify.app` *(DBBS will fill this in)* |
-| **Admin user ID** | `merchant@uandm.co.in` |
-| **Password** | ____________________ *(provided separately by DBBS)* |
+| **Web address** | `golaiv1.netlify.app` *(DBBS will fill this in)* |
+| **Admin user ID** | `merchant@uandm.co.in` *(user ID = email or mobile number)* |
+| **Password** | dn6#iVCS@azp+EN *(provided separately by DBBS)* |
 
 Open the address in any browser — computer or phone. On a phone, your browser
 will offer **"Add to Home Screen"**: accept it, and Golai installs like an app
@@ -34,7 +34,8 @@ them or add more anytime — see section 3.
 You (the Admin) create every staff login yourself — no need to contact DBBS.
 
 1. Log in → home screen → **Users & Roles** → **New User**
-2. Enter their name, email, and pick a **role**:
+2. Enter their name, their **email or mobile number** (either works — staff
+   without email can use their 10-digit mobile to log in), and pick a **role**:
 
 | Role | Who it's for | What they can do |
 |---|---|---|

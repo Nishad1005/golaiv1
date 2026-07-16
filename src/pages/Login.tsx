@@ -4,9 +4,16 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '../stores/auth'
+import { looksLikePhone, normalizePhone } from '../lib/phone'
 
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email'),
+  identifier: z
+    .string()
+    .min(1, 'Enter your email or mobile number')
+    .refine(
+      (v) => (looksLikePhone(v) ? normalizePhone(v) !== null : z.string().email().safeParse(v.trim()).success),
+      'Enter a valid email or 10-digit mobile number',
+    ),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -23,7 +30,7 @@ export function Login() {
 
   const onSubmit = async (values: LoginForm) => {
     setServerError(null)
-    const { error } = await signIn(values.email, values.password)
+    const { error } = await signIn(values.identifier, values.password)
     if (error) setServerError(error)
     // On success the auth store updates and the router redirects to the role home.
   }
@@ -41,15 +48,18 @@ export function Login() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="card space-y-4">
           <div>
-            <label className="label-text" htmlFor="email">Email</label>
+            <label className="label-text" htmlFor="identifier">Email or mobile number</label>
             <input
-              id="email"
-              type="email"
+              id="identifier"
+              type="text"
               className="input-field"
-              autoComplete="email"
-              {...register('email')}
+              placeholder="you@company.com or 9829012345"
+              autoComplete="username"
+              {...register('identifier')}
             />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+            {errors.identifier && (
+              <p className="mt-1 text-sm text-red-600">{errors.identifier.message}</p>
+            )}
           </div>
 
           <div>

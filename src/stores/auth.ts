@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { looksLikePhone, normalizePhone } from '../lib/phone'
 import type { Profile } from '../lib/types'
 
 interface AuthState {
@@ -8,7 +9,7 @@ interface AuthState {
   profile: Profile | null
   loading: boolean
   initialize: () => Promise<void>
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signIn: (identifier: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -42,8 +43,12 @@ export const useAuth = create<AuthState>((set) => ({
     })
   },
 
-  signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  // `identifier` is an email or a phone number — floor staff often have no email.
+  signIn: async (identifier, password) => {
+    const phone = looksLikePhone(identifier) ? normalizePhone(identifier) : null
+    const { error } = phone
+      ? await supabase.auth.signInWithPassword({ phone, password })
+      : await supabase.auth.signInWithPassword({ email: identifier.trim(), password })
     return { error: error ? error.message : null }
   },
 

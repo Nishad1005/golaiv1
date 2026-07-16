@@ -42,10 +42,13 @@ export function Users() {
   // temporary password the admin hands to the staff member — no email needed.
   const createUser = useMutation({
     mutationFn: async () => {
+      if (!form.email.trim() && !form.phone.trim()) {
+        throw new Error('Enter an email or a mobile number — at least one is needed to log in.')
+      }
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           full_name: form.full_name.trim(),
-          email: form.email.trim(),
+          email: form.email.trim() || null,
           phone: form.phone.trim() || null,
           role: form.role,
         },
@@ -64,7 +67,7 @@ export function Users() {
         }
         throw new Error(detail)
       }
-      const result = data as { id: string; email: string; temp_password: string }
+      const result = data as { id: string; login_id: string; temp_password: string }
       await logActivity({
         tenantId: profile!.tenant_id,
         userId: profile!.id,
@@ -78,7 +81,7 @@ export function Users() {
     },
     onSuccess: (result) => {
       setNotice(
-        `Login created for ${result.email}. Temporary password: ${result.temp_password} — share it with them; they can change it after signing in.`,
+        `Login created — user ID: ${result.login_id}, temporary password: ${result.temp_password}. Share both with them; they can change the password after signing in.`,
       )
       setForm({ full_name: '', email: '', phone: '', role: 'storekeeper' })
       setShowForm(false)
@@ -185,12 +188,17 @@ export function Users() {
           <div>
             <label className="label-text">Email</label>
             <input type="email" className="input-field" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              placeholder="Leave blank to use mobile instead"
+              onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="label-text">Phone (optional)</label>
-            <input className="input-field" value={form.phone}
+            <label className="label-text">Mobile number</label>
+            <input type="tel" inputMode="tel" className="input-field" value={form.phone}
+              placeholder="9829012345"
               onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <p className="mt-1 text-xs text-ink-400">
+              They can log in with either — enter at least one of email / mobile.
+            </p>
           </div>
           <div>
             <label className="label-text">Role</label>
@@ -233,7 +241,9 @@ export function Users() {
                       </span>
                     )}
                   </div>
-                  <div className="truncate text-sm text-ink-400">{u.email ?? u.phone ?? ''}</div>
+                  <div className="truncate text-sm text-ink-400">
+                    {[u.email, u.phone].filter(Boolean).join(' · ')}
+                  </div>
                 </div>
                 <select
                   className="input-field ml-auto w-auto"
