@@ -3,11 +3,11 @@
 **Operational control system for manufacturing warehouses.**
 Golai runs the floor. Your ERP runs the books.
 
-Scan-first stock control: zones and shelves get barcode labels, every item enters the system through the scanner (pre-assigned codes recognized, unknown items auto-coded), and anyone can type an item's name to find the exact zone and shelf it sits on.
+Scan-first stock control: zones and storage places (shelves, ghodas, racks — whatever the client calls them) get barcode labels, every item enters the system through the scanner (pre-assigned codes recognized verbatim, unknown items auto-coded), and anyone can type an item's name to find the exact zone and place it sits on. Staff log in with **email or mobile number**.
 
 ## Stack
 
-React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · Supabase (Postgres, Auth, Storage, Realtime, RLS)
+React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · Supabase (Postgres, Auth, Storage, Realtime, RLS, Edge Functions)
 
 ## Getting started
 
@@ -19,39 +19,67 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
 
 2. **Create a Supabase project** at [supabase.com](https://supabase.com) (free tier is fine).
 
-3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` in order (0001 → 0004), or use the Supabase CLI:
+3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0011)**, or use the Supabase CLI:
 
    ```sh
-   supabase link --project-ref YOUR_PROJECT_REF
-   supabase db push
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   npx supabase db push
    ```
 
 4. **Configure environment** — copy `.env.example` to `.env` and fill in your project URL and anon key (dashboard → Project Settings → API).
 
-5. **Create the first tenant + admin** — in the SQL Editor:
+5. **Deploy the Edge Functions** — these power in-app user management (Admins create/delete staff logins without touching Supabase):
+
+   ```sh
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   npx supabase functions deploy create-user
+   npx supabase functions deploy delete-user
+   ```
+
+6. **Enable phone logins** — dashboard → Authentication → Sign In / Providers → **Phone → Enable**. The form requires Twilio credentials to save; fill them with placeholders, because Golai never sends SMS (logins are phone + password, accounts are created pre-confirmed with an admin-issued temporary password):
+
+   - Account SID: `AC00000000000000000000000000000000`
+   - Auth Token: `0000000000000000000000000000000000`
+   - Message Service SID: `MG00000000000000000000000000000000`
+   - Keep **"Enable phone confirmations" OFF** (turning it on would make Supabase try to send real SMS at sign-in and logins would fail).
+   - Real Twilio/MSG91 credentials only become necessary if you later add OTP-by-SMS login.
+
+7. **Create the first tenant + admin** — in the SQL Editor:
 
    ```sql
-   insert into tenants (name) values ('U&M Designs Pvt Ltd') returning id;
-   -- Create a user in Authentication → Users, then:
+   insert into tenants (name) values ('Your Company Pvt Ltd') returning id;
+   -- Create a user in Authentication → Users (Auto Confirm), then:
    insert into profiles (id, tenant_id, email, full_name, role)
    values ('<auth-user-uuid>', '<tenant-uuid>', 'admin@example.com', 'Admin', 'admin');
    ```
 
-6. **Run**
+   For onboarding a real client (tenant + admin + their zone list in one script), copy the pattern in `supabase/seeds/uandm_tenant.sql`. From there the client's Admin creates all their own staff in-app (Users & Roles → New User, email or mobile).
+
+8. **Run**
 
    ```sh
    npm run dev
    ```
 
+## Deploy (web)
+
+Connect the repo to Netlify — `netlify.toml` in the repo sets the build command, publish directory, and the SPA fallback redirect (so deep links like `/grn/123` survive refresh). Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables in Netlify, and set the Netlify URL as the **Site URL** under Supabase → Authentication → URL Configuration. Every push to `main` auto-deploys. The app is an installable PWA (Add to Home Screen on phones).
+
 ## Project layout
 
 ```
-supabase/migrations/    Database schema, RLS policies, functions (source of truth)
-src/lib/                Supabase client, domain types, audit-log helper
-src/stores/             Zustand stores (auth/session/role)
-src/components/         Shared UI (Layout, ItemLocator, ModuleTile)
-src/pages/              Login + role-segregated home screens
-docs/superpowers/specs/ Design documents
+supabase/migrations/     Database schema, RLS policies, SQL functions (source of truth)
+supabase/functions/      Edge Functions: create-user, delete-user (admin user management)
+supabase/seeds/          Client onboarding seeds (tenant + admin + zones)
+src/lib/                 Supabase client, domain types, phone/CSV/label/audit helpers
+src/lib/offline/         IndexedDB queue + sync engine + cached masters (offline mode)
+src/stores/              Zustand stores (auth/session/role)
+src/components/          Shared UI (Layout shell, ItemLocator, ScanInput, StatCard, …)
+src/pages/               Login + role-segregated screens (home, store, grn, release, dispatch, counts, admin, manager)
+docs/demo-guide.md       Sales demo manual (accounts, 15-min script, FAQ, reset)
+docs/uandm-client-guide.md  Client self-service guide (U&M)
+docs/superpowers/specs/  Design documents
 ```
 
 ## Offline mode

@@ -57,3 +57,18 @@ Authoritative DDL lives in `supabase/migrations/0001–0004`. Deviations from PR
 - Type-safe build (`npm run build`) green at every commit.
 - Per-phase: manual walkthrough of that phase's workflow + RLS cross-tenant denial check.
 - Final: PRD §10 acceptance (3 flagship workflows end-to-end, offline on 5 screens, append-only verified by attempted UPDATE).
+
+## Post-v1.0 additions (2026-07-08 → 2026-07-15)
+
+The historical body above describes the v1.0 build (as "Aksure"). Since then:
+
+- **Rebrand**: product renamed **Golai**; green chevron logo (`public/logo.svg`), Android app id `com.golai.app`.
+- **Live**: cloud Supabase project + Netlify deploy (netlify.toml SPA redirect); full end-to-end shakedown of all three flagship workflows passed.
+- **UI shell**: navy sidebar navigation per role (mobile drawer), live KPI stat cards on role homes, Inter Variable bundled, brand green/slate theme.
+- **User management in-app**: Edge Functions `create-user` / `delete-user` — Admin creates staff with a temp password shown on screen (no invite email), deactivate/reactivate (soft, history-preserving) + delete (no-history accounts only).
+- **Phone logins**: single "email or mobile" identifier everywhere; phone+password via `signInWithPassword({phone})`, E.164 normalization with +91 default (`src/lib/phone.ts`); Phone provider enabled with placeholder Twilio creds — no SMS is ever sent.
+- **Client-named storage places**: migration 0011 made `shelves.fixture_type` free text ("Ghoda" etc.); bulk place creation with custom code prefix; shelf-code regex relaxed to any letter prefix.
+- **Labels**: shelf/place labels carry company name + zone + place name + Code128 + QR; item barcode labels (A4 24/12-up + 50×25 thermal presets, copies per piece); issuance/carton labels carry QR alongside Code128; camera scanner uses native BarcodeDetector.
+- **Bulk imports**: zone CSV import + item CSV import, both with downloadable fill-in templates; inline zone editing.
+- **Multi-tenant onboarding**: seed pattern `supabase/seeds/uandm_tenant.sql` (first client: U&M Designs, 13 zones, admin merchant@uandm.co.in).
+- **Docs**: `docs/demo-guide.md` (sales demo script) and `docs/uandm-client-guide.md` (client self-service guide).

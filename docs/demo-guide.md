@@ -133,9 +133,11 @@ process you'll follow the same way for every client.
 - **The client's Admin creates everyone else from inside the app** — no Supabase
   access needed. Admin → **Users & Roles → New User** → name, email **or mobile
   number** (staff without email log in with their 10-digit mobile), role →
-  **Create & send invite**. The staff member gets an email to set their own
-  password and appears in the list right away. The client adds and removes their
-  own managers, storekeepers, guards, and planners as their team changes.
+  **Create & send invite**. Golai shows a **temporary password on screen** — the
+  admin hands it to the staff member, who logs in with their email/mobile + that
+  password (no email is sent; they can change the password later). When staff
+  leave, the admin **Deactivates** them from the same screen (login blocked,
+  history preserved); permanent Delete is only for accounts created by mistake.
 - Each client is a separate **tenant**: their data is invisible to every other
   client, enforced at the database level.
 
