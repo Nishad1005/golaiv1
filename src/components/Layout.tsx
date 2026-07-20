@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, LogOut, Menu, UserRound, X } from 'lucide-react'
+import { Bell, LogOut, Menu, Settings, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { navForRole } from '../lib/nav'
@@ -102,6 +102,7 @@ export function Layout() {
                   <div className="truncate text-sm font-semibold text-white">{profile.full_name}</div>
                   <div className="text-xs text-ink-300">{ROLE_LABELS[profile.role]}</div>
                 </div>
+                <Settings className="ml-auto h-4 w-4 shrink-0 text-ink-300" />
               </Link>
               <button
                 onClick={() => void signOut()}
@@ -139,8 +140,11 @@ export function Layout() {
                 onClick={() => setDrawerOpen(false)}
                 className="flex min-h-tap items-center gap-3 rounded-xl px-3 text-sm font-medium text-ink-300 hover:bg-white/10 hover:text-white"
               >
-                <UserRound className="h-5 w-5" />
-                {profile ? profile.full_name : 'My account'}
+                <UserRound className="h-5 w-5 shrink-0" />
+                <span className="min-w-0 leading-tight">
+                  <span className="block truncate text-white">My Account</span>
+                  <span className="block text-xs text-ink-300">Change password</span>
+                </span>
               </Link>
               <button
                 onClick={() => void signOut()}
