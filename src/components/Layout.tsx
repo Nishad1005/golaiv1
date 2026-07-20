@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, LogOut, Menu, X } from 'lucide-react'
+import { Bell, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { navForRole } from '../lib/nav'
@@ -89,17 +89,23 @@ export function Layout() {
         </div>
         {profile && (
           <div className="mt-3 border-t border-white/10 pt-3">
-            <div className="flex items-center gap-2 px-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
-                {profile.full_name.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0 leading-tight">
-                <div className="truncate text-sm font-semibold text-white">{profile.full_name}</div>
-                <div className="text-xs text-ink-300">{ROLE_LABELS[profile.role]}</div>
-              </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/account"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-white/10"
+                title="My account — change password"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
+                  {profile.full_name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 leading-tight">
+                  <div className="truncate text-sm font-semibold text-white">{profile.full_name}</div>
+                  <div className="text-xs text-ink-300">{ROLE_LABELS[profile.role]}</div>
+                </div>
+              </Link>
               <button
                 onClick={() => void signOut()}
-                className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-ink-300 hover:bg-white/10 hover:text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-300 hover:bg-white/10 hover:text-white"
                 aria-label="Sign out"
               >
                 <LogOut className="h-5 w-5" />
@@ -127,12 +133,22 @@ export function Layout() {
             <div className="flex-1 overflow-y-auto">
               <NavLinks onNavigate={() => setDrawerOpen(false)} />
             </div>
-            <button
-              onClick={() => void signOut()}
-              className="mt-3 flex min-h-tap items-center gap-3 rounded-xl border-t border-white/10 px-3 pt-3 text-sm font-medium text-ink-300 hover:text-white"
-            >
-              <LogOut className="h-5 w-5" /> Sign out
-            </button>
+            <div className="mt-3 space-y-1 border-t border-white/10 pt-3">
+              <Link
+                to="/account"
+                onClick={() => setDrawerOpen(false)}
+                className="flex min-h-tap items-center gap-3 rounded-xl px-3 text-sm font-medium text-ink-300 hover:bg-white/10 hover:text-white"
+              >
+                <UserRound className="h-5 w-5" />
+                {profile ? profile.full_name : 'My account'}
+              </Link>
+              <button
+                onClick={() => void signOut()}
+                className="flex min-h-tap w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-ink-300 hover:bg-white/10 hover:text-white"
+              >
+                <LogOut className="h-5 w-5" /> Sign out
+              </button>
+            </div>
           </aside>
         </div>
       )}

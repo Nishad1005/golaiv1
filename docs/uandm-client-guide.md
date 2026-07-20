@@ -21,7 +21,10 @@ will offer **"Add to Home Screen"**: accept it, and Golai installs like an app
 with its own icon. It even keeps working when the warehouse Wi-Fi drops
 (everything syncs automatically when the connection returns).
 
-> Tip: change your password after first login if DBBS gave you a temporary one.
+> **Change your password after first login.** Click your name at the bottom of
+> the menu (or **My account** in the phone menu) → **Change password**. Every
+> user can do this for themselves — staff should do it as soon as they receive
+> their temporary password.
 
 Your 13 warehouse zones are **already set up** from your Zone Master sheet
 (Z01 Main Store Hardware … Z13 Sample Hold + Finished Goods). You can rename
@@ -143,7 +146,8 @@ order's entire journey with all the evidence.
 
 | Problem | What to do |
 |---|---|
-| Forgot password | Ask your Admin to check with DBBS, or use another admin login to reset |
+| Want to change your password | Click your name at the bottom of the menu → **My Account** → Change password |
+| Forgot password | Ask your Admin to delete and re-create the login (they get a fresh temporary password), or contact DBBS |
 | Scanner won't read a label | Type the code by hand using the keyboard button next to the scan box, or use the QR square with a phone camera |
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |

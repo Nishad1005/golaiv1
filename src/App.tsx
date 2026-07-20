@@ -7,6 +7,7 @@ import { refreshMasterCache } from './lib/offline/masters'
 import { registerPush } from './lib/push'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
+import { Account } from './pages/Account'
 import { ComingSoon } from './pages/ComingSoon'
 import { SecurityHome } from './pages/home/SecurityHome'
 import { StorekeeperHome } from './pages/home/StorekeeperHome'
@@ -154,6 +155,7 @@ export default function App() {
             <Route path="/qc" element={<QcHolds />} />
           )}
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/account" element={<Account />} />
           {isStoreish && (
             <>
               <Route path="/counts" element={<CountList />} />
