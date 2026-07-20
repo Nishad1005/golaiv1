@@ -6,21 +6,16 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { generateShelfLabelsPdf } from '../../lib/labels'
 import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
+import { locationLabel, prefixFor } from '../../lib/places'
 import { PageHeader } from '../../components/PageHeader'
 import type { Shelf, Zone } from '../../lib/types'
 
-const FIXTURE_SUGGESTIONS = ['Shelf', 'Ghoda', 'Rack', 'Pallet', 'Bin', 'Floor Area']
+const LOCATION_TYPE_SUGGESTIONS = ['Shelf', 'Ghoda', 'Rack', 'Pallet', 'Bin', 'Floor Area']
 
 type ZoneRow = Zone & { description: string | null; default_category: string | null }
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 const pad3 = (n: number) => String(n).padStart(3, '0')
-
-/** "Z03-G001" + fixture "Ghoda" → "Ghoda 1" (the client's own words on the sticker) */
-function locationLabel(shelf: Shelf): string {
-  const m = shelf.code.match(/-([A-Za-z]+)0*(\d+)$/)
-  return m ? `${shelf.fixture_type} ${Number(m[2])}` : shelf.code
-}
 
 export function ZonesShelves() {
   const { profile } = useAuth()
@@ -151,7 +146,7 @@ export function ZonesShelves() {
   const createShelves = useMutation({
     mutationFn: async () => {
       const zone = zones!.find((z) => z.id === bulkZoneId)!
-      const cleanPrefix = (prefix.trim() || fixtureName.trim().charAt(0)).toUpperCase().replace(/[^A-Z]/g, '')
+      const cleanPrefix = prefix.trim().toUpperCase().replace(/[^A-Z]/g, '') || prefixFor(fixtureName)
       if (!cleanPrefix) throw new Error('Code prefix must contain letters')
       const rows = []
       for (let n = fromNum; n <= toNum; n++) {
@@ -225,8 +220,8 @@ export function ZonesShelves() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Zones & Shelves"
-        subtitle="Define the warehouse layout in the client's own words, then print the stickers."
+        title="Zones & Locations"
+        subtitle="Define the warehouse layout in your own words, then print the stickers."
         actions={
           <>
             <button
@@ -292,7 +287,7 @@ export function ZonesShelves() {
                     {zone.default_category}
                   </span>
                 )}
-                <span className="ml-auto shrink-0 text-sm text-ink-400">{zoneShelves.length} places</span>
+                <span className="ml-auto shrink-0 text-sm text-ink-400">{zoneShelves.length} locations</span>
               </button>
               <button
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-400 hover:bg-ink-100"
@@ -337,7 +332,7 @@ export function ZonesShelves() {
                   ))}
                   {zoneShelves.length === 0 && (
                     <span className="text-sm text-ink-400">
-                      No storage places in this zone yet — add shelves, ghodas, racks… whatever the floor calls them.
+                      No locations in this zone yet — add them using whatever your team calls them.
                     </span>
                   )}
                 </div>
@@ -346,15 +341,15 @@ export function ZonesShelves() {
                   <form className="flex flex-wrap items-end gap-3"
                     onSubmit={(e) => { e.preventDefault(); createShelves.mutate() }}>
                     <div className="min-w-40">
-                      <label className="label-text">What is this place called?</label>
+                      <label className="label-text">What do you call this location type?</label>
                       <input className="input-field" list="fixture-suggestions" value={fixtureName}
                         placeholder="Shelf / Ghoda / Rack…"
                         onChange={(e) => {
                           setFixtureName(e.target.value)
-                          setPrefix(e.target.value.trim().charAt(0).toUpperCase())
+                          setPrefix(prefixFor(e.target.value))
                         }} required />
                       <datalist id="fixture-suggestions">
-                        {FIXTURE_SUGGESTIONS.map((f) => <option key={f} value={f} />)}
+                        {LOCATION_TYPE_SUGGESTIONS.map((f) => <option key={f} value={f} />)}
                       </datalist>
                     </div>
                     <div className="w-24">
@@ -376,7 +371,7 @@ export function ZonesShelves() {
                       → codes {zone.code}-{(prefix || 'S')}{pad3(fromNum)} … {zone.code}-{(prefix || 'S')}{pad3(toNum)}
                     </p>
                     <button type="submit" className="btn-primary" disabled={createShelves.isPending}>
-                      Add {Math.max(0, toNum - fromNum + 1)} place{toNum - fromNum === 0 ? '' : 's'}
+                      Add {Math.max(0, toNum - fromNum + 1)} location{toNum - fromNum === 0 ? '' : 's'}
                     </button>
                     <button type="button" className="btn-secondary" onClick={() => setBulkZoneId(null)}>Cancel</button>
                     {createShelves.isError && (
@@ -385,7 +380,7 @@ export function ZonesShelves() {
                   </form>
                 ) : (
                   <button className="btn-secondary" onClick={() => setBulkZoneId(zone.id)}>
-                    <Plus className="h-5 w-5" /> Add storage places
+                    <Plus className="h-5 w-5" /> Add locations
                   </button>
                 )}
               </div>

@@ -55,36 +55,37 @@ You (the Admin) create every staff login yourself — no need to contact DBBS.
 
 ---
 
-## 3. Zones and storage places (one-time setup, ~an hour)
+## 3. Give every storage spot a barcode (one-time setup)
 
-Your zones exist already. Now tell Golai what's *inside* each zone — the
-shelves, ghodas, racks — in **your own words**.
+Your zones exist already. Now tell Golai what's *inside* each zone — and give
+each spot a barcode sticker, so it can be scanned.
 
-1. **Zones & Shelves** → tap a zone (e.g. `Z03 Foam`) to expand it
-2. **Add storage places** → type what you call it: `Ghoda`, `Shelf`, `Rack` —
-   anything. Set the numbers (e.g. from 1 to 6) → **Add**
-3. Golai creates codes like `Z03-G001 … Z03-G006` (you'll see a preview first)
-4. Press **Labels** → a PDF downloads with one sticker per place, showing:
+1. **Zones & Locations** → tap a zone (e.g. `Z03 Foam`) to expand it
+2. **Add locations** → type **what you call it**: `Ghoda`, `Shelf`, `Rack`,
+   anything. Golai takes the first letter as the code prefix (Ghoda → `G`).
+   Set the range (e.g. 1 to 20) → **Add**
+3. Golai creates codes like `Z03-G001 … Z03-G020` (you see a preview first)
+4. Press **Labels** → a PDF downloads with one sticker per location, showing
    your company name, the code, a barcode + QR, and "Ghoda 1 — Foam (Zone 3)"
-5. Print on A4 sticker paper, stick each label on its ghoda/shelf/rack
+5. Print on A4 sticker paper and **stick one on each ghoda / shelf / rack**
 
-To rename a zone or change its notes, use the **pencil icon** next to it.
-To add more zones later: **New Zone**, or **Import zones CSV** for many at once
-(**CSV template** button gives you the exact sheet to fill).
+It does not matter which sticker goes on which spot — you record what's on each
+one in section 5. Just make sure every spot in the zone gets a sticker.
 
-> **Important:** the sticker's code is what scanners read. Stick each label on
-> the right place — the label says which zone and place it belongs to.
+To rename a zone, use the **pencil icon**. To add more zones later: **New
+Zone**, or **Import zones CSV** for many at once (**CSV template** gives you the
+exact sheet to fill).
 
 ---
 
-## 4. Bring in your item list (one-time, ~30 minutes)
+## 4. Bring in your product list (one-time, ~30 minutes)
 
 1. **Items** → **CSV template** → a file downloads with example rows
-2. Fill it in Excel — one row per item:
-   - **Item Code** — your existing code, if the item has one. *It will be kept
-     exactly as you wrote it.* Leave blank if the item has no code — Golai
+2. Fill it in Excel — one row per product:
+   - **Item Code** — your existing code, if the product has one. *It will be
+     kept exactly as you wrote it.* Leave blank if it has no code — Golai
      assigns one automatically (ITM-00001, ITM-00002…)
-   - **Barcode** — only if the item already has a printed barcode on it
+   - **Barcode** — only if the product already has a printed barcode on it
    - **Item Name** — required
    - **Category / Sub Category / UOM** — UOM is the unit you count in
      (pcs, m, kg, set…)
@@ -92,28 +93,32 @@ To add more zones later: **New Zone**, or **Import zones CSV** for many at once
 4. Golai shows a preview ("X items, Y keeping your codes, Z getting new
    codes") → confirm
 
-**Then print item labels:** tick the items (or Select all) → **Print labels**
-→ choose A4 stickers or thermal printer, and **copies per item** = number of
-physical pieces (12 rolls = 12 copies). Stick one label on every roll / box /
-piece that doesn't already have a barcode.
+No location column is needed — you record where things are in the next step.
 
 ---
 
-## 5. Put your stock into Golai (the scan-walk)
+## 5. Record where each product sits (the walk)
 
-This is how Golai learns where everything is. A storekeeper walks the floor
-with a phone (or USB scanner + laptop):
+This is the step that makes searching work. One person walks the floor with a
+phone. **Products do not need barcodes for this** — you find them by name.
 
-1. **Capture** → scan the **place label** (the sticker from section 3)
-2. Scan an **item** on that place → Golai recognizes it → type the quantity
-3. Repeat for every item on that place, then scan the next place
+1. Open **Assign Location**
+2. **Scan the sticker** on a ghoda/shelf (or type its code)
+3. **Type the product's name** in the search box → tap it to add
+4. Add every product sitting on that spot — quantity is **optional**, leave it
+   blank if you are not counting right now
+5. **Save**, then press **Next location** and repeat
 
-That's it. Each scan records "this much of this item sits here." If you scan a
-barcode Golai doesn't know, it offers to create the item on the spot.
+The screen shows a running count ("312 of 4,565 products located") so you can
+stop and continue another day. Products already recorded on a spot are listed,
+so it is obvious if you revisit one.
 
-**The payoff:** from any screen, type an item's name in the search bar —
-Golai shows exactly which zone and which ghoda/shelf it's on, and how much.
-Anyone can find anything in five seconds.
+> Quantities can be filled in later — run a **Stock Count** when you want real
+> numbers. Knowing *where* things are works immediately.
+
+**The payoff:** open **Find Item**, type a product name — Golai shows the exact
+zone and spot, e.g. **Foam (Z03) · Ghoda 1**. Anyone can find anything in
+seconds, without asking the storekeeper.
 
 ---
 

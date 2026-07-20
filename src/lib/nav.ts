@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard,
   ScanBarcode,
+  MapPin,
   ArrowLeftRight,
   PencilRuler,
   PackageCheck,
@@ -29,6 +30,8 @@ export interface NavItem {
 
 const HOME: NavItem = { label: 'Home', to: '/', icon: LayoutDashboard }
 const ALERTS: NavItem = { label: 'Alerts', to: '/alerts', icon: Bell }
+const FIND: NavItem = { label: 'Find Item', to: '/find', icon: Search }
+const ASSIGN: NavItem = { label: 'Assign Location', to: '/assign', icon: MapPin }
 
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   security: [
@@ -40,6 +43,8 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   ],
   storekeeper: [
     HOME,
+    FIND,
+    ASSIGN,
     { label: 'Capture', to: '/capture', icon: ScanBarcode },
     { label: 'Transfer', to: '/transfer', icon: ArrowLeftRight },
     { label: 'Adjust', to: '/adjust', icon: PencilRuler },
@@ -52,12 +57,14 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   ],
   planner: [
     HOME,
+    FIND,
     { label: 'Release Requests', to: '/release', icon: PackageOpen },
     { label: 'Returns', to: '/returns', icon: Undo2 },
     ALERTS,
   ],
   manager: [
     HOME,
+    FIND,
     { label: 'Receiving', to: '/grn', icon: PackageCheck },
     { label: 'Release Requests', to: '/release', icon: PackageOpen },
     { label: 'Dispatch', to: '/dispatch', icon: Send },
@@ -70,7 +77,9 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   ],
   admin: [
     HOME,
-    { label: 'Zones & Shelves', to: '/admin/zones', icon: Map },
+    FIND,
+    ASSIGN,
+    { label: 'Zones & Locations', to: '/admin/zones', icon: Map },
     { label: 'Items', to: '/admin/items', icon: Boxes },
     { label: 'Parties', to: '/admin/parties', icon: Building2 },
     { label: 'Users & Roles', to: '/admin/users', icon: Users },

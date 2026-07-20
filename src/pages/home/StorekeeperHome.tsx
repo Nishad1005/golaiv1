@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  ScanBarcode, ArrowLeftRight, ListChecks, PackageCheck, PackageOpen, PencilRuler,
+  ScanBarcode, ArrowLeftRight, ListChecks, MapPin, PackageCheck, PackageOpen, PencilRuler,
   Undo2, ClipboardList,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -45,7 +45,8 @@ export function StorekeeperHome() {
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-400">Stock</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <ModuleTile icon={ScanBarcode} title="Capture" subtitle="Scan shelf, scan items, record stock" to="/capture" />
+          <ModuleTile icon={MapPin} title="Assign Location" subtitle="Scan a location, search products, record what's there" to="/assign" />
+          <ModuleTile icon={ScanBarcode} title="Capture" subtitle="Scan location, scan items, record stock" to="/capture" />
           <ModuleTile icon={ArrowLeftRight} title="Internal Transfer" subtitle="Move items between shelves" to="/transfer" />
           <ModuleTile icon={PencilRuler} title="Adjust Quantity" subtitle="Correct a count with a reason" to="/adjust" />
           <ModuleTile icon={ListChecks} title="Stock Counts" subtitle="Execute assigned cycle counts" to="/counts" />

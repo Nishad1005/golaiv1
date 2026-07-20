@@ -21,6 +21,8 @@ import { Users } from './pages/admin/Users'
 import { Capture } from './pages/store/Capture'
 import { Transfer } from './pages/store/Transfer'
 import { Adjustments } from './pages/store/Adjustments'
+import { AssignLocation } from './pages/store/AssignLocation'
+import { FindItem } from './pages/FindItem'
 import { GrnList } from './pages/grn/GrnList'
 import { GateEntry } from './pages/grn/GateEntry'
 import { GrnDetail } from './pages/grn/GrnDetail'
@@ -135,8 +137,10 @@ export default function App() {
               <Route path="/capture" element={<Capture />} />
               <Route path="/transfer" element={<Transfer />} />
               <Route path="/adjust" element={<Adjustments />} />
+              <Route path="/assign" element={<AssignLocation />} />
             </>
           )}
+          {profile.role !== 'security' && <Route path="/find" element={<FindItem />} />}
           <Route path="/grn" element={<GrnList />} />
           <Route path="/grn/:id" element={<GrnDetail />} />
           {(profile.role === 'security' || isAdminish) && (

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Search, MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { locationLabel } from '../lib/places'
 
 interface LocatorRow {
   id: string
@@ -13,6 +14,8 @@ interface LocatorRow {
     qty_on_hold: number
     shelves: {
       code: string
+      fixture_type: string | null
+      description: string | null
       zones: { code: string; name: string } | null
     } | null
   }[]
@@ -34,7 +37,7 @@ export function ItemLocator() {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, code, name, uom, stock_balances(qty_on_hand, qty_on_hold, shelves(code, zones(code, name)))',
+          'id, code, name, uom, stock_balances(qty_on_hand, qty_on_hold, shelves(code, fixture_type, description, zones(code, name)))',
         )
         .or(`name.ilike.%${trimmed}%,code.ilike.%${trimmed}%,barcode.eq.${trimmed}`)
         .eq('status', 'active')
@@ -66,7 +69,9 @@ export function ItemLocator() {
             <li className="py-3 text-sm text-ink-400">No matching items.</li>
           )}
           {data.map((item) => {
-            const locations = item.stock_balances.filter((b) => b.qty_on_hand > 0 || b.qty_on_hold > 0)
+            // Zero-quantity rows are kept: "located but not counted yet" is a
+            // valid state during the mapping walk, and still answers "where is it".
+            const locations = item.stock_balances.filter((b) => b.shelves)
             return (
               <li key={item.id} className="py-3">
                 <div className="flex items-baseline justify-between gap-2">
@@ -74,21 +79,28 @@ export function ItemLocator() {
                   <span className="shrink-0 text-xs text-ink-400">{item.code}</span>
                 </div>
                 {locations.length === 0 ? (
-                  <p className="mt-1 text-sm text-ink-400">Not on any shelf right now.</p>
+                  <p className="mt-1 text-sm text-ink-400">No location recorded yet.</p>
                 ) : (
                   <ul className="mt-1 space-y-1">
                     {locations.map((b, i) => (
                       <li key={i} className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 shrink-0 text-brand-500" />
-                        <span className="font-medium">
+                        <span className="min-w-0 font-medium">
                           {b.shelves?.zones ? `${b.shelves.zones.name} (${b.shelves.zones.code})` : '—'}
                           {' · '}
-                          {b.shelves?.code ?? '—'}
+                          {b.shelves ? locationLabel(b.shelves) : '—'}
+                          <span className="ml-1.5 font-normal text-ink-400">{b.shelves?.code}</span>
                         </span>
-                        <span className="ml-auto tabular-nums">
-                          {b.qty_on_hand} {item.uom}
-                          {b.qty_on_hold > 0 && (
-                            <span className="ml-1 text-amber-600">(+{b.qty_on_hold} on hold)</span>
+                        <span className="ml-auto shrink-0 tabular-nums">
+                          {b.qty_on_hand > 0 ? (
+                            <>
+                              {b.qty_on_hand} {item.uom}
+                              {b.qty_on_hold > 0 && (
+                                <span className="ml-1 text-amber-600">(+{b.qty_on_hold} on hold)</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-ink-400">not counted yet</span>
                           )}
                         </span>
                       </li>
