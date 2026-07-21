@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileDown, Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
+import { Check, FileDown, Pencil, Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -46,6 +46,9 @@ export function Items() {
   const [copies, setCopies] = useState('1')
   const [printing, setPrinting] = useState(false)
 
+  const [onlyAuto, setOnlyAuto] = useState(false)
+  const [editingCode, setEditingCode] = useState<{ id: string; value: string } | null>(null)
+
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev)
@@ -54,15 +57,39 @@ export function Items() {
     })
 
   const { data: items, isLoading } = useQuery({
-    queryKey: ['items', search],
+    queryKey: ['items', search, onlyAuto],
     queryFn: async () => {
       let q = supabase.from('items').select('*').is('deleted_at', null).order('name').limit(100)
+      if (onlyAuto) q = q.eq('code_auto_assigned', true)
       if (search.trim()) {
         q = q.or(`name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%,item_type.ilike.%${search.trim()}%`)
       }
       const { data, error } = await q
       if (error) throw error
       return data as Item[]
+    },
+  })
+
+  // Replace an auto-assigned code with the client's real one (clears the flag).
+  const saveCode = useMutation({
+    mutationFn: async ({ id, code }: { id: string; code: string }) => {
+      const trimmed = code.trim()
+      if (!trimmed) throw new Error('Code cannot be empty')
+      const { error } = await supabase
+        .from('items')
+        .update({ code: trimmed, code_auto_assigned: false })
+        .eq('id', id)
+      if (error) {
+        throw new Error(error.code === '23505' ? `Code "${trimmed}" is already used by another item.` : error.message)
+      }
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'update.item_code', entityType: 'item', entityId: id, after: { code: trimmed },
+      })
+    },
+    onSuccess: () => {
+      setEditingCode(null)
+      void queryClient.invalidateQueries({ queryKey: ['items'] })
     },
   })
 
@@ -79,6 +106,7 @@ export function Items() {
         .insert({
           tenant_id: profile!.tenant_id,
           code,
+          code_auto_assigned: !form.code.trim(),
           barcode: form.barcode.trim() || null,
           name: form.name.trim(),
           item_type: form.item_type.trim() || null,
@@ -159,6 +187,7 @@ export function Items() {
         prepared.push({
           tenant_id: profile!.tenant_id,
           code: row.code ?? (await resolveItemCode(null)),
+          code_auto_assigned: !row.code, // flag rows that had no client code
           barcode: row.barcode,
           name: row.name,
           item_type: row.item_type,
@@ -401,14 +430,20 @@ export function Items() {
         </div>
       )}
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-300" />
-        <input
-          className="input-field pl-12"
-          placeholder="Search items by name or code…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-64 flex-1">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-300" />
+          <input
+            className="input-field pl-12"
+            placeholder="Search items by name, code or type…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border-2 border-tan px-4 text-sm font-medium text-ink-600">
+          <input type="checkbox" className="h-5 w-5" checked={onlyAuto} onChange={(e) => setOnlyAuto(e.target.checked)} />
+          Only auto-assigned codes
+        </label>
       </div>
 
       {isLoading ? (
@@ -448,7 +483,54 @@ export function Items() {
                       onChange={() => toggle(item.id)}
                     />
                   </td>
-                  <td className="px-4 py-3 font-mono">{item.code}</td>
+                  <td className="px-4 py-3">
+                    {editingCode?.id === item.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          className="input-field h-9 w-40 font-mono"
+                          value={editingCode.value}
+                          autoFocus
+                          onChange={(e) => setEditingCode({ id: item.id, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveCode.mutate({ id: item.id, code: editingCode.value })
+                            if (e.key === 'Escape') setEditingCode(null)
+                          }}
+                        />
+                        <button
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50"
+                          onClick={() => saveCode.mutate({ id: item.id, code: editingCode.value })}
+                          disabled={saveCode.isPending}
+                          aria-label="Save code"
+                        >
+                          <Check className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 hover:bg-ink-100"
+                          onClick={() => setEditingCode(null)}
+                          aria-label="Cancel"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{item.code}</span>
+                        {item.code_auto_assigned && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                            auto
+                          </span>
+                        )}
+                        <button
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-300 hover:bg-ink-100 hover:text-ink-600"
+                          onClick={() => setEditingCode({ id: item.id, value: item.code })}
+                          title="Edit code"
+                          aria-label={`Edit code for ${item.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-medium">{item.name}</td>
                   <td className="px-4 py-3 text-ink-400">{item.item_type ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
@@ -467,6 +549,7 @@ export function Items() {
           </table>
         </div>
       )}
+      {saveCode.isError && <p className="text-sm text-red-600">{(saveCode.error as Error).message}</p>}
     </div>
   )
 }

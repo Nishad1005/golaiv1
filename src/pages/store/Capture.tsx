@@ -128,6 +128,7 @@ export function Capture() {
         .insert({
           tenant_id: profile!.tenant_id,
           code,
+          code_auto_assigned: !newItem.code.trim(),
           barcode: unknownScan !== code ? unknownScan : null,
           name: newItem.name.trim(),
           uom: newItem.uom.trim() || 'pcs',

@@ -40,6 +40,7 @@ export interface Item {
   id: string
   tenant_id: string
   code: string
+  code_auto_assigned: boolean
   barcode: string | null
   name: string
   description: string | null
