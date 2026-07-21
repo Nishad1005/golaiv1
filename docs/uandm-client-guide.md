@@ -69,9 +69,13 @@ each spot a barcode sticker, so it can be scanned.
    anything. Golai takes the first letter as the code prefix (Ghoda → `G`).
    Set the range (e.g. 1 to 20) → **Add**
 3. Golai creates codes like `Z03-G001 … Z03-G020` (you see a preview first)
-4. Press **Labels** → a PDF downloads with one sticker per location, showing
-   your company name, the code, a barcode + QR, and "Ghoda 1 — Foam (Zone 3)"
-5. Print on A4 sticker paper and **stick one on each ghoda / shelf / rack**
+4. Press **Labels** → choose your **label size**:
+   - **Thermal roll (100 × 50 mm)** — for a label printer like the TSC TE244.
+     Each sticker prints on its own label. Pick the size that matches your roll.
+   - **A4 sheet** — only if you're printing on sticker sheets in an office printer.
+5. A PDF downloads with your company name, the code, a barcode + QR, and
+   "Ghoda 1 — Foam (Zone 3)" on each label
+6. Print and **stick one on each ghoda / shelf / rack**
 
 It does not matter which sticker goes on which spot — you record what's on each
 one in section 5. Just make sure every spot in the zone gets a sticker.

@@ -29,64 +29,108 @@ function barcodeDataUrl(value: string): string {
 }
 
 /**
- * Generate a printable A4 PDF of shelf/place barcode labels (2 × 5 per page).
- * Client requirement: company name on top, the code big, Code128 (USB laser
- * scanners) + QR (phone cameras), and the zone + the client's own place name
- * ("Ghoda 1") at the bottom.
+ * Location label sizes.
+ * - 'a4': 10 labels per A4 sheet — office printer + sticker sheets
+ * - 'thermal-100x50' / 'thermal-75x50' / 'thermal-50x25': ONE label per page,
+ *   sized to the roll, for direct thermal printers (TSC TE244, TVS LP46 …).
+ *   One label per page is essential: sending an A4 sheet to a label printer
+ *   squeezes all ten labels onto a single sticker.
+ */
+export type ShelfLabelSize = 'a4' | 'thermal-100x50' | 'thermal-75x50' | 'thermal-50x25'
+
+export const SHELF_LABEL_SIZES: { value: ShelfLabelSize; label: string }[] = [
+  { value: 'thermal-100x50', label: 'Thermal roll — 100 × 50 mm (one per label)' },
+  { value: 'thermal-75x50', label: 'Thermal roll — 75 × 50 mm (one per label)' },
+  { value: 'thermal-50x25', label: 'Thermal roll — 50 × 25 mm (one per label)' },
+  { value: 'a4', label: 'A4 sheet — 10 labels per page (office printer)' },
+]
+
+const THERMAL_DIMS: Record<string, [number, number]> = {
+  'thermal-100x50': [100, 50],
+  'thermal-75x50': [75, 50],
+  'thermal-50x25': [50, 25],
+}
+
+/**
+ * Generate printable location barcode labels: company name on top, the code
+ * big, Code128 (USB laser scanners) + QR (phone cameras), and the zone + the
+ * client's own place name ("Ghoda 1") at the bottom.
  */
 export async function generateShelfLabelsPdf(
   labels: ShelfLabel[],
   fileName = 'shelf-labels.pdf',
+  size: ShelfLabelSize = 'a4',
 ): Promise<void> {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-  const pageW = 210
-  const cols = 2
-  const rows = 5
-  const marginX = 10
-  const marginY = 12
-  const cellW = (pageW - marginX * 2) / cols
-  const cellH = (297 - marginY * 2) / rows
+  if (labels.length === 0) return
 
   const qrs = new Map<string, string>()
   for (const l of labels) {
     if (!qrs.has(l.code)) qrs.set(l.code, await qrDataUrl(l.code))
   }
 
+  // Draws one label into the box at (x, y) of size w × h.
+  const drawLabel = (doc: jsPDF, label: ShelfLabel, x: number, y: number, w: number, h: number, frame: boolean) => {
+    const tiny = h < 30
+    const pad = tiny ? 2 : 4
+    const qrSide = Math.min(h * 0.42, w * 0.22)
+
+    if (frame) {
+      doc.setDrawColor(180)
+      doc.roundedRect(x + 2, y + 2, w - 4, h - 4, 2, 2)
+    }
+
+    // Company name — their brand on every sticker
+    doc.setFontSize(tiny ? 5.5 : 8)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label.companyName.toUpperCase(), x + w / 2, y + (tiny ? 4 : 6.5), { align: 'center' })
+
+    // The code — readable from a distance
+    doc.setFontSize(tiny ? 10 : 18)
+    doc.setFont('helvetica', 'bold')
+    doc.text(label.code, x + w / 2, y + (tiny ? 9.5 : 14.5), { align: 'center' })
+
+    // Code128 on the left, QR on the right
+    const barTop = tiny ? y + 11 : y + 17
+    const barH = tiny ? 6.5 : h * 0.28
+    doc.addImage(barcodeDataUrl(label.code), 'PNG', x + pad, barTop, w - qrSide - pad * 3, barH)
+    doc.addImage(qrs.get(label.code)!, 'PNG', x + w - qrSide - pad, barTop - (tiny ? 1 : 1.5), qrSide, qrSide)
+
+    // The client's own place name, then the zone
+    doc.setFontSize(tiny ? 7 : 11)
+    doc.setFont('helvetica', 'bold')
+    doc.text(label.locationLabel, x + w / 2, y + h - (tiny ? 6 : 10), { align: 'center' })
+    doc.setFontSize(tiny ? 5.5 : 8.5)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${label.zoneName} (${label.zoneNo})`, x + w / 2, y + h - (tiny ? 2 : 4.5), { align: 'center' })
+  }
+
+  // --- Thermal: exactly one label per page, page = the sticker ---------------
+  if (size !== 'a4') {
+    const [w, h] = THERMAL_DIMS[size]
+    const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' })
+    labels.forEach((label, i) => {
+      if (i > 0) doc.addPage([w, h], 'landscape')
+      drawLabel(doc, label, 0, 0, w, h, false)
+    })
+    doc.save(fileName)
+    return
+  }
+
+  // --- A4 sheet: 2 × 5 grid --------------------------------------------------
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const cols = 2
+  const rows = 5
+  const marginX = 10
+  const marginY = 12
+  const cellW = (210 - marginX * 2) / cols
+  const cellH = (297 - marginY * 2) / rows
+
   labels.forEach((label, i) => {
     const idx = i % (cols * rows)
     if (i > 0 && idx === 0) doc.addPage()
     const col = idx % cols
     const row = Math.floor(idx / cols)
-    const x = marginX + col * cellW
-    const y = marginY + row * cellH
-
-    doc.setDrawColor(180)
-    doc.roundedRect(x + 2, y + 2, cellW - 4, cellH - 4, 2, 2)
-
-    // Company name (client requirement: their brand on every sticker)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text(label.companyName.toUpperCase(), x + cellW / 2, y + 8, { align: 'center' })
-    doc.setDrawColor(220)
-    doc.line(x + 10, y + 10.5, x + cellW - 10, y + 10.5)
-
-    // The code — big and readable from a distance
-    doc.setFontSize(22)
-    doc.setFont('helvetica', 'bold')
-    doc.text(label.code, x + cellW / 2, y + 19, { align: 'center' })
-
-    // Code128 left, QR right
-    const qrSide = 20
-    doc.addImage(barcodeDataUrl(label.code), 'PNG', x + 8, y + 23, cellW - qrSide - 20, 16)
-    doc.addImage(qrs.get(label.code)!, 'PNG', x + cellW - qrSide - 8, y + 21, qrSide, qrSide)
-
-    // Zone + the client's own place name
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.text(label.locationLabel, x + cellW / 2, y + cellH - 11, { align: 'center' })
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`${label.zoneName} (${label.zoneNo})`, x + cellW / 2, y + cellH - 6, { align: 'center' })
+    drawLabel(doc, label, marginX + col * cellW, marginY + row * cellH, cellW, cellH, true)
   })
 
   doc.save(fileName)

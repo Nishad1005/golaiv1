@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, FileDown, Loader2, Pencil, Plus, Printer, Up
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
-import { generateShelfLabelsPdf } from '../../lib/labels'
+import { generateShelfLabelsPdf, SHELF_LABEL_SIZES, type ShelfLabelSize } from '../../lib/labels'
 import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
 import { locationLabel, prefixFor } from '../../lib/places'
 import { PageHeader } from '../../components/PageHeader'
@@ -25,6 +25,9 @@ export function ZonesShelves() {
   const [editingZone, setEditingZone] = useState<string | null>(null)
   const csvInput = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
+  const [printZone, setPrintZone] = useState<ZoneRow | null>(null)
+  const [labelSize, setLabelSize] = useState<ShelfLabelSize>('thermal-100x50')
+  const [printing, setPrinting] = useState(false)
 
   const { data: tenant } = useQuery({
     queryKey: ['tenant'],
@@ -175,24 +178,31 @@ export function ZonesShelves() {
 
   const shelvesByZone = (zoneId: string) => (shelves ?? []).filter((s) => s.zone_id === zoneId)
 
-  const printZoneLabels = async (zone: ZoneRow) => {
+  const printZoneLabels = async (zone: ZoneRow, size: ShelfLabelSize) => {
     const zoneShelves = shelvesByZone(zone.id)
     if (zoneShelves.length === 0) return
-    await generateShelfLabelsPdf(
-      zoneShelves.map((s) => ({
-        code: s.code,
-        companyName: tenant?.name ?? '',
-        zoneName: zone.name,
-        zoneNo: 'Zone ' + Number(zone.code.replace(/^Z/i, '')),
-        locationLabel: locationLabel(s),
-      })),
-      `${zone.code}-labels.pdf`,
-    )
-    void logActivity({
-      tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
-      action: 'print.shelf_labels', entityType: 'zone', entityId: zone.id,
-      after: { count: zoneShelves.length },
-    })
+    setPrinting(true)
+    try {
+      await generateShelfLabelsPdf(
+        zoneShelves.map((s) => ({
+          code: s.code,
+          companyName: tenant?.name ?? '',
+          zoneName: zone.name,
+          zoneNo: 'Zone ' + Number(zone.code.replace(/^Z/i, '')),
+          locationLabel: locationLabel(s),
+        })),
+        `${zone.code}-labels.pdf`,
+        size,
+      )
+      void logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'print.shelf_labels', entityType: 'zone', entityId: zone.id,
+        after: { count: zoneShelves.length, size },
+      })
+      setPrintZone(null)
+    } finally {
+      setPrinting(false)
+    }
   }
 
   if (isLoading) return <Loader2 className="mx-auto mt-12 h-8 w-8 animate-spin text-brand-500" />
@@ -247,6 +257,44 @@ export function ZonesShelves() {
           e.target.value = ''
         }} />
       {importStatus && <p className="text-sm text-ink-500">{importStatus}</p>}
+
+      {printZone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
+          onClick={() => !printing && setPrintZone(null)}>
+          <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <p className="text-lg font-bold">Print location labels</p>
+              <p className="mt-1 text-sm text-ink-500">
+                {shelvesByZone(printZone.id).length} labels for {printZone.code} {printZone.name}
+              </p>
+            </div>
+            <div>
+              <label className="label-text">Label size</label>
+              <select className="input-field" value={labelSize}
+                onChange={(e) => setLabelSize(e.target.value as ShelfLabelSize)}>
+                {SHELF_LABEL_SIZES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-ink-400">
+                Using a label printer (TSC / TVS)? Pick the size that matches your roll — each
+                sticker prints on its own page. Choose A4 only for sticker sheets in an office
+                printer.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn-primary" disabled={printing}
+                onClick={() => void printZoneLabels(printZone, labelSize)}>
+                {printing && <Loader2 className="h-5 w-5 animate-spin" />}
+                Download PDF
+              </button>
+              <button className="btn-secondary" disabled={printing} onClick={() => setPrintZone(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showZoneForm && (
         <form className="card flex flex-wrap items-end gap-3"
@@ -305,7 +353,7 @@ export function ZonesShelves() {
               >
                 <Pencil className="h-5 w-5" />
               </button>
-              <button className="btn-secondary" onClick={() => void printZoneLabels(zone)}
+              <button className="btn-secondary" onClick={() => setPrintZone(zone)}
                 disabled={zoneShelves.length === 0 || !tenant}
                 title="Printable stickers: company name, code, barcode + QR, zone and place name">
                 <Printer className="h-5 w-5" /> Labels
