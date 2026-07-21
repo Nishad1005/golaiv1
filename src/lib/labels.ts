@@ -219,31 +219,29 @@ export async function generateItemLabelsPdf(
     const row = Math.floor(idx / spec.cols)
     const x = spec.marginX + col * cellW
     const y = spec.marginY + row * cellH
-    // Scale by the actual label height so bigger rolls use the space
-    const compact = cellH < 30
-    const pad = compact ? 1.5 : 3
+    // Only what the floor needs: the item name and its number, large enough to
+    // read at arm's length, then the barcode and QR. The code is NOT repeated
+    // under the barcode — that space goes to the text instead.
+    const pad = cellH < 30 ? 1.5 : 3
+    const nameSize = Math.max(7, Math.min(18, cellH * 0.3))
+    const codeSize = Math.max(6, nameSize * 0.8)
+    const lineH = (pt: number) => pt * 0.42 // pt → mm, with leading
 
-    // Item name (wrapped, max 2 lines)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(compact ? 7 : 11)
+    doc.setFontSize(nameSize)
     const nameLines = doc.splitTextToSize(label.name, cellW - pad * 2).slice(0, 2)
-    doc.text(nameLines, x + pad, y + pad + 2.5)
+    doc.text(nameLines, x + pad, y + pad + lineH(nameSize) * 0.8)
 
-    // Code
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(compact ? 6 : 9)
-    const codeY = y + pad + (compact ? (nameLines.length > 1 ? 8 : 5) : (nameLines.length > 1 ? 13 : 8))
+    doc.setFontSize(codeSize)
+    const codeY = y + pad + lineH(nameSize) * (nameLines.length + 0.6)
     doc.text(label.code, x + pad, codeY)
 
-    // Code128 on the left, QR on the right of the lower half
-    const barTop = codeY + 1
-    const qrSide = Math.min(cellH - (barTop - y) - pad, cellW * 0.32)
-    doc.addImage(bars.get(label.code)!, 'PNG', x + pad, barTop, cellW - qrSide - pad * 3, cellH - (barTop - y) - pad - 2.5)
+    // Code128 on the left, QR on the right, filling the space that's left
+    const barTop = codeY + lineH(codeSize) * 0.5
+    const availH = cellH - (barTop - y) - pad
+    const qrSide = Math.min(availH, cellW * 0.3)
+    doc.addImage(bars.get(label.code)!, 'PNG', x + pad, barTop, cellW - qrSide - pad * 3, availH)
     doc.addImage(qrs.get(label.code)!, 'PNG', x + cellW - qrSide - pad, barTop, qrSide, qrSide)
-
-    // Code text under the barcode
-    doc.setFontSize(compact ? 5 : 8)
-    doc.text(label.code, x + pad, y + cellH - pad + 0.5)
   })
 
   doc.save(fileName)
