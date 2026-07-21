@@ -95,7 +95,8 @@ export function Users() {
 
   const changeRole = useMutation({
     mutationFn: async ({ user, role }: { user: Profile; role: UserRole }) => {
-      const { error } = await supabase.from('profiles').update({ role }).eq('id', user.id)
+      // Guarded RPC — clients cannot write role/status/module_access directly
+      const { error } = await supabase.rpc('admin_set_user_role', { p_user_id: user.id, p_role: role })
       if (error) throw error
       await logActivity({
         tenantId: profile!.tenant_id,
@@ -115,7 +116,7 @@ export function Users() {
   // but keeps their name on their past work.
   const setStatus = useMutation({
     mutationFn: async ({ user, status }: { user: Profile; status: 'active' | 'inactive' }) => {
-      const { error } = await supabase.from('profiles').update({ status }).eq('id', user.id)
+      const { error } = await supabase.rpc('admin_set_user_status', { p_user_id: user.id, p_status: status })
       if (error) throw error
       await logActivity({
         tenantId: profile!.tenant_id,
@@ -138,7 +139,10 @@ export function Users() {
       if (allowed === isDefault) delete current[key]
       else current[key] = allowed
 
-      const { error } = await supabase.from('profiles').update({ module_access: current }).eq('id', user.id)
+      const { error } = await supabase.rpc('admin_set_module_access', {
+        p_user_id: user.id,
+        p_access: current,
+      })
       if (error) throw error
       await logActivity({
         tenantId: profile!.tenant_id,

@@ -22,6 +22,11 @@ const ALL: UserRole[] = ['security', 'storekeeper', 'planner', 'manager', 'admin
 /**
  * Single source of truth for what exists in the app: drives the sidebar, the
  * routes, and the per-user access checkboxes. Order here is the nav order.
+ *
+ * The database enforces the same rules independently (migration 0017: the
+ * `modules` table + has_module()). If you change a module key or its
+ * defaultRoles here, update that table too — the DB is authoritative, so a
+ * mismatch means the UI offers something the server will refuse.
  */
 export const MODULES: AppModule[] = [
   { key: 'home', label: 'Home', to: '/', icon: LayoutDashboard, defaultRoles: ALL, alwaysOn: true },
