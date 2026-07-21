@@ -14,6 +14,8 @@ export interface Profile {
   status: 'active' | 'inactive'
   last_login_at: string | null
   is_platform_admin: boolean
+  /** Per-user module overrides on top of the role defaults (see lib/modules). */
+  module_access: Record<string, boolean> | null
 }
 
 export interface Tenant {

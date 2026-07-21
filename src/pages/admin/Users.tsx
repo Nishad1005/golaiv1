@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Loader2, Plus, Power, Trash2, UserPlus } from 'lucide-react'
+import { KeyRound, Loader2, Plus, Power, SlidersHorizontal, Trash2, UserPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
+import { canAccess, MODULES, TOGGLEABLE_MODULES } from '../../lib/modules'
 import type { Profile, UserRole } from '../../lib/types'
 
 async function invokeError(error: { message: string; context?: unknown }): Promise<string> {
@@ -28,6 +29,7 @@ export function Users() {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'storekeeper' as UserRole })
   const [notice, setNotice] = useState<string | null>(null)
   const [resetting, setResetting] = useState<{ user: Profile; password: string } | null>(null)
+  const [accessFor, setAccessFor] = useState<string | null>(null)
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['profiles'],
@@ -125,6 +127,31 @@ export function Users() {
       })
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+  })
+
+  // Turn a single module on/off for one person. Stored as an override; clearing
+  // it back to the role default removes the key entirely.
+  const setModuleAccess = useMutation({
+    mutationFn: async ({ user, key, allowed }: { user: Profile; key: string; allowed: boolean }) => {
+      const current = { ...(user.module_access ?? {}) }
+      const isDefault = MODULES.find((m) => m.key === key)?.defaultRoles.includes(user.role) ?? false
+      if (allowed === isDefault) delete current[key]
+      else current[key] = allowed
+
+      const { error } = await supabase.from('profiles').update({ module_access: current }).eq('id', user.id)
+      if (error) throw error
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: allowed ? 'grant.module' : 'revoke.module',
+        entityType: 'profile',
+        entityId: user.id,
+        after: { module: key },
+      })
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+    onError: (e) => setNotice((e as Error).message),
   })
 
   // Set a new password for a staff member — either one the admin types (easy to
@@ -305,10 +332,8 @@ export function Users() {
             const isSelf = u.id === profile!.id
             const inactive = u.status !== 'active'
             return (
-              <div
-                key={u.id}
-                className={'flex flex-wrap items-center gap-3 px-4 py-3 ' + (inactive ? 'opacity-60' : '')}
-              >
+              <div key={u.id} className={inactive ? 'opacity-60' : ''}>
+              <div className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 font-medium">
                     {u.full_name}
@@ -336,6 +361,17 @@ export function Users() {
                 </select>
                 {!isSelf && (
                   <div className="flex flex-wrap items-center gap-1">
+                    <button
+                      className={
+                        'flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium hover:bg-cream ' +
+                        (accessFor === u.id ? 'bg-cream text-ink-700' : 'text-ink-500')
+                      }
+                      title="Choose which parts of the app this person can use"
+                      onClick={() => setAccessFor(accessFor === u.id ? null : u.id)}
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Access
+                    </button>
                     <button
                       className="flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-ink-500 hover:bg-cream"
                       title="Set a new password for this user"
@@ -372,6 +408,48 @@ export function Users() {
                     </button>
                   </div>
                 )}
+              </div>
+
+              {accessFor === u.id && !isSelf && (
+                <div className="border-t border-ink-100 bg-cream/50 px-4 py-3">
+                  <p className="mb-2 text-sm font-semibold text-ink-600">
+                    What {u.full_name.split(' ')[0]} can use
+                  </p>
+                  <p className="mb-3 text-xs text-ink-400">
+                    Ticked boxes follow the <b>{u.role}</b> role by default — change any of them for
+                    this person only. Home and Alerts are always available.
+                  </p>
+                  <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {TOGGLEABLE_MODULES.map((m) => {
+                      const allowed = canAccess(u, m.key)
+                      const isDefault = m.defaultRoles.includes(u.role)
+                      return (
+                        <label
+                          key={m.key}
+                          className="flex min-h-tap cursor-pointer items-center gap-2 rounded-lg px-2 text-sm hover:bg-white"
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-5 w-5 shrink-0"
+                            checked={allowed}
+                            disabled={setModuleAccess.isPending}
+                            onChange={(e) =>
+                              setModuleAccess.mutate({ user: u, key: m.key, allowed: e.target.checked })
+                            }
+                          />
+                          <m.icon className="h-4 w-4 shrink-0 text-ink-400" />
+                          <span className="min-w-0 truncate">{m.label}</span>
+                          {allowed !== isDefault && (
+                            <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                              custom
+                            </span>
+                          )}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               </div>
             )
           })}

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from './stores/auth'
+import { canAccess } from './lib/modules'
 import { useOffline } from './lib/offline/queue'
 import { refreshMasterCache } from './lib/offline/masters'
 import { registerPush } from './lib/push'
@@ -126,63 +127,62 @@ export default function App() {
   }
 
   const Home = HOME_BY_ROLE[profile.role]
-  const isAdminish = profile.role === 'admin' || profile.role === 'manager'
-  const isStoreish = profile.role === 'storekeeper' || isAdminish
+  // Routes follow the same effective access as the sidebar: role default,
+  // overridden per person by the admin's module checkboxes.
+  const can = (key: string) => canAccess(profile, key)
 
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          {isStoreish && (
+          {can('capture') && <Route path="/capture" element={<Capture />} />}
+          {can('transfer') && <Route path="/transfer" element={<Transfer />} />}
+          {can('adjust') && <Route path="/adjust" element={<Adjustments />} />}
+          {can('assign') && <Route path="/assign" element={<AssignLocation />} />}
+          {can('find') && <Route path="/find" element={<FindItem />} />}
+          {can('grn') && (
             <>
-              <Route path="/capture" element={<Capture />} />
-              <Route path="/transfer" element={<Transfer />} />
-              <Route path="/adjust" element={<Adjustments />} />
-              <Route path="/assign" element={<AssignLocation />} />
+              <Route path="/grn" element={<GrnList />} />
+              <Route path="/grn/:id" element={<GrnDetail />} />
+              {(profile.role === 'security' || profile.role === 'manager' || profile.role === 'admin') && (
+                <Route path="/grn/new" element={<GateEntry />} />
+              )}
             </>
           )}
-          {profile.role !== 'security' && <Route path="/find" element={<FindItem />} />}
-          <Route path="/grn" element={<GrnList />} />
-          <Route path="/grn/:id" element={<GrnDetail />} />
-          {(profile.role === 'security' || isAdminish) && (
-            <Route path="/grn/new" element={<GateEntry />} />
+          {can('release') && (
+            <>
+              <Route path="/release" element={<ReleaseRequestList />} />
+              <Route path="/release/:id" element={<ReleaseRequestDetail />} />
+              {profile.role !== 'security' && profile.role !== 'storekeeper' && (
+                <Route path="/release/new" element={<ReleaseRequestNew />} />
+              )}
+            </>
           )}
-          <Route path="/release" element={<ReleaseRequestList />} />
-          <Route path="/release/:id" element={<ReleaseRequestDetail />} />
-          {(profile.role === 'planner' || isAdminish) && (
-            <Route path="/release/new" element={<ReleaseRequestNew />} />
+          {can('returns') && <Route path="/returns" element={<Returns />} />}
+          {can('dispatch') && (
+            <>
+              <Route path="/dispatch" element={<DispatchList />} />
+              <Route path="/dispatch/:id" element={<DispatchDetail />} />
+              {profile.role !== 'security' && <Route path="/dispatch/new" element={<DispatchNew />} />}
+            </>
           )}
-          {(profile.role !== 'security') && <Route path="/returns" element={<Returns />} />}
-          <Route path="/dispatch" element={<DispatchList />} />
-          <Route path="/dispatch/:id" element={<DispatchDetail />} />
-          {isStoreish && <Route path="/dispatch/new" element={<DispatchNew />} />}
-          {(profile.role !== 'security' && profile.role !== 'planner') && (
-            <Route path="/qc" element={<QcHolds />} />
-          )}
+          {can('qc') && <Route path="/qc" element={<QcHolds />} />}
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/account" element={<Account />} />
-          {isStoreish && (
+          {can('counts') && (
             <>
               <Route path="/counts" element={<CountList />} />
               <Route path="/counts/:id" element={<CountDetail />} />
             </>
           )}
-          {isAdminish && (
-            <>
-              <Route path="/so-movement" element={<SoMovement />} />
-              <Route path="/export" element={<Export />} />
-            </>
-          )}
-          {isAdminish && (
-            <>
-              <Route path="/admin/zones" element={<ZonesShelves />} />
-              <Route path="/admin/items" element={<Items />} />
-              <Route path="/admin/parties" element={<Parties />} />
-              {profile.role === 'admin' && <Route path="/admin/users" element={<Users />} />}
-              {profile.role === 'admin' && <Route path="/admin/company" element={<CompanyProfile />} />}
-            </>
-          )}
+          {can('so_movement') && <Route path="/so-movement" element={<SoMovement />} />}
+          {can('export') && <Route path="/export" element={<Export />} />}
+          {can('admin_zones') && <Route path="/admin/zones" element={<ZonesShelves />} />}
+          {can('admin_items') && <Route path="/admin/items" element={<Items />} />}
+          {can('admin_parties') && <Route path="/admin/parties" element={<Parties />} />}
+          {can('admin_users') && <Route path="/admin/users" element={<Users />} />}
+          {can('admin_company') && <Route path="/admin/company" element={<CompanyProfile />} />}
           {profile.is_platform_admin && <Route path="/provision" element={<ProvisionClient />} />}
           <Route path="*" element={<ComingSoon />} />
         </Route>

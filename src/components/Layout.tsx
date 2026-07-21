@@ -5,7 +5,7 @@ import { Bell, LogOut, Menu, Rocket, Settings, UserRound, X } from 'lucide-react
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { useTenant, logoPublicUrl } from '../lib/tenant'
-import { navForRole } from '../lib/nav'
+import { navForProfile } from '../lib/modules'
 import { OfflineBanner } from './OfflineBanner'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -38,10 +38,17 @@ export function Layout() {
     },
   })
 
-  const nav = profile ? [...navForRole(profile.role)] : []
+  const nav = profile ? [...navForProfile(profile)] : []
   // DBBS platform admins get the cross-tenant "Provision Client" destination.
   if (profile?.is_platform_admin) {
-    nav.push({ label: 'Provision Client', to: '/provision', icon: Rocket })
+    nav.push({
+      key: 'provision',
+      label: 'Provision Client',
+      to: '/provision',
+      icon: Rocket,
+      defaultRoles: [],
+      alwaysOn: true,
+    })
   }
 
   const isActive = (to: string) =>
