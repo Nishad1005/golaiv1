@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     if (profErr || !caller) return json({ error: 'Profile not found for caller' }, 403)
     if (caller.role !== 'admin') return json({ error: 'Only an admin can create users' }, 403)
 
-    const { email, full_name, role, phone } = await req.json()
+    const { email, full_name, role, phone, password: chosenPassword } = await req.json()
     if (!full_name || !role) {
       return json({ error: 'Name and role are required' }, 400)
     }
@@ -96,7 +96,13 @@ Deno.serve(async (req) => {
     //    confirmed so no verification message is ever needed — the user logs
     //    in with the identifier + temp password the admin hands them.
     const admin = createClient(url, serviceKey)
-    const password = tempPassword()
+    // The admin may set a password they'll read out to the staff member;
+    // otherwise Golai generates one. Either way it is shown once on screen.
+    const chosen = typeof chosenPassword === 'string' ? chosenPassword.trim() : ''
+    if (chosen && chosen.length < 6) {
+      return json({ error: 'Password must be at least 6 characters' }, 400)
+    }
+    const password = chosen || tempPassword()
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       ...(cleanEmail ? { email: cleanEmail, email_confirm: true } : {}),
       ...(cleanPhone ? { phone: cleanPhone, phone_confirm: true } : {}),

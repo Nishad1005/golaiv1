@@ -35,6 +35,7 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
    npx supabase link --project-ref YOUR_PROJECT_REF
    npx supabase functions deploy create-user      # admins create staff logins
    npx supabase functions deploy delete-user      # admins remove staff
+   npx supabase functions deploy reset-password   # admins reset staff passwords
    npx supabase functions deploy provision-tenant # platform admins create client companies
    ```
 

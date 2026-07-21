@@ -48,8 +48,12 @@ You (the Admin) create every staff login yourself — no need to contact DBBS.
 | **Manager** | Owner / ops head | Approvals, reports, full visibility |
 | **Admin** | You / your IT person | Everything + settings, users, masters |
 
-3. Click **Create & send invite** → Golai shows a **temporary password** on
-   screen. Write it down and hand it to that person — they log in with it.
+3. Optionally **set a password** you can read out to them (or leave it blank and
+   Golai generates one). Click **Create & send invite** → the password is shown
+   on screen. Hand it to that person along with their user ID (their email or
+   mobile) — they log in with those.
+   > Forgot it later? **Reset password** next to their name sets a new one
+   > instantly — no email or SMS involved.
 4. If someone leaves: **Deactivate** (their login stops working, their history
    stays). Use **Delete** only for accounts created by mistake.
 
@@ -154,7 +158,7 @@ order's entire journey with all the evidence.
 | Problem | What to do |
 |---|---|
 | Want to change your password | Click your name at the bottom of the menu → **My Account** → Change password |
-| Forgot password | Ask your Admin to delete and re-create the login (they get a fresh temporary password), or contact DBBS |
+| Forgot password | Ask your Admin: **Users & Roles → Reset password** → they set a new one and tell you. Takes 10 seconds. |
 | Scanner won't read a label | Type the code by hand using the keyboard button next to the scan box, or use the QR square with a phone camera |
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |

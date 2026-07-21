@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, Power, Trash2, UserPlus } from 'lucide-react'
+import { KeyRound, Loader2, Plus, Power, Trash2, UserPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -25,8 +25,9 @@ export function Users() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', role: 'storekeeper' as UserRole })
+  const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'storekeeper' as UserRole })
   const [notice, setNotice] = useState<string | null>(null)
+  const [resetting, setResetting] = useState<{ user: Profile; password: string } | null>(null)
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['profiles'],
@@ -50,6 +51,7 @@ export function Users() {
           full_name: form.full_name.trim(),
           email: form.email.trim() || null,
           phone: form.phone.trim() || null,
+          password: form.password.trim() || null,
           role: form.role,
         },
       })
@@ -83,7 +85,7 @@ export function Users() {
       setNotice(
         `Login created — user ID: ${result.login_id}, temporary password: ${result.temp_password}. Share both with them; they can change the password after signing in.`,
       )
-      setForm({ full_name: '', email: '', phone: '', role: 'storekeeper' })
+      setForm({ full_name: '', email: '', phone: '', password: '', role: 'storekeeper' })
       setShowForm(false)
       void queryClient.invalidateQueries({ queryKey: ['profiles'] })
     },
@@ -123,6 +125,33 @@ export function Users() {
       })
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+  })
+
+  // Set a new password for a staff member — either one the admin types (easy to
+  // read out on the floor) or a generated one. Shown once, to hand over.
+  const resetPassword = useMutation({
+    mutationFn: async ({ user, password }: { user: Profile; password: string }) => {
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: { user_id: user.id, password: password.trim() || null },
+      })
+      if (error) throw new Error(await invokeError(error))
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: 'reset.password',
+        entityType: 'profile',
+        entityId: user.id,
+      })
+      return data as { login_id: string; password: string }
+    },
+    onSuccess: (r, vars) => {
+      setResetting(null)
+      setNotice(
+        `Password reset for ${vars.user.full_name} — user ID: ${r.login_id}, password: ${r.password}. Share both with them.`,
+      )
+    },
+    onError: (e) => setNotice((e as Error).message),
   })
 
   // Permanent delete via edge function (service role). Refused for users with
@@ -172,6 +201,45 @@ export function Users() {
         </div>
       )}
 
+      {resetting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
+          onClick={() => !resetPassword.isPending && setResetting(null)}>
+          <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <p className="text-lg font-bold">Reset password</p>
+              <p className="mt-1 text-sm text-ink-500">
+                For <b>{resetting.user.full_name}</b> ({[resetting.user.email, resetting.user.phone].filter(Boolean).join(' · ')})
+              </p>
+            </div>
+            <div>
+              <label className="label-text">New password</label>
+              <input
+                className="input-field"
+                autoFocus
+                placeholder="Leave blank to generate one"
+                value={resetting.password}
+                onChange={(e) => setResetting({ ...resetting, password: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') resetPassword.mutate(resetting)
+                }}
+              />
+              <p className="mt-1 text-xs text-ink-400">
+                Minimum 6 characters. You'll see it on screen to hand over — it is not emailed.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn-primary" disabled={resetPassword.isPending}
+                onClick={() => resetPassword.mutate(resetting)}>
+                {resetPassword.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
+                Set password
+              </button>
+              <button className="btn-secondary" disabled={resetPassword.isPending}
+                onClick={() => setResetting(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForm && (
         <form
           className="card grid gap-3 sm:grid-cols-2"
@@ -206,6 +274,15 @@ export function Users() {
               onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}>
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="label-text">Password (optional)</label>
+            <input className="input-field" value={form.password}
+              placeholder="Leave blank to generate one"
+              onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <p className="mt-1 text-xs text-ink-400">
+              Set one you can read out to them (min 6 characters), or leave blank.
+            </p>
           </div>
           <div className="flex gap-2 sm:col-span-2">
             <button type="submit" className="btn-primary" disabled={createUser.isPending}>
@@ -258,7 +335,15 @@ export function Users() {
                   ))}
                 </select>
                 {!isSelf && (
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <button
+                      className="flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-ink-500 hover:bg-cream"
+                      title="Set a new password for this user"
+                      onClick={() => setResetting({ user: u, password: '' })}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Reset password
+                    </button>
                     <button
                       className="flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-ink-500 hover:bg-cream"
                       title={inactive ? 'Reactivate — restore access' : 'Deactivate — block login, keep history'}
