@@ -28,13 +28,14 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
 
 4. **Configure environment** — copy `.env.example` to `.env` and fill in your project URL and anon key (dashboard → Project Settings → API).
 
-5. **Deploy the Edge Functions** — these power in-app user management (Admins create/delete staff logins without touching Supabase):
+5. **Deploy the Edge Functions** — these power in-app client onboarding and user management (no Supabase dashboard needed):
 
    ```sh
    npx supabase login
    npx supabase link --project-ref YOUR_PROJECT_REF
-   npx supabase functions deploy create-user
-   npx supabase functions deploy delete-user
+   npx supabase functions deploy create-user      # admins create staff logins
+   npx supabase functions deploy delete-user      # admins remove staff
+   npx supabase functions deploy provision-tenant # platform admins create client companies
    ```
 
 6. **Enable phone logins** — dashboard → Authentication → Sign In / Providers → **Phone → Enable**. The form requires Twilio credentials to save; fill them with placeholders, because Golai never sends SMS (logins are phone + password, accounts are created pre-confirmed with an admin-issued temporary password):
@@ -54,7 +55,13 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
    values ('<auth-user-uuid>', '<tenant-uuid>', 'admin@example.com', 'Admin', 'admin');
    ```
 
-   For onboarding a real client (tenant + admin + their zone list in one script), copy the pattern in `supabase/seeds/uandm_tenant.sql`. From there the client's Admin creates all their own staff in-app (Users & Roles → New User, email or mobile).
+   Mark this first user as a **platform admin** so they can create client companies from inside the app:
+
+   ```sql
+   update profiles set is_platform_admin = true where email = 'admin@example.com';
+   ```
+
+   **Onboarding real clients:** log in as the platform admin → **Provision Client** → enter the company + admin details → Golai creates the company and its admin login together (atomically). The client's admin then sets their **Company Profile** (name + logo, shown across the app) and creates all their own staff (Users & Roles → New User, email or mobile). The older `supabase/seeds/uandm_tenant.sql` is kept only as a reference for the first tenant.
 
 8. **Run**
 

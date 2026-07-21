@@ -1,4 +1,4 @@
-import { Users, Map, Boxes, Building2, Printer, Settings, PackageCheck, Send } from 'lucide-react'
+import { Users, Map, Boxes, Building, Building2, Printer, Settings, PackageCheck, Send } from 'lucide-react'
 import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 import { PageHeader } from '../../components/PageHeader'
@@ -18,6 +18,7 @@ export function AdminHome() {
           <ModuleTile icon={Boxes} title="Items" subtitle="Item master, codes, CSV import, barcode labels" to="/admin/items" />
           <ModuleTile icon={Building2} title="Suppliers, Customers & Departments" subtitle="Contact masters (names only, no financials)" to="/admin/parties" />
           <ModuleTile icon={Users} title="Users & Roles" subtitle="Create staff logins, assign the five roles" to="/admin/users" />
+          <ModuleTile icon={Building} title="Company Profile" subtitle="Your name & logo — shown across the app" to="/admin/company" />
         </div>
       </section>
 

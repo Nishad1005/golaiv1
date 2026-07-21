@@ -13,6 +13,17 @@ export interface Profile {
   role: UserRole
   status: 'active' | 'inactive'
   last_login_at: string | null
+  is_platform_admin: boolean
+}
+
+export interface Tenant {
+  id: string
+  name: string
+  logo_url: string | null
+  gst_number: string | null
+  address: string | null
+  contact_email: string | null
+  contact_phone: string | null
 }
 
 export interface Zone {

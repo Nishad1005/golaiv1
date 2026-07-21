@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, LogOut, Menu, Settings, UserRound, X } from 'lucide-react'
+import { Bell, LogOut, Menu, Rocket, Settings, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
+import { useTenant, logoPublicUrl } from '../lib/tenant'
 import { navForRole } from '../lib/nav'
 import { OfflineBanner } from './OfflineBanner'
 
@@ -20,6 +21,10 @@ export function Layout() {
   const { pathname } = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  const { data: tenant } = useTenant()
+  const logoUrl = logoPublicUrl(tenant?.logo_url ?? null)
+  const companyName = tenant?.name ?? 'Golai'
+
   const { data: unread } = useQuery({
     queryKey: ['alerts-unread'],
     refetchInterval: 30_000,
@@ -33,7 +38,11 @@ export function Layout() {
     },
   })
 
-  const nav = profile ? navForRole(profile.role) : []
+  const nav = profile ? [...navForRole(profile.role)] : []
+  // DBBS platform admins get the cross-tenant "Provision Client" destination.
+  if (profile?.is_platform_admin) {
+    nav.push({ label: 'Provision Client', to: '/provision', icon: Rocket })
+  }
 
   const isActive = (to: string) =>
     to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(to + '/')
@@ -72,10 +81,20 @@ export function Layout() {
     </nav>
   )
 
+  // Company branding: the logged-in tenant's logo + name (falls back to Golai).
   const SidebarHeader = (
     <Link to="/" className="flex items-center gap-2.5" onClick={() => setDrawerOpen(false)}>
-      <img src="/logo.svg" alt="Golai — home" className="h-9 w-9 rounded-xl shadow-sm" />
-      <span className="text-xl font-bold tracking-tight text-white">Golai</span>
+      {logoUrl ? (
+        <img src={logoUrl} alt={companyName} className="h-9 w-9 shrink-0 rounded-xl bg-white object-contain shadow-sm" />
+      ) : (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white shadow-sm">
+          {companyName.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 leading-tight">
+        <div className="truncate text-lg font-bold tracking-tight text-white">{companyName}</div>
+        <div className="text-[10px] font-medium uppercase tracking-wide text-ink-300">Powered by Golai</div>
+      </div>
     </Link>
   )
 
@@ -168,9 +187,15 @@ export function Layout() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.svg" alt="Golai — home" className="h-8 w-8 rounded-lg" />
-            <span className="text-lg font-bold tracking-tight text-navy">Golai</span>
+          <Link to="/" className="flex min-w-0 items-center gap-2">
+            {logoUrl ? (
+              <img src={logoUrl} alt={companyName} className="h-8 w-8 shrink-0 rounded-lg object-contain" />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white">
+                {companyName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span className="truncate text-lg font-bold tracking-tight text-navy">{companyName}</span>
           </Link>
           <Link
             to="/alerts"

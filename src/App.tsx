@@ -18,6 +18,8 @@ import { ZonesShelves } from './pages/admin/ZonesShelves'
 import { Items } from './pages/admin/Items'
 import { Parties } from './pages/admin/Parties'
 import { Users } from './pages/admin/Users'
+import { CompanyProfile } from './pages/admin/CompanyProfile'
+import { ProvisionClient } from './pages/ProvisionClient'
 import { Capture } from './pages/store/Capture'
 import { Transfer } from './pages/store/Transfer'
 import { Adjustments } from './pages/store/Adjustments'
@@ -178,8 +180,10 @@ export default function App() {
               <Route path="/admin/items" element={<Items />} />
               <Route path="/admin/parties" element={<Parties />} />
               {profile.role === 'admin' && <Route path="/admin/users" element={<Users />} />}
+              {profile.role === 'admin' && <Route path="/admin/company" element={<CompanyProfile />} />}
             </>
           )}
+          {profile.is_platform_admin && <Route path="/provision" element={<ProvisionClient />} />}
           <Route path="*" element={<ComingSoon />} />
         </Route>
         <Route path="/login" element={<Navigate to="/" replace />} />
