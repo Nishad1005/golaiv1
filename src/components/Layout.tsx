@@ -81,21 +81,28 @@ export function Layout() {
     </nav>
   )
 
-  // Company branding: the logged-in tenant's logo + name (falls back to Golai).
+  // App identity — Golai — in the sidebar/top-bar.
   const SidebarHeader = (
     <Link to="/" className="flex items-center gap-2.5" onClick={() => setDrawerOpen(false)}>
+      <img src="/logo.svg" alt="Golai — home" className="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
+      <span className="text-xl font-bold tracking-tight text-white">Golai</span>
+    </Link>
+  )
+
+  // The logged-in company's brand — shown top-right, next to the bell.
+  const CompanyBadge = ({ showName = true }: { showName?: boolean }) => (
+    <div className="flex min-w-0 items-center gap-2">
       {logoUrl ? (
-        <img src={logoUrl} alt={companyName} className="h-9 w-9 shrink-0 rounded-xl bg-white object-contain shadow-sm" />
+        <img src={logoUrl} alt={companyName} className="h-8 w-8 shrink-0 rounded-lg border border-ink-200 bg-white object-contain" />
       ) : (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white shadow-sm">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white">
           {companyName.charAt(0).toUpperCase()}
         </div>
       )}
-      <div className="min-w-0 leading-tight">
-        <div className="truncate text-lg font-bold tracking-tight text-white">{companyName}</div>
-        <div className="text-[10px] font-medium uppercase tracking-wide text-ink-300">Powered by Golai</div>
-      </div>
-    </Link>
+      {showName && (
+        <span className="max-w-[11rem] truncate text-sm font-semibold text-ink-700">{companyName}</span>
+      )}
+    </div>
   )
 
   return (
@@ -178,6 +185,25 @@ export function Layout() {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* Desktop top bar — company brand + alerts on the right */}
+        <header className="sticky top-0 z-10 hidden h-14 items-center gap-3 border-b border-ink-200 bg-white px-6 lg:flex">
+          <div className="ml-auto flex items-center gap-3">
+            <CompanyBadge />
+            <Link
+              to="/alerts"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-ink-600 hover:bg-ink-100"
+              aria-label="Alerts"
+            >
+              <Bell className="h-5 w-5" />
+              {(unread ?? 0) > 0 && (
+                <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unread! > 99 ? '99+' : unread}
+                </span>
+              )}
+            </Link>
+          </div>
+        </header>
+
         {/* Mobile top bar */}
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-ink-200 bg-white px-4 lg:hidden">
           <button
@@ -187,28 +213,25 @@ export function Layout() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <Link to="/" className="flex min-w-0 items-center gap-2">
-            {logoUrl ? (
-              <img src={logoUrl} alt={companyName} className="h-8 w-8 shrink-0 rounded-lg object-contain" />
-            ) : (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white">
-                {companyName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <span className="truncate text-lg font-bold tracking-tight text-navy">{companyName}</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.svg" alt="Golai — home" className="h-8 w-8 rounded-lg" />
+            <span className="text-lg font-bold tracking-tight text-navy">Golai</span>
           </Link>
-          <Link
-            to="/alerts"
-            className="relative ml-auto flex h-11 w-11 items-center justify-center rounded-xl text-ink-600 hover:bg-ink-100"
-            aria-label="Alerts"
-          >
-            <Bell className="h-5 w-5" />
-            {(unread ?? 0) > 0 && (
-              <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
-                {unread! > 99 ? '99+' : unread}
-              </span>
-            )}
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <CompanyBadge showName={false} />
+            <Link
+              to="/alerts"
+              className="relative flex h-11 w-11 items-center justify-center rounded-xl text-ink-600 hover:bg-ink-100"
+              aria-label="Alerts"
+            >
+              <Bell className="h-5 w-5" />
+              {(unread ?? 0) > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unread! > 99 ? '99+' : unread}
+                </span>
+              )}
+            </Link>
+          </div>
         </header>
 
         <OfflineBanner />
