@@ -136,6 +136,24 @@ export async function generateShelfLabelsPdf(
   doc.save(fileName)
 }
 
+/**
+ * Client masters often carry the code inside the product name
+ * ("0.75MM WIRE UNMPL/SKU/25-26/2229"). Printing the name and the code as-is
+ * then shows the code twice, so strip it out of the name for display.
+ */
+function nameWithoutCode(name: string, code: string): string {
+  const i = name.toLowerCase().indexOf(code.toLowerCase())
+  if (i === -1) return name
+  const stripped = (name.slice(0, i) + name.slice(i + code.length))
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[\s\-–—:,/|]+|[\s\-–—:,/|]+$/g, '')
+    .trim()
+  return stripped || name // name was only the code — keep it rather than blank
+}
+
+/** Exposed for unit tests only. */
+export const __testables = { nameWithoutCode }
+
 export interface ItemLabel {
   code: string // the item's code (client's own, verbatim), encoded in both symbologies
   name: string
@@ -229,7 +247,9 @@ export async function generateItemLabelsPdf(
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(nameSize)
-    const nameLines = doc.splitTextToSize(label.name, cellW - pad * 2).slice(0, 2)
+    const nameLines = doc
+      .splitTextToSize(nameWithoutCode(label.name, label.code), cellW - pad * 2)
+      .slice(0, 2)
     doc.text(nameLines, x + pad, y + pad + lineH(nameSize) * 0.8)
 
     doc.setFontSize(codeSize)
@@ -292,7 +312,11 @@ export async function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileNam
     let cy = y + 14
     doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
-    doc.text(doc.splitTextToSize(label.itemName, cellW - 16), x + 8, cy)
+    doc.text(
+      doc.splitTextToSize(nameWithoutCode(label.itemName, label.itemCode), cellW - 16),
+      x + 8,
+      cy,
+    )
     cy += 12
 
     doc.setFontSize(10)
