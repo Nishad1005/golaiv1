@@ -113,9 +113,9 @@ export function Items() {
       return
     }
     const headers = rows[0]
-    const codeCol = findColumn(headers, ['itemcode', 'code', 'sku'])
+    const codeCol = findColumn(headers, ['itemcode', 'productcode', 'code', 'sku'])
     const barcodeCol = findColumn(headers, ['barcode', 'ean', 'upc'])
-    const nameCol = findColumn(headers, ['itemname', 'name', 'description', 'item'])
+    const nameCol = findColumn(headers, ['itemname', 'name', 'particular', 'particulars', 'description', 'item'])
     const catCol = findColumn(headers, ['category', 'group'])
     const subCatCol = findColumn(headers, ['subcategory', 'subgroup'])
     const uomCol = findColumn(headers, ['uom', 'unit', 'units'])

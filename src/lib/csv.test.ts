@@ -44,4 +44,12 @@ describe('findColumn', () => {
   it('returns -1 when absent', () => {
     expect(findColumn(['a', 'b'], ['missing'])).toBe(-1)
   })
+
+  it("maps U&M's actual master headers", () => {
+    const headers = ['Particular', 'Product Code', 'Definition', 'Category (clean)', 'Sub-Category (clean)']
+    expect(findColumn(headers, ['itemname', 'name', 'particular'])).toBe(0)
+    expect(findColumn(headers, ['itemcode', 'productcode', 'code'])).toBe(1)
+    expect(findColumn(headers, ['category', 'group'])).toBe(3) // not fooled by "Sub-Category"
+    expect(findColumn(headers, ['subcategory', 'subgroup'])).toBe(4)
+  })
 })

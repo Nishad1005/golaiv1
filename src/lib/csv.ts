@@ -77,9 +77,20 @@ export function downloadItemTemplate(): void {
   )
 }
 
-/** Find the index of the first header matching any of the given aliases (case/space-insensitive). */
+/**
+ * Find the index of the first header matching any of the given aliases.
+ * Case/space/underscore/dash-insensitive, and ignores parenthetical qualifiers
+ * so "Category (clean)" matches "category" and "Sub-Category (clean)" matches
+ * "subcategory".
+ */
 export function findColumn(headers: string[], aliases: string[]): number {
-  const normalized = headers.map((h) => h.trim().toLowerCase().replace(/[\s_-]+/g, ''))
+  const normalized = headers.map((h) =>
+    h
+      .trim()
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, '') // drop "(clean)" etc.
+      .replace(/[\s_/\-.]+/g, ''),
+  )
   for (const alias of aliases) {
     const idx = normalized.indexOf(alias)
     if (idx !== -1) return idx
