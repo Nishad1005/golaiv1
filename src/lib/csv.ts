@@ -68,10 +68,10 @@ export function downloadZoneTemplate(): void {
 export function downloadItemTemplate(): void {
   downloadCsv(
     [
-      ['Item Code', 'Barcode', 'Item Name', 'Category', 'Sub Category', 'UOM'],
-      ['AU162590', '', 'Cupcake Fabric — Beige', 'Fabric', 'Upholstery', 'm'],
-      ['', '8901234567890', 'Foam Block 40 Density', 'Foam', '', 'pcs'],
-      ['HW-0042', '', 'Hinge 4 inch SS', 'Hardware', 'Fittings', 'pcs'],
+      ['Item Code', 'Barcode', 'Item Name', 'Type', 'Category', 'Sub Category', 'UOM'],
+      ['AU162590', '', 'Cupcake Fabric — Beige', 'Fabric', 'Raw Material', 'Upholstery', 'm'],
+      ['', '8901234567890', 'Foam Block 40 Density', 'Foam', 'Raw Material', '', 'pcs'],
+      ['HW-0042', '', 'Hinge 4 inch SS', 'Hardware', 'Consumables', 'Fittings', 'pcs'],
     ],
     'golai-items-template.csv',
   )

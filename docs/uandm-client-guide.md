@@ -87,6 +87,8 @@ exact sheet to fill).
      assigns one automatically (ITM-00001, ITM-00002…)
    - **Barcode** — only if the product already has a printed barcode on it
    - **Item Name** — required
+   - **Type** — the broad product group (Thread, Foam, Fabric…). Searching the
+     type shows every product in it. (Your "Definition" column maps here.)
    - **Category / Sub Category / UOM** — UOM is the unit you count in
      (pcs, m, kg, set…)
 3. Save as CSV → **Items → Import CSV** → pick the file

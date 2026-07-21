@@ -70,7 +70,7 @@ export function AssignLocation() {
       const { data, error } = await supabase
         .from('items')
         .select('*')
-        .or(`name.ilike.%${q}%,code.ilike.%${q}%,barcode.eq.${q}`)
+        .or(`name.ilike.%${q}%,code.ilike.%${q}%,item_type.ilike.%${q}%,barcode.eq.${q}`)
         .eq('status', 'active')
         .is('deleted_at', null)
         .limit(10)

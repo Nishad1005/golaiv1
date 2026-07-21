@@ -23,6 +23,7 @@ interface CsvPreview {
     code: string | null
     barcode: string | null
     name: string
+    item_type: string | null
     category: string | null
     sub_category: string | null
     uom: string
@@ -57,7 +58,7 @@ export function Items() {
     queryFn: async () => {
       let q = supabase.from('items').select('*').is('deleted_at', null).order('name').limit(100)
       if (search.trim()) {
-        q = q.or(`name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%`)
+        q = q.or(`name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%,item_type.ilike.%${search.trim()}%`)
       }
       const { data, error } = await q
       if (error) throw error
@@ -68,7 +69,7 @@ export function Items() {
   // --- Manual create ---------------------------------------------------------
   // Item code policy: if the client provides a code, it is stored VERBATIM.
   // A new ITM-NNNNN code is allocated ONLY when the code field is left empty.
-  const [form, setForm] = useState({ code: '', barcode: '', name: '', category: '', uom: 'pcs' })
+  const [form, setForm] = useState({ code: '', barcode: '', name: '', item_type: '', category: '', uom: 'pcs' })
 
   const createItem = useMutation({
     mutationFn: async () => {
@@ -80,6 +81,7 @@ export function Items() {
           code,
           barcode: form.barcode.trim() || null,
           name: form.name.trim(),
+          item_type: form.item_type.trim() || null,
           category: form.category.trim() || null,
           uom: form.uom.trim() || 'pcs',
         })
@@ -98,7 +100,7 @@ export function Items() {
       return data as Item
     },
     onSuccess: () => {
-      setForm({ code: '', barcode: '', name: '', category: '', uom: 'pcs' })
+      setForm({ code: '', barcode: '', name: '', item_type: '', category: '', uom: 'pcs' })
       setShowForm(false)
       void queryClient.invalidateQueries({ queryKey: ['items'] })
     },
@@ -116,6 +118,7 @@ export function Items() {
     const codeCol = findColumn(headers, ['itemcode', 'productcode', 'code', 'sku'])
     const barcodeCol = findColumn(headers, ['barcode', 'ean', 'upc'])
     const nameCol = findColumn(headers, ['itemname', 'name', 'particular', 'particulars', 'description', 'item'])
+    const typeCol = findColumn(headers, ['definition', 'type', 'itemtype', 'producttype'])
     const catCol = findColumn(headers, ['category', 'group'])
     const subCatCol = findColumn(headers, ['subcategory', 'subgroup'])
     const uomCol = findColumn(headers, ['uom', 'unit', 'units'])
@@ -131,6 +134,7 @@ export function Items() {
         code: codeCol !== -1 && r[codeCol]?.trim() ? r[codeCol].trim() : null, // kept verbatim
         barcode: barcodeCol !== -1 && r[barcodeCol]?.trim() ? r[barcodeCol].trim() : null,
         name: r[nameCol]?.trim() ?? '',
+        item_type: typeCol !== -1 && r[typeCol]?.trim() ? r[typeCol].trim() : null,
         category: catCol !== -1 && r[catCol]?.trim() ? r[catCol].trim() : null,
         sub_category: subCatCol !== -1 && r[subCatCol]?.trim() ? r[subCatCol].trim() : null,
         uom: uomCol !== -1 && r[uomCol]?.trim() ? r[uomCol].trim() : 'pcs',
@@ -157,6 +161,7 @@ export function Items() {
           code: row.code ?? (await resolveItemCode(null)),
           barcode: row.barcode,
           name: row.name,
+          item_type: row.item_type,
           category: row.category,
           sub_category: row.sub_category,
           uom: row.uom,
@@ -280,6 +285,15 @@ export function Items() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
+            />
+          </div>
+          <div>
+            <label className="label-text">Type / Definition</label>
+            <input
+              className="input-field"
+              placeholder="Thread, Foam, Fabric…"
+              value={form.item_type}
+              onChange={(e) => setForm({ ...form, item_type: e.target.value })}
             />
           </div>
           <div>
@@ -417,6 +431,7 @@ export function Items() {
                 </th>
                 <th className="px-4 py-3 font-medium">Code</th>
                 <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Unit</th>
               </tr>
@@ -435,13 +450,14 @@ export function Items() {
                   </td>
                   <td className="px-4 py-3 font-mono">{item.code}</td>
                   <td className="px-4 py-3 font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-ink-400">{item.item_type ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
                   <td className="px-4 py-3">{item.uom}</td>
                 </tr>
               ))}
               {(items ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-ink-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-ink-400">
                     No items yet. Import the client's CSV or create items manually — existing codes
                     are always kept unchanged.
                   </td>

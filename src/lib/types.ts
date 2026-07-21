@@ -43,6 +43,7 @@ export interface Item {
   barcode: string | null
   name: string
   description: string | null
+  item_type: string | null
   category: string | null
   sub_category: string | null
   uom: string

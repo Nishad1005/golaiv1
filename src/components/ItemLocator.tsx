@@ -8,6 +8,7 @@ interface LocatorRow {
   id: string
   code: string
   name: string
+  item_type: string | null
   uom: string
   stock_balances: {
     qty_on_hand: number
@@ -37,9 +38,9 @@ export function ItemLocator() {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, code, name, uom, stock_balances(qty_on_hand, qty_on_hold, shelves(code, fixture_type, description, zones(code, name)))',
+          'id, code, name, item_type, uom, stock_balances(qty_on_hand, qty_on_hold, shelves(code, fixture_type, description, zones(code, name)))',
         )
-        .or(`name.ilike.%${trimmed}%,code.ilike.%${trimmed}%,barcode.eq.${trimmed}`)
+        .or(`name.ilike.%${trimmed}%,code.ilike.%${trimmed}%,item_type.ilike.%${trimmed}%,barcode.eq.${trimmed}`)
         .eq('status', 'active')
         .limit(10)
       if (error) throw error
@@ -75,7 +76,14 @@ export function ItemLocator() {
             return (
               <li key={item.id} className="py-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-semibold">{item.name}</span>
+                  <span className="font-semibold">
+                    {item.name}
+                    {item.item_type && (
+                      <span className="ml-2 rounded-full bg-ink-100 px-2 py-0.5 align-middle text-xs font-medium text-ink-500">
+                        {item.item_type}
+                      </span>
+                    )}
+                  </span>
                   <span className="shrink-0 text-xs text-ink-400">{item.code}</span>
                 </div>
                 {locations.length === 0 ? (
