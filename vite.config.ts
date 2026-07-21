@@ -23,6 +23,11 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // A new deploy must take over immediately — otherwise the old bundle
+        // keeps being served until every tab is closed, and users see stale UI.
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
         // App shell + assets cached so the app opens with no connectivity;
         // Supabase API calls are NOT cached (data must be live or queued).
         globPatterns: ['**/*.{js,css,html,svg}'],
