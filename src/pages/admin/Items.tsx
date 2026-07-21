@@ -6,14 +6,8 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
 import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
-import { generateItemLabelsPdf, type ItemLabelSize } from '../../lib/labels'
+import { generateItemLabelsPdf, ITEM_LABEL_SIZES, type ItemLabelSize } from '../../lib/labels'
 import type { Item } from '../../lib/types'
-
-const LABEL_SIZES: { value: ItemLabelSize; label: string }[] = [
-  { value: 'a4-24', label: 'A4 sheet — 24 labels (70×37mm office stickers)' },
-  { value: 'a4-12', label: 'A4 sheet — 12 labels (105×48mm office stickers)' },
-  { value: 'thermal-50x25', label: 'Thermal printer — 50×25mm rolls' },
-]
 
 interface CsvPreview {
   total: number
@@ -42,7 +36,7 @@ export function Items() {
   // --- Label printing --------------------------------------------------------
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showPrint, setShowPrint] = useState(false)
-  const [labelSize, setLabelSize] = useState<ItemLabelSize>('a4-24')
+  const [labelSize, setLabelSize] = useState<ItemLabelSize>('thermal-50x25')
   const [copies, setCopies] = useState('1')
   const [printing, setPrinting] = useState(false)
 
@@ -376,7 +370,7 @@ export function Items() {
             <div>
               <label className="label-text">Label size</label>
               <select className="input-field" value={labelSize} onChange={(e) => setLabelSize(e.target.value as ItemLabelSize)}>
-                {LABEL_SIZES.map((s) => (
+                {ITEM_LABEL_SIZES.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>

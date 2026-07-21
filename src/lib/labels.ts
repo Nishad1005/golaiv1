@@ -150,7 +150,16 @@ export interface ItemLabel {
  * - 'thermal-50x25': one 50×25mm label per page — direct thermal printers
  *   (TVS-E LP46, TSC TE244 etc., the Indian warehouse standard)
  */
-export type ItemLabelSize = 'a4-24' | 'a4-12' | 'thermal-50x25'
+export type ItemLabelSize =
+  | 'thermal-50x25' | 'thermal-75x50' | 'thermal-100x50' | 'a4-24' | 'a4-12'
+
+export const ITEM_LABEL_SIZES: { value: ItemLabelSize; label: string }[] = [
+  { value: 'thermal-50x25', label: 'Thermal roll — 50 × 25 mm (one per label)' },
+  { value: 'thermal-75x50', label: 'Thermal roll — 75 × 50 mm (one per label)' },
+  { value: 'thermal-100x50', label: 'Thermal roll — 100 × 50 mm (one per label)' },
+  { value: 'a4-24', label: 'A4 sheet — 24 labels (70 × 37 mm office stickers)' },
+  { value: 'a4-12', label: 'A4 sheet — 12 labels (105 × 48 mm office stickers)' },
+]
 
 interface SizeSpec {
   page: [number, number] | 'a4'
@@ -164,6 +173,8 @@ const SIZE_SPECS: Record<ItemLabelSize, SizeSpec> = {
   'a4-24': { page: 'a4', cols: 3, rows: 8, marginX: 8, marginY: 12 },
   'a4-12': { page: 'a4', cols: 2, rows: 6, marginX: 6, marginY: 10 },
   'thermal-50x25': { page: [50, 25], cols: 1, rows: 1, marginX: 0, marginY: 0 },
+  'thermal-75x50': { page: [75, 50], cols: 1, rows: 1, marginX: 0, marginY: 0 },
+  'thermal-100x50': { page: [100, 50], cols: 1, rows: 1, marginX: 0, marginY: 0 },
 }
 
 /**
@@ -208,18 +219,20 @@ export async function generateItemLabelsPdf(
     const row = Math.floor(idx / spec.cols)
     const x = spec.marginX + col * cellW
     const y = spec.marginY + row * cellH
-    const pad = size === 'thermal-50x25' ? 1.5 : 2.5
+    // Scale by the actual label height so bigger rolls use the space
+    const compact = cellH < 30
+    const pad = compact ? 1.5 : 3
 
     // Item name (wrapped, max 2 lines)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(size === 'thermal-50x25' ? 7 : 8)
+    doc.setFontSize(compact ? 7 : 11)
     const nameLines = doc.splitTextToSize(label.name, cellW - pad * 2).slice(0, 2)
     doc.text(nameLines, x + pad, y + pad + 2.5)
 
     // Code
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(size === 'thermal-50x25' ? 6 : 7)
-    const codeY = y + pad + (nameLines.length > 1 ? 8 : 5)
+    doc.setFontSize(compact ? 6 : 9)
+    const codeY = y + pad + (compact ? (nameLines.length > 1 ? 8 : 5) : (nameLines.length > 1 ? 13 : 8))
     doc.text(label.code, x + pad, codeY)
 
     // Code128 on the left, QR on the right of the lower half
@@ -229,7 +242,7 @@ export async function generateItemLabelsPdf(
     doc.addImage(qrs.get(label.code)!, 'PNG', x + cellW - qrSide - pad, barTop, qrSide, qrSide)
 
     // Code text under the barcode
-    doc.setFontSize(size === 'thermal-50x25' ? 5 : 6)
+    doc.setFontSize(compact ? 5 : 8)
     doc.text(label.code, x + pad, y + cellH - pad + 0.5)
   })
 

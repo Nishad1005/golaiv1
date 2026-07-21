@@ -27,8 +27,14 @@ interface LocatorRow {
  * the exact zone + shelf it sits on, with quantity. Available on every home
  * screen.
  */
-export function ItemLocator() {
-  const [query, setQuery] = useState('')
+export function ItemLocator({ initialQuery = '' }: { initialQuery?: string } = {}) {
+  const [query, setQuery] = useState(initialQuery)
+  // A scan upstream (Find screen) refills the box
+  const [lastInitial, setLastInitial] = useState(initialQuery)
+  if (initialQuery !== lastInitial) {
+    setLastInitial(initialQuery)
+    setQuery(initialQuery)
+  }
   const trimmed = query.trim()
 
   const { data, isFetching } = useQuery({
