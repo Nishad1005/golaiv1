@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, FileDown, Pencil, Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -525,7 +526,15 @@ export function Items() {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      to={`/item/${item.id}`}
+                      className="hover:text-brand-600 hover:underline"
+                      title="Stock card — what came in, what went out, what's left"
+                    >
+                      {item.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-ink-400">{item.item_type ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
                   <td className="px-4 py-3">{item.uom}</td>

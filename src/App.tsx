@@ -26,6 +26,7 @@ import { Transfer } from './pages/store/Transfer'
 import { Adjustments } from './pages/store/Adjustments'
 import { AssignLocation } from './pages/store/AssignLocation'
 import { FindItem } from './pages/FindItem'
+import { ItemMovement } from './pages/ItemMovement'
 import { GrnList } from './pages/grn/GrnList'
 import { GateEntry } from './pages/grn/GateEntry'
 import { GrnDetail } from './pages/grn/GrnDetail'
@@ -141,6 +142,7 @@ export default function App() {
           {can('adjust') && <Route path="/adjust" element={<Adjustments />} />}
           {can('assign') && <Route path="/assign" element={<AssignLocation />} />}
           {can('find') && <Route path="/find" element={<FindItem />} />}
+          {can('find') && <Route path="/item/:id" element={<ItemMovement />} />}
           {can('grn') && (
             <>
               <Route path="/grn" element={<GrnList />} />

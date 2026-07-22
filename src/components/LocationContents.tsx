@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, MapPin, PackageSearch } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -61,7 +62,13 @@ export function LocationContents({ location }: { location: LocationRow }) {
           {rows.map((r) => (
             <div key={r.items.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
-                <p className="font-medium">{r.items.name}</p>
+                <Link
+                  to={`/item/${r.items.id}`}
+                  className="font-medium hover:text-brand-600 hover:underline"
+                  title="Stock card — what came in, what went out, what's left"
+                >
+                  {r.items.name}
+                </Link>
                 <p className="text-xs text-ink-400">
                   {r.items.code}
                   {r.items.item_type ? ` · ${r.items.item_type}` : ''}

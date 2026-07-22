@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search, MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -82,14 +83,18 @@ export function ItemLocator({ initialQuery = '' }: { initialQuery?: string } = {
             return (
               <li key={item.id} className="py-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-semibold">
+                  <Link
+                    to={`/item/${item.id}`}
+                    className="font-semibold hover:text-brand-600 hover:underline"
+                    title="Open the stock card — what came in, what went out, what's left"
+                  >
                     {item.name}
                     {item.item_type && (
                       <span className="ml-2 rounded-full bg-ink-100 px-2 py-0.5 align-middle text-xs font-medium text-ink-500">
                         {item.item_type}
                       </span>
                     )}
-                  </span>
+                  </Link>
                   <span className="shrink-0 text-xs text-ink-400">{item.code}</span>
                 </div>
                 {locations.length === 0 ? (
