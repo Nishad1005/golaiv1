@@ -91,6 +91,7 @@ docs/uandm-client-guide.md  Client self-service guide — setup, in order (U&M)
 docs/module-guide.md        Reference: every module, who uses it, and a use case
 docs/product-lifecycle.md   One product's journey from gate to finished sofa
 docs/open-items.md          Backlog before customer handover
+docs/regression-checklist.md  Post-migration test pass, stage by stage
 docs/superpowers/specs/     Design documents
 ```
 
