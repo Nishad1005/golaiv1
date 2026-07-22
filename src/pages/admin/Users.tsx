@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Loader2, Plus, Power, SlidersHorizontal, Trash2, UserPlus } from 'lucide-react'
+import { IdCard, KeyRound, Loader2, Plus, Power, SlidersHorizontal, Trash2, UserPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -30,6 +30,7 @@ export function Users() {
   const [notice, setNotice] = useState<string | null>(null)
   const [resetting, setResetting] = useState<{ user: Profile; password: string } | null>(null)
   const [accessFor, setAccessFor] = useState<string | null>(null)
+  const [detailsFor, setDetailsFor] = useState<{ id: string; employee_id: string; designation: string } | null>(null)
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['profiles'],
@@ -128,6 +129,36 @@ export function Users() {
       })
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['profiles'] }),
+  })
+
+  // The HR facts on someone's ID card. Position is admin-only by design — a
+  // person can set their own photo and employee number but must not be able to
+  // give themselves a title (migration 0018).
+  const setDetails = useMutation({
+    mutationFn: async ({ user, employeeId, designation }: {
+      user: Profile; employeeId: string; designation: string
+    }) => {
+      const { error } = await supabase.rpc('admin_set_user_details', {
+        p_user_id: user.id,
+        p_employee_id: employeeId.trim() || null,
+        p_designation: designation.trim() || null,
+      })
+      if (error) throw error
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: 'update.user_details',
+        entityType: 'profile',
+        entityId: user.id,
+        after: { employee_id: employeeId.trim(), designation: designation.trim() },
+      })
+    },
+    onSuccess: () => {
+      setDetailsFor(null)
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] })
+    },
+    onError: (e) => setNotice((e as Error).message),
   })
 
   // Turn a single module on/off for one person. Stored as an override; clearing
@@ -347,6 +378,11 @@ export function Users() {
                       </span>
                     )}
                   </div>
+                  {(u.designation || u.employee_id) && (
+                    <div className="truncate text-sm text-ink-500">
+                      {[u.designation, u.employee_id && `ID ${u.employee_id}`].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
                   <div className="truncate text-sm text-ink-400">
                     {[u.email, u.phone].filter(Boolean).join(' · ')}
                   </div>
@@ -363,8 +399,26 @@ export function Users() {
                     </option>
                   ))}
                 </select>
-                {!isSelf && (
-                  <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
+                  <button
+                    className={
+                      'flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium hover:bg-cream ' +
+                      (detailsFor?.id === u.id ? 'bg-cream text-ink-700' : 'text-ink-500')
+                    }
+                    title="Set this person's employee ID and position"
+                    onClick={() =>
+                      setDetailsFor(
+                        detailsFor?.id === u.id
+                          ? null
+                          : { id: u.id, employee_id: u.employee_id ?? '', designation: u.designation ?? '' },
+                      )
+                    }
+                  >
+                    <IdCard className="h-4 w-4" />
+                    ID card
+                  </button>
+                  {!isSelf && (
+                    <>
                     <button
                       className={
                         'flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium hover:bg-cream ' +
@@ -410,9 +464,60 @@ export function Users() {
                     >
                       <Trash2 className="h-5 w-5" />
                     </button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
+
+              {detailsFor?.id === u.id && (
+                <form
+                  className="border-t border-ink-100 bg-cream/50 px-4 py-3"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    setDetails.mutate({
+                      user: u,
+                      employeeId: detailsFor.employee_id,
+                      designation: detailsFor.designation,
+                    })
+                  }}
+                >
+                  <p className="mb-3 text-xs text-ink-400">
+                    Shown on {u.full_name.split(' ')[0]}&rsquo;s account card. They can change their own
+                    photo and employee ID; <b>only you can set the position</b>.
+                  </p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-[10rem] flex-1">
+                      <label className="label-text" htmlFor={`emp-${u.id}`}>Employee ID</label>
+                      <input
+                        id={`emp-${u.id}`}
+                        className="input-field"
+                        placeholder="e.g. UM-114"
+                        maxLength={40}
+                        value={detailsFor.employee_id}
+                        onChange={(e) => setDetailsFor({ ...detailsFor, employee_id: e.target.value })}
+                      />
+                    </div>
+                    <div className="min-w-[12rem] flex-1">
+                      <label className="label-text" htmlFor={`desig-${u.id}`}>Position</label>
+                      <input
+                        id={`desig-${u.id}`}
+                        className="input-field"
+                        placeholder="e.g. Assistant Store Manager"
+                        maxLength={60}
+                        value={detailsFor.designation}
+                        onChange={(e) => setDetailsFor({ ...detailsFor, designation: e.target.value })}
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={setDetails.isPending}>
+                      {setDetails.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
+                      Save
+                    </button>
+                    <button type="button" className="btn-secondary" onClick={() => setDetailsFor(null)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
 
               {accessFor === u.id && !isSelf && (
                 <div className="border-t border-ink-100 bg-cream/50 px-4 py-3">

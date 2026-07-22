@@ -14,6 +14,12 @@ export interface Profile {
   status: 'active' | 'inactive'
   last_login_at: string | null
   is_platform_admin: boolean
+  /** Photo in the public `avatars` bucket — the person sets their own. */
+  avatar_url: string | null
+  /** Company/HR number. Settable by the person or their admin. */
+  employee_id: string | null
+  /** Job title ("Assistant Store Manager"). Admin-assigned only — see 0018. */
+  designation: string | null
   /** Per-user module overrides on top of the role defaults (see lib/modules). */
   module_access: Record<string, boolean> | null
 }

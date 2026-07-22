@@ -5,6 +5,7 @@ import { Bell, LogOut, Menu, Rocket, Settings, UserRound, X } from 'lucide-react
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { useTenant, logoPublicUrl } from '../lib/tenant'
+import { avatarPublicUrl, initialsOf } from '../lib/avatar'
 import { navForProfile } from '../lib/modules'
 import { OfflineBanner } from './OfflineBanner'
 
@@ -128,12 +129,22 @@ export function Layout() {
                 className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-white/10"
                 title="My account — change password"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
-                  {profile.full_name.charAt(0).toUpperCase()}
-                </div>
+                {avatarPublicUrl(profile.avatar_url) ? (
+                  <img
+                    src={avatarPublicUrl(profile.avatar_url)!}
+                    alt=""
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
+                    {initialsOf(profile.full_name)}
+                  </div>
+                )}
                 <div className="min-w-0 leading-tight">
                   <div className="truncate text-sm font-semibold text-white">{profile.full_name}</div>
-                  <div className="text-xs text-ink-300">{ROLE_LABELS[profile.role]}</div>
+                  <div className="truncate text-xs text-ink-300">
+                    {profile.designation || ROLE_LABELS[profile.role]}
+                  </div>
                 </div>
                 <Settings className="ml-auto h-4 w-4 shrink-0 text-ink-300" />
               </Link>

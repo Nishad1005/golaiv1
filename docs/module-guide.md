@@ -369,10 +369,19 @@ appear top-right for everyone in your company.
 ---
 
 ## My Account
-**Who:** everyone
+**Who:** everyone · Click your name at the bottom of the menu.
 
-Change your own password. Reachable by clicking your name at the bottom of the
-menu.
+Your ID card — photo, employee ID, position, role and contact details — plus
+shortcuts to every section you can open, and your password.
+
+You can set **your own photo and employee ID**. Your **position and role are
+assigned by your admin** and cannot be changed here, exactly as they can't be on
+a printed ID card.
+
+> **Use case.** A new storekeeper adds his photo and types his employee number
+> so the sidebar shows his face rather than initials. He also glances at "What
+> you can use" and sees Dispatch isn't there — so he asks the admin instead of
+> assuming the app is broken.
 
 ---
 

@@ -57,6 +57,12 @@ You (the Admin) create every staff login yourself — no need to contact DBBS.
 4. If someone leaves: **Deactivate** (their login stops working, their history
    stays). Use **Delete** only for accounts created by mistake.
 
+**Employee ID and position.** Click **ID card** next to anyone's name to set
+their employee number and their job title (e.g. *Assistant Store Manager*).
+These show on their account page and in the menu. Staff can add their own photo
+and employee number themselves, but **only you can set the position** — nobody
+can give themselves a title.
+
 **Fine-tuning what each person can use.** The role sets sensible defaults, but
 you can change them per person: click **Access** next to their name and tick or
 untick each part of the app (Receiving, Dispatch, Stock Counts, Items…). Useful
@@ -203,7 +209,8 @@ order's entire journey with all the evidence.
 
 | Problem | What to do |
 |---|---|
-| Want to change your password | Click your name at the bottom of the menu → **My Account** → Change password |
+| Want to change your password | Click your name at the bottom of the menu → **My Account** → **Change** next to Password |
+| Want to add your photo | **My Account** → tap the camera button on your picture |
 | Forgot password | Ask your Admin: **Users & Roles → Reset password** → they set a new one and tell you. Takes 10 seconds. |
 | Scanner won't read a label | Type the code by hand using the keyboard button next to the scan box, or use the QR square with a phone camera |
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |

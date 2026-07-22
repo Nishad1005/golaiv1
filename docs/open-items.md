@@ -55,12 +55,17 @@ tile is still marked "Phase 2". Several PRD behaviours depend on it:
 - **Manual-entry password gate** — typing a location code instead of scanning is
   audit-flagged but not password-gated (PRD 4.2).
 
-### 5. Verify migrations 0016 + 0017 in production
+### 5. Verify migrations 0016 + 0017 + 0018 in production
 Module access and its database-level enforcement are written and pushed but the
 migrations have **not been confirmed run**. 0017 rewrote every write path
 (guarded RPC wrappers, dropped direct-write policies, revoked internal helpers),
 so it needs a real regression pass: capture, assign location, GRN through
 putaway, release → issuance, dispatch, and Users & Roles.
+
+0018 adds the staff ID card (photo, employee ID, position), the public
+`avatars` bucket and two RPCs — `set_my_profile` (own photo + employee number)
+and `admin_set_user_details` (employee number + position). Check that a
+non-admin can upload a photo but cannot set their own position.
 
 ### 6. Finish U&M onboarding
 - Import their real item master into the **U&M tenant** (currently only loaded
@@ -151,7 +156,7 @@ Golai deliberately avoids.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0017**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0018**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.

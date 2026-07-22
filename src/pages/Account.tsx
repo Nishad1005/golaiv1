@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import {
-  AtSign, Building, Check, CheckCircle2, ChevronDown, ChevronRight, Eye, EyeOff,
-  KeyRound, Loader2, LogOut, Phone, ShieldCheck, TriangleAlert, X,
+  AtSign, BadgeCheck, Building, Camera, Check, CheckCircle2, ChevronDown, ChevronRight,
+  Eye, EyeOff, IdCard, KeyRound, Loader2, Lock, LogOut, Pencil, Phone, ShieldCheck,
+  Trash2, TriangleAlert, X,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { logActivity } from '../lib/audit'
-import { useTenant } from '../lib/tenant'
+import { useTenant, logoPublicUrl } from '../lib/tenant'
+import { avatarPublicUrl, initialsOf } from '../lib/avatar'
 import { canAccess, TOGGLEABLE_MODULES } from '../lib/modules'
 import { MIN_PASSWORD_LENGTH, passwordStrength } from '../lib/password'
 import { PageHeader } from '../components/PageHeader'
@@ -34,19 +36,14 @@ const ROLE_TONES: Record<string, string> = {
 const METER_FILL = ['bg-ink-200', 'bg-red-500', 'bg-amber-500', 'bg-brand-400', 'bg-brand-600']
 const METER_TEXT = ['text-ink-400', 'text-red-600', 'text-amber-600', 'text-brand-600', 'text-brand-700']
 
-/** "Rajesh Kumar Sharma" → "RS". Falls back to the first letter, then a dash. */
-function initialsOf(name: string | undefined): string {
-  const words = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return '—'
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
-}
+const MAX_PHOTO_BYTES = 3_000_000
 
-function Detail({ icon: Icon, label, value, muted }: {
+function Detail({ icon: Icon, label, value, muted, action }: {
   icon: LucideIcon
   label: string
   value: string
   muted?: boolean
+  action?: React.ReactNode
 }) {
   return (
     <div className="flex items-start gap-3">
@@ -55,6 +52,7 @@ function Detail({ icon: Icon, label, value, muted }: {
         <dt className="text-xs font-medium uppercase tracking-wide text-ink-400">{label}</dt>
         <dd className={`truncate ${muted ? 'text-ink-400' : 'font-medium text-ink-800'}`}>{value}</dd>
       </div>
+      {action}
     </div>
   )
 }
@@ -72,13 +70,17 @@ function Detail({ icon: Icon, label, value, muted }: {
  * authenticated, so no service-role/edge function is involved.
  */
 export function Account() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, refreshProfile } = useAuth()
   const { data: tenant } = useTenant()
+  const photoInput = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [show, setShow] = useState(false)
   const [done, setDone] = useState(false)
+  const [editingId, setEditingId] = useState(false)
+  const [employeeId, setEmployeeId] = useState('')
+  const [cardError, setCardError] = useState<string | null>(null)
 
   const strength = passwordStrength(password)
   const longEnough = password.length >= MIN_PASSWORD_LENGTH
@@ -86,6 +88,49 @@ export function Account() {
   const canSubmit = longEnough && matches
 
   const allowed = TOGGLEABLE_MODULES.filter((m) => canAccess(profile, m.key))
+  const photo = avatarPublicUrl(profile?.avatar_url)
+  const companyLogo = logoPublicUrl(tenant?.logo_url ?? null)
+
+  /**
+   * The one write the person may make to their own card: photo and employee
+   * number. Position and role are missing on purpose — those come from the
+   * admin (migration 0018).
+   */
+  const saveCard = useMutation({
+    mutationFn: async (next: { avatar_url?: string | null; employee_id?: string | null }) => {
+      const { error } = await supabase.rpc('set_my_profile', {
+        p_avatar_url: next.avatar_url !== undefined ? next.avatar_url : profile!.avatar_url,
+        p_employee_id: next.employee_id !== undefined ? next.employee_id : profile!.employee_id,
+      })
+      if (error) throw new Error(error.message)
+      await logActivity({
+        tenantId: profile!.tenant_id,
+        userId: profile!.id,
+        userRole: profile!.role,
+        action: 'update.own_profile',
+        entityType: 'profile',
+        entityId: profile!.id,
+      })
+      await refreshProfile()
+    },
+    onError: (e) => setCardError((e as Error).message),
+  })
+
+  const uploadPhoto = useMutation({
+    mutationFn: async (file: File) => {
+      if (!file.type.startsWith('image/')) throw new Error('Choose an image file.')
+      if (file.size > MAX_PHOTO_BYTES) throw new Error('Photo must be under 3 MB.')
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+      // Path must be <tenant>/<user>/… — the storage policy in 0018 checks both.
+      const path = `${profile!.tenant_id}/${profile!.id}/photo-${crypto.randomUUID()}.${ext}`
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { contentType: file.type, upsert: true })
+      if (error) throw new Error(`Upload failed: ${error.message}`)
+      await saveCard.mutateAsync({ avatar_url: path })
+    },
+    onError: (e) => setCardError((e as Error).message),
+  })
 
   const changePassword = useMutation({
     mutationFn: async () => {
@@ -119,18 +164,80 @@ export function Account() {
       <PageHeader title="My Account" subtitle="Your details, your shortcuts, and your password." />
 
       <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
-        {/* ---------- Who you are ---------- */}
+        {/* ---------- The ID card ---------- */}
         <section className="card overflow-hidden p-0">
-          <div className="h-24 bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700" />
+          <div className="relative h-24 bg-gradient-to-br from-brand-400 via-brand-500 to-brand-700">
+            {companyLogo && (
+              <img
+                src={companyLogo}
+                alt={tenant?.name ?? 'Company'}
+                className="absolute right-4 top-4 h-9 w-9 rounded-lg bg-white/95 object-contain p-1 shadow-sm"
+              />
+            )}
+          </div>
+
           <div className="px-5 pb-5">
-            <div className="-mt-10 inline-flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-brand-50 text-2xl font-bold text-brand-700 shadow-card">
-              {initialsOf(profile?.full_name)}
+            <div className="relative -mt-12 inline-block">
+              {photo ? (
+                <img
+                  src={photo}
+                  alt={profile?.full_name ?? 'Profile photo'}
+                  className="h-24 w-24 rounded-2xl border-4 border-white bg-white object-cover shadow-card"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-brand-50 text-3xl font-bold text-brand-700 shadow-card">
+                  {initialsOf(profile?.full_name)}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => photoInput.current?.click()}
+                disabled={uploadPhoto.isPending}
+                className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-ink-800 text-white shadow-card transition-colors hover:bg-ink-900 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                aria-label={photo ? 'Change profile photo' : 'Add a profile photo'}
+                title={photo ? 'Change photo' : 'Add a photo'}
+              >
+                {uploadPhoto.isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  : <Camera className="h-4 w-4" aria-hidden />}
+              </button>
+              <input
+                ref={photoInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                capture="user"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  setCardError(null)
+                  if (file) uploadPhoto.mutate(file)
+                  e.target.value = ''
+                }}
+              />
             </div>
 
+            {photo && (
+              <button
+                type="button"
+                onClick={() => { setCardError(null); saveCard.mutate({ avatar_url: null }) }}
+                disabled={saveCard.isPending}
+                className="ml-3 inline-flex items-center gap-1 align-bottom text-xs font-medium text-ink-400 transition-colors hover:text-red-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove photo
+              </button>
+            )}
+
             <h2 className="mt-3 text-xl font-bold tracking-tight text-ink-900">{profile?.full_name}</h2>
+            {profile?.designation && (
+              <p className="text-sm font-medium text-ink-500">{profile.designation}</p>
+            )}
 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className={`badge ${ROLE_TONES[profile?.role ?? ''] ?? 'bg-ink-100 text-ink-700'}`}>
+              <span
+                className={`badge ${ROLE_TONES[profile?.role ?? ''] ?? 'bg-ink-100 text-ink-700'}`}
+                title="Your role is set by your company admin"
+              >
+                <Lock className="h-3 w-3" aria-hidden />
                 {ROLE_LABELS[profile?.role ?? ''] ?? profile?.role}
               </span>
               {profile?.is_platform_admin && (
@@ -144,13 +251,74 @@ export function Account() {
             </div>
 
             <dl className="mt-5 space-y-3.5 border-t border-ink-200/70 pt-4 text-sm">
+              {editingId ? (
+                <form
+                  className="flex items-end gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    setCardError(null)
+                    saveCard.mutate({ employee_id: employeeId.trim() || null })
+                    setEditingId(false)
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <label className="label-text" htmlFor="employee-id">Employee ID</label>
+                    <input
+                      id="employee-id"
+                      className="input-field"
+                      value={employeeId}
+                      onChange={(e) => setEmployeeId(e.target.value)}
+                      placeholder="e.g. UM-114"
+                      maxLength={40}
+                      autoFocus
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary px-4" disabled={saveCard.isPending}>
+                    {saveCard.isPending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : 'Save'}
+                  </button>
+                  <button type="button" className="btn-secondary px-4" onClick={() => setEditingId(false)}>
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <Detail
+                  icon={IdCard}
+                  label="Employee ID"
+                  value={profile?.employee_id ?? 'Not set'}
+                  muted={!profile?.employee_id}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => { setEmployeeId(profile?.employee_id ?? ''); setEditingId(true) }}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      aria-label={profile?.employee_id ? 'Change employee ID' : 'Add employee ID'}
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden />
+                    </button>
+                  }
+                />
+              )}
+              <Detail
+                icon={BadgeCheck}
+                label="Position"
+                value={profile?.designation ?? 'Set by your admin'}
+                muted={!profile?.designation}
+              />
               <Detail icon={AtSign} label="Email" value={profile?.email ?? 'Not set'} muted={!profile?.email} />
               <Detail icon={Phone} label="Mobile" value={profile?.phone ?? 'Not set'} muted={!profile?.phone} />
               <Detail icon={Building} label="Company" value={tenant?.name ?? '—'} />
             </dl>
 
+            {cardError && (
+              <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
+                <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                {cardError}
+              </p>
+            )}
+
             <p className="mt-4 rounded-xl bg-ink-50 px-3 py-2 text-xs leading-relaxed text-ink-500">
-              Sign in with either your email or your mobile number — whichever is set above.
+              Your <b>position</b> and <b>role</b> are assigned by your company admin and cannot be
+              changed here. Sign in with either your email or your mobile number.
             </p>
           </div>
         </section>

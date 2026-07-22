@@ -9,6 +9,8 @@ interface AuthState {
   profile: Profile | null
   loading: boolean
   initialize: () => Promise<void>
+  /** Re-read the profile row — after the user edits their own card, say. */
+  refreshProfile: () => Promise<void>
   signIn: (identifier: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
@@ -26,7 +28,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
   return data as Profile
 }
 
-export const useAuth = create<AuthState>((set) => ({
+export const useAuth = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
   loading: true,
@@ -41,6 +43,13 @@ export const useAuth = create<AuthState>((set) => ({
       const newProfile = newSession ? await fetchProfile(newSession.user.id) : null
       set({ session: newSession, profile: newProfile, loading: false })
     })
+  },
+
+  refreshProfile: async () => {
+    const userId = get().session?.user.id
+    if (!userId) return
+    const profile = await fetchProfile(userId)
+    if (profile) set({ profile })
   },
 
   // `identifier` is an email or a phone number — floor staff often have no email.
