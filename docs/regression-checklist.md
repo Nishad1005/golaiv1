@@ -21,23 +21,47 @@ scrolled past rather than executed. Paste into the Supabase SQL Editor.
 
 ```sql
 select
+  -- tables and views
   to_regclass('public.modules')                       is not null as t_modules,
   to_regclass('public.placements')                    is not null as t_placements,
   to_regclass('public.item_movements')                is not null as v_item_movements,
   to_regclass('public.stock_overview')                is not null as v_stock_overview,
+  -- functions
   to_regprocedure('public.undo_capture_entry(uuid)')  is not null as f_undo,
   to_regprocedure('public.tenant_edit_lock_hours()')  is not null as f_edit_lock,
   to_regprocedure('public.load_sample_data()')        is not null as f_sample_load,
   to_regprocedure('public.clear_sample_data()')       is not null as f_sample_clear,
   to_regprocedure('public.alert_roles_for(text)')     is not null as f_alert_roles,
-  (select count(*) from modules)                                  as module_count,
+  to_regprocedure('public.set_my_profile(text,text)') is not null as f_set_my_profile,
+  -- columns
   exists(select 1 from information_schema.columns
-          where table_name = 'entries'  and column_name = 'qty_delta')   as c_qty_delta,
+          where table_name = 'entries'  and column_name = 'qty_delta')    as c_qty_delta,
   exists(select 1 from information_schema.columns
-          where table_name = 'profiles' and column_name = 'designation') as c_designation;
+          where table_name = 'profiles' and column_name = 'designation')  as c_designation,
+  exists(select 1 from information_schema.columns
+          where table_name = 'profiles' and column_name = 'avatar_url')   as c_avatar_url,
+  exists(select 1 from information_schema.columns
+          where table_name = 'alerts'   and column_name = 'target_roles') as c_alert_targets,
+  -- the trigger that does the actual targeting
+  exists(select 1 from pg_trigger
+          where tgname = 'alerts_set_targets' and not tgisinternal)       as t_alert_trigger,
+  -- counts
+  (select count(*) from modules)                                         as module_count,
+  (select count(*) from alerts where target_roles is null)               as alerts_untargeted;
 ```
 
-**Expect:** every boolean `true`, and `module_count` = **19**.
+**Expect:** every boolean `true`, `module_count` = **19**, and
+`alerts_untargeted` = **0**.
+
+Two of these are easy to miss and fail quietly:
+
+- **`t_alert_trigger`** is the one that matters for 0023. `alert_roles_for` can
+  exist while the trigger does not, and the read policy treats a null
+  `target_roles` as "show everyone" — a deliberately safe default, but it means
+  a missing trigger silently restores the old behaviour where the guard sees
+  low-stock warnings. If this is `false`, re-run 0023.
+- **`alerts_untargeted` > 0** means the backfill did not run, so alerts raised
+  *before* the migration are still going to everybody.
 
 Then the subtle one — the views must run as the *caller*, or they read across
 every tenant:
