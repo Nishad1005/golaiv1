@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { lazy, useEffect } from 'react'
+import type { ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from './stores/auth'
@@ -8,46 +9,54 @@ import { refreshMasterCache } from './lib/offline/masters'
 import { registerPush } from './lib/push'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
-import { Account } from './pages/Account'
-import { ComingSoon } from './pages/ComingSoon'
-import { SecurityHome } from './pages/home/SecurityHome'
-import { StorekeeperHome } from './pages/home/StorekeeperHome'
-import { PlannerHome } from './pages/home/PlannerHome'
-import { ManagerHome } from './pages/home/ManagerHome'
-import { AdminHome } from './pages/home/AdminHome'
-import { ZonesShelves } from './pages/admin/ZonesShelves'
-import { Items } from './pages/admin/Items'
-import { Parties } from './pages/admin/Parties'
-import { Users } from './pages/admin/Users'
-import { CompanyProfile } from './pages/admin/CompanyProfile'
-import { Settings } from './pages/admin/Settings'
-import { ProvisionClient } from './pages/ProvisionClient'
-import { Capture } from './pages/store/Capture'
-import { Transfer } from './pages/store/Transfer'
-import { Adjustments } from './pages/store/Adjustments'
-import { AssignLocation } from './pages/store/AssignLocation'
-import { FindItem } from './pages/FindItem'
-import { ItemMovement } from './pages/ItemMovement'
-import { GrnList } from './pages/grn/GrnList'
-import { GateEntry } from './pages/grn/GateEntry'
-import { GrnDetail } from './pages/grn/GrnDetail'
-import { ReleaseRequestList } from './pages/release/ReleaseRequestList'
-import { ReleaseRequestNew } from './pages/release/ReleaseRequestNew'
-import { ReleaseRequestDetail } from './pages/release/ReleaseRequestDetail'
-import { Returns } from './pages/release/Returns'
-import { DispatchList } from './pages/dispatch/DispatchList'
-import { DispatchNew } from './pages/dispatch/DispatchNew'
-import { DispatchDetail } from './pages/dispatch/DispatchDetail'
-import { QcHolds } from './pages/dispatch/QcHolds'
-import { CountList } from './pages/counts/CountList'
-import { CountDetail } from './pages/counts/CountDetail'
-import { Alerts } from './pages/manager/Alerts'
-import { SoMovement } from './pages/manager/SoMovement'
-import { Export } from './pages/manager/Export'
 import type { UserRole } from './lib/types'
 
+/**
+ * Every screen is a separate chunk, fetched the first time someone opens it.
+ * The app is used on entry-level Android over warehouse Wi-Fi, so shipping
+ * all 25 screens on first load made the login screen wait for the dispatch
+ * gate-out form nobody had asked for yet.
+ */
+const Account = lazy(() => import('./pages/Account').then((m) => ({ default: m.Account })))
+const ComingSoon = lazy(() => import('./pages/ComingSoon').then((m) => ({ default: m.ComingSoon })))
+const SecurityHome = lazy(() => import('./pages/home/SecurityHome').then((m) => ({ default: m.SecurityHome })))
+const StorekeeperHome = lazy(() => import('./pages/home/StorekeeperHome').then((m) => ({ default: m.StorekeeperHome })))
+const PlannerHome = lazy(() => import('./pages/home/PlannerHome').then((m) => ({ default: m.PlannerHome })))
+const ManagerHome = lazy(() => import('./pages/home/ManagerHome').then((m) => ({ default: m.ManagerHome })))
+const AdminHome = lazy(() => import('./pages/home/AdminHome').then((m) => ({ default: m.AdminHome })))
+const ZonesShelves = lazy(() => import('./pages/admin/ZonesShelves').then((m) => ({ default: m.ZonesShelves })))
+const Items = lazy(() => import('./pages/admin/Items').then((m) => ({ default: m.Items })))
+const Parties = lazy(() => import('./pages/admin/Parties').then((m) => ({ default: m.Parties })))
+const Users = lazy(() => import('./pages/admin/Users').then((m) => ({ default: m.Users })))
+const CompanyProfile = lazy(() => import('./pages/admin/CompanyProfile').then((m) => ({ default: m.CompanyProfile })))
+const Settings = lazy(() => import('./pages/admin/Settings').then((m) => ({ default: m.Settings })))
+const ProvisionClient = lazy(() => import('./pages/ProvisionClient').then((m) => ({ default: m.ProvisionClient })))
+const Capture = lazy(() => import('./pages/store/Capture').then((m) => ({ default: m.Capture })))
+const Transfer = lazy(() => import('./pages/store/Transfer').then((m) => ({ default: m.Transfer })))
+const Adjustments = lazy(() => import('./pages/store/Adjustments').then((m) => ({ default: m.Adjustments })))
+const AssignLocation = lazy(() => import('./pages/store/AssignLocation').then((m) => ({ default: m.AssignLocation })))
+const FindItem = lazy(() => import('./pages/FindItem').then((m) => ({ default: m.FindItem })))
+const ItemMovement = lazy(() => import('./pages/ItemMovement').then((m) => ({ default: m.ItemMovement })))
+const GrnList = lazy(() => import('./pages/grn/GrnList').then((m) => ({ default: m.GrnList })))
+const GateEntry = lazy(() => import('./pages/grn/GateEntry').then((m) => ({ default: m.GateEntry })))
+const GrnDetail = lazy(() => import('./pages/grn/GrnDetail').then((m) => ({ default: m.GrnDetail })))
+const ReleaseRequestList = lazy(() => import('./pages/release/ReleaseRequestList').then((m) => ({ default: m.ReleaseRequestList })))
+const ReleaseRequestNew = lazy(() => import('./pages/release/ReleaseRequestNew').then((m) => ({ default: m.ReleaseRequestNew })))
+const ReleaseRequestDetail = lazy(() => import('./pages/release/ReleaseRequestDetail').then((m) => ({ default: m.ReleaseRequestDetail })))
+const Returns = lazy(() => import('./pages/release/Returns').then((m) => ({ default: m.Returns })))
+const DispatchList = lazy(() => import('./pages/dispatch/DispatchList').then((m) => ({ default: m.DispatchList })))
+const DispatchNew = lazy(() => import('./pages/dispatch/DispatchNew').then((m) => ({ default: m.DispatchNew })))
+const DispatchDetail = lazy(() => import('./pages/dispatch/DispatchDetail').then((m) => ({ default: m.DispatchDetail })))
+const QcHolds = lazy(() => import('./pages/dispatch/QcHolds').then((m) => ({ default: m.QcHolds })))
+const CountList = lazy(() => import('./pages/counts/CountList').then((m) => ({ default: m.CountList })))
+const CountDetail = lazy(() => import('./pages/counts/CountDetail').then((m) => ({ default: m.CountDetail })))
+const Alerts = lazy(() => import('./pages/manager/Alerts').then((m) => ({ default: m.Alerts })))
+const SoMovement = lazy(() => import('./pages/manager/SoMovement').then((m) => ({ default: m.SoMovement })))
+const Export = lazy(() => import('./pages/manager/Export').then((m) => ({ default: m.Export })))
+
+
 /** Each role lands on its own home screen on login (PRD 3, 7.4). */
-const HOME_BY_ROLE: Record<UserRole, () => JSX.Element> = {
+const HOME_BY_ROLE: Record<UserRole, ComponentType> = {
   security: SecurityHome,
   storekeeper: StorekeeperHome,
   planner: PlannerHome,

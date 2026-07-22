@@ -1,11 +1,26 @@
-import { jsPDF } from 'jspdf'
-import JsBarcode from 'jsbarcode'
-import QRCode from 'qrcode'
+import type { jsPDF as JsPdfType } from 'jspdf'
+
+/**
+ * jsPDF + jsbarcode + qrcode are ~1 MB of the bundle and are only needed the
+ * moment somebody prints. Loading them on demand keeps them out of the first
+ * page load, which matters on the entry-level Android phones the floor uses.
+ * The modules are cached by the browser after the first print.
+ */
+async function pdfKit() {
+  const [{ jsPDF }, JsBarcode, QRCode] = await Promise.all([
+    import('jspdf'),
+    import('jsbarcode').then((m) => m.default),
+    import('qrcode').then((m) => m.default),
+  ])
+  return { jsPDF, JsBarcode, QRCode }
+}
+
+type PdfKit = Awaited<ReturnType<typeof pdfKit>>
 
 // Labels carry BOTH symbologies: Code128 for USB laser scanners on the floor,
 // QR for phone/webcam cameras (1D codes decode poorly on webcams).
-function qrDataUrl(value: string): Promise<string> {
-  return QRCode.toDataURL(value, { margin: 0, width: 256 })
+function qrDataUrl(kit: PdfKit, value: string): Promise<string> {
+  return kit.QRCode.toDataURL(value, { margin: 0, width: 256 })
 }
 
 export interface ShelfLabel {
@@ -16,9 +31,9 @@ export interface ShelfLabel {
   locationLabel: string // client's own words, e.g. "Ghoda 1"
 }
 
-function barcodeDataUrl(value: string): string {
+function barcodeDataUrl(kit: PdfKit, value: string): string {
   const canvas = document.createElement('canvas')
-  JsBarcode(canvas, value, {
+  kit.JsBarcode(canvas, value, {
     format: 'CODE128',
     displayValue: false,
     margin: 0,
@@ -62,14 +77,15 @@ export async function generateShelfLabelsPdf(
   size: ShelfLabelSize = 'a4',
 ): Promise<void> {
   if (labels.length === 0) return
+  const kit = await pdfKit()
 
   const qrs = new Map<string, string>()
   for (const l of labels) {
-    if (!qrs.has(l.code)) qrs.set(l.code, await qrDataUrl(l.code))
+    if (!qrs.has(l.code)) qrs.set(l.code, await qrDataUrl(kit, l.code))
   }
 
   // Draws one label into the box at (x, y) of size w × h.
-  const drawLabel = (doc: jsPDF, label: ShelfLabel, x: number, y: number, w: number, h: number, frame: boolean) => {
+  const drawLabel = (doc: JsPdfType, label: ShelfLabel, x: number, y: number, w: number, h: number, frame: boolean) => {
     const tiny = h < 30
     const pad = tiny ? 2 : 4
     const qrSide = Math.min(h * 0.42, w * 0.22)
@@ -92,7 +108,7 @@ export async function generateShelfLabelsPdf(
     // Code128 on the left, QR on the right
     const barTop = tiny ? y + 11 : y + 17
     const barH = tiny ? 6.5 : h * 0.28
-    doc.addImage(barcodeDataUrl(label.code), 'PNG', x + pad, barTop, w - qrSide - pad * 3, barH)
+    doc.addImage(barcodeDataUrl(kit, label.code), 'PNG', x + pad, barTop, w - qrSide - pad * 3, barH)
     doc.addImage(qrs.get(label.code)!, 'PNG', x + w - qrSide - pad, barTop - (tiny ? 1 : 1.5), qrSide, qrSide)
 
     // The client's own place name, then the zone
@@ -107,7 +123,7 @@ export async function generateShelfLabelsPdf(
   // --- Thermal: exactly one label per page, page = the sticker ---------------
   if (size !== 'a4') {
     const [w, h] = THERMAL_DIMS[size]
-    const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' })
+    const doc = new kit.jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' })
     labels.forEach((label, i) => {
       if (i > 0) doc.addPage([w, h], 'landscape')
       drawLabel(doc, label, 0, 0, w, h, false)
@@ -117,7 +133,7 @@ export async function generateShelfLabelsPdf(
   }
 
   // --- A4 sheet: 2 × 5 grid --------------------------------------------------
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const doc = new kit.jsPDF({ unit: 'mm', format: 'a4' })
   const cols = 2
   const rows = 5
   const marginX = 10
@@ -205,6 +221,7 @@ export async function generateItemLabelsPdf(
   size: ItemLabelSize,
   fileName: string,
 ): Promise<void> {
+  const kit = await pdfKit()
   const spec = SIZE_SPECS[size]
   // Expand copies into a flat list of labels to place
   const flat: ItemLabel[] = []
@@ -215,11 +232,11 @@ export async function generateItemLabelsPdf(
 
   // Pre-render barcodes/QRs once per distinct code
   const codes = [...new Set(flat.map((l) => l.code))]
-  const bars = new Map(codes.map((c) => [c, barcodeDataUrl(c)]))
+  const bars = new Map(codes.map((c) => [c, barcodeDataUrl(kit, c)]))
   const qrs = new Map<string, string>()
-  for (const c of codes) qrs.set(c, await qrDataUrl(c))
+  for (const c of codes) qrs.set(c, await qrDataUrl(kit, c))
 
-  const doc = new jsPDF({
+  const doc = new kit.jsPDF({
     unit: 'mm',
     format: spec.page === 'a4' ? 'a4' : spec.page,
     orientation: spec.page === 'a4' ? 'portrait' : 'landscape',
@@ -286,7 +303,8 @@ export interface IssuanceLabel {
  * dominant element; the barcode encodes the issuance number for return scans.
  */
 export async function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileName: string): Promise<void> {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const kit = await pdfKit()
+  const doc = new kit.jsPDF({ unit: 'mm', format: 'a4' })
   const cols = 2
   const rows = 2
   const marginX = 8
@@ -295,7 +313,7 @@ export async function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileNam
   const cellH = (297 - marginY * 2) / rows
   const qrByNumber = new Map<string, string>()
   for (const l of labels) {
-    if (!qrByNumber.has(l.issNumber)) qrByNumber.set(l.issNumber, await qrDataUrl(l.issNumber))
+    if (!qrByNumber.has(l.issNumber)) qrByNumber.set(l.issNumber, await qrDataUrl(kit, l.issNumber))
   }
 
   labels.forEach((label, i) => {
@@ -341,7 +359,7 @@ export async function generateIssuanceLabelsPdf(labels: IssuanceLabel[], fileNam
     doc.text(`Issued: ${label.dateIssued}   Ref: ${label.rrNumber}`, x + 8, cy)
     cy += 6
 
-    const img = barcodeDataUrl(label.issNumber)
+    const img = barcodeDataUrl(kit, label.issNumber)
     doc.addImage(img, 'PNG', x + 12, cy, cellW - 52, 16)
     doc.addImage(qrByNumber.get(label.issNumber)!, 'PNG', x + cellW - 34, cy - 2, 24, 24)
     doc.setFontSize(9)
@@ -361,10 +379,11 @@ export interface CartonLabel {
 
 /** Dispatch carton labels: scanned by security at gate-out (2 × 3 per A4). */
 export async function generateCartonLabelsPdf(labels: CartonLabel[], fileName: string): Promise<void> {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const kit = await pdfKit()
+  const doc = new kit.jsPDF({ unit: 'mm', format: 'a4' })
   const cartonQrs = new Map<string, string>()
   for (const l of labels) {
-    if (!cartonQrs.has(l.cartonBarcode)) cartonQrs.set(l.cartonBarcode, await qrDataUrl(l.cartonBarcode))
+    if (!cartonQrs.has(l.cartonBarcode)) cartonQrs.set(l.cartonBarcode, await qrDataUrl(kit, l.cartonBarcode))
   }
   const cols = 2
   const rows = 3
@@ -398,7 +417,7 @@ export async function generateCartonLabelsPdf(labels: CartonLabel[], fileName: s
     }
     doc.text(doc.splitTextToSize(label.contents, cellW - 16), x + 8, y + 38)
 
-    const img = barcodeDataUrl(label.cartonBarcode)
+    const img = barcodeDataUrl(kit, label.cartonBarcode)
     doc.addImage(img, 'PNG', x + 12, y + cellH - 32, cellW - 52, 16)
     doc.addImage(cartonQrs.get(label.cartonBarcode)!, 'PNG', x + cellW - 34, y + cellH - 36, 24, 24)
     doc.setFontSize(9)

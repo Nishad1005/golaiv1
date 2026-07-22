@@ -1,6 +1,14 @@
-import { useRef, useState } from 'react'
-import { Camera, Keyboard, ScanBarcode } from 'lucide-react'
-import { CameraScanner } from './CameraScanner'
+import { lazy, Suspense, useRef, useState } from 'react'
+import { Camera, Keyboard, Loader2, ScanBarcode } from 'lucide-react'
+
+/**
+ * html5-qrcode is ~200 KB and only needed when someone actually opens the
+ * camera — most scans come from a USB laser scanner, which needs no library at
+ * all. Loading it on demand keeps it off the first page load.
+ */
+const CameraScanner = lazy(() =>
+  import('./CameraScanner').then((m) => ({ default: m.CameraScanner })),
+)
 
 interface ScanInputProps {
   placeholder: string
@@ -93,13 +101,21 @@ export function ScanInput({ placeholder, onScan, allowManual = true, autoFocus =
       )}
 
       {showCamera && (
-        <CameraScanner
-          onScan={(v) => {
-            setShowCamera(false)
-            submit(v, false)
-          }}
-          onClose={() => setShowCamera(false)}
-        />
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+              <Loader2 className="h-8 w-8 animate-spin text-white" />
+            </div>
+          }
+        >
+          <CameraScanner
+            onScan={(v) => {
+              setShowCamera(false)
+              submit(v, false)
+            }}
+            onClose={() => setShowCamera(false)}
+          />
+        </Suspense>
       )}
     </div>
   )

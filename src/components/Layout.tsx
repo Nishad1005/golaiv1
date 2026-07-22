@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, LogOut, Menu, Rocket, Settings, UserRound, X } from 'lucide-react'
+import { Bell, Loader2, LogOut, Menu, Rocket, Settings, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { useTenant, logoPublicUrl } from '../lib/tenant'
@@ -255,9 +255,19 @@ export function Layout() {
         <OfflineBanner />
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 lg:px-8 lg:py-8">
-          <div className="animate-fade-in">
-            <Outlet />
-          </div>
+          {/* Screens load as separate chunks, so the shell stays put while the
+              next one arrives rather than blanking the whole page. */}
+          <Suspense
+            fallback={
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+              </div>
+            }
+          >
+            <div className="animate-fade-in">
+              <Outlet />
+            </div>
+          </Suspense>
         </main>
       </div>
     </div>
