@@ -5,7 +5,12 @@ Updated 2026-07-22.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0018.
+0001 → 0020.
+
+**Shipped since the last revision:** the stock card (A1), the manager stock
+dashboard (B3), item labels at receiving (A2) and the first-run checklist (B1).
+Building the stock card also fixed two silent data bugs — see the note under
+A3.
 
 This file is **two different roadmaps**, deliberately separated:
 
@@ -29,33 +34,7 @@ Legend: **★** = also fixes a general product gap, not just a U&M request.
 > **would the next client want this without being asked?** If yes it belongs in
 > the product; if no, it belongs in settings, or nowhere.
 
-### A1. Item movement history — the "stock card" ★
-*The client's explicit ask, and the single biggest gap.*
-
-A manager cannot see, per item, what came in, what went out, when, and what's
-left. The data all exists (GRN putaways, issuances, returns, dispatches,
-transfers, captures, approved adjustments) but there is no per-item view — only
-**SO Movement**, which traces a sales order, not a product.
-
-**Build:** a database view unioning every movement type (tenant-filtered,
-RLS-respecting) plus an **Item Movement** page showing a dated ledger with
-quantity in/out, location, person, reference document and a running balance,
-reachable from Find Item, the Items list and location contents.
-
-> Build this together with **B3 (stock dashboard)** — the dashboard is mostly
-> presentation over this same view, and doing them separately means building the
-> query twice.
-
-### A2. Print item labels at receiving ★
-Item labels only exist in Admin → Items. When a delivery is verified the
-storekeeper cannot print labels for what just arrived, so incoming goods reach
-the shelf unlabelled — which breaks the "scan the product" workflow the client
-asked for and we already built.
-
-**Build:** a **Print item labels** action on the GRN screen for the received
-lines, defaulting copies to the received quantity.
-
-### A3. Stock count blind spot ★
+### A1. Stock count blind spot ★
 *This is a correctness bug, not a preference.*
 
 The count screen never shows what *should* be at a location — lines appear only
@@ -66,7 +45,7 @@ item is silently never counted and no variance is raised.
 already recorded there with expected quantities and mark off what's been
 counted. Reuses the existing approval workflow.
 
-### A4. Settings screen ★
+### A2. Settings screen ★
 `tenant_settings` exists in the database (edit-lock window, approval quantity
 threshold, working hours, photo retention) but **has no UI** — the Admin home
 tile is still marked "Phase 2". Several PRD behaviours are written but dead:
@@ -78,15 +57,28 @@ tile is still marked "Phase 2". Several PRD behaviours are written but dead:
 - **Manual-entry password gate** — typing a location code instead of scanning is
   audit-flagged but not password-gated (PRD 4.2).
 
-### A5. Verify migrations 0016 → 0018 in production
-Module access (0016), its database-level enforcement (0017) and the staff ID
-card (0018) are written and pushed but **not confirmed run**. 0017 rewrote every
-write path (guarded RPC wrappers, dropped direct-write policies, revoked
-internal helpers), so it needs a real regression pass: capture, assign location,
-GRN through putaway, release → issuance, dispatch, Users & Roles, and My Account
+### A3. Verify migrations 0016 → 0020 in production
+Module access (0016), its enforcement (0017), the staff ID card (0018), the
+movement ledger (0019) and the stock overview (0020). 0017 rewrote every write
+path (guarded RPC wrappers, dropped direct-write policies, revoked internal
+helpers), so it needs a real regression pass: capture, assign location, GRN
+through putaway, release → issuance, dispatch, Users & Roles, and My Account
 (photo upload, employee ID, admin-set position).
 
-### A6. Complete the onboarding
+**0019 changed two write paths** and both deserve a specific check:
+
+- `capture_entry` now records the true change to stock in `entries.qty_delta`.
+  Do a capture in **set** mode (recount a shelf down) and confirm the stock card
+  shows a negative movement, not the typed number.
+- `assign_placements` now writes a `placements` audit row. Run the mapping walk
+  and confirm each assignment appears on the stock card as "Located".
+
+Rows that existed before 0019 have `qty_delta` backfilled from `qty`, which is
+right for 'add' captures and unknowable for old 'set' ones — so a stock card may
+show one wrong historical figure for any recount done before the migration. The
+current balance is always correct; only that one row's delta is suspect.
+
+### A4. Complete the onboarding
 - Import their real item master into the **U&M tenant** (currently only loaded
   into the demo tenant for testing).
 - Create their locations, print and stick the barcode stickers.
@@ -102,45 +94,29 @@ GRN through putaway, release → issuance, dispatch, Users & Roles, and My Accou
 *None of this is required for U&M. All of it is required before selling to the
 tenth client without a DBBS person doing the setup.*
 
-### B1. First-run checklist — *highest value item in this file*
-A new admin lands in an empty app and must already know the order: zones →
-locations → labels → items → the walk. Today that knowledge lives in a PDF and
-in your head.
-
-**Build:** a live checklist on the admin home — "3 of 6 done" — each step
-linking to the right screen and ticking itself when the data exists. It turns
-the client guide into something the app performs itself, and it is what makes
-onboarding self-serve.
-
-### B2. Sample data
+### B1. Sample data
 A prospect should be able to click **Load sample data** and explore a populated
 warehouse in ten seconds — zones, locations, items, stock, one GRN, one
 issuance. Also the fastest way to reset a demo tenant (see the SQL appendix in
 `docs/demo-guide.md`).
 
-### B3. Stock dashboard
-Manager home shows *activity* KPIs but nothing about *stock*. The first thing a
-buyer says in a demo is "show me my stock" — and today the answer is a CSV. Add
-totals (items, items carrying stock, out-of-stock, low-stock, dead stock) and a
-live recent-movement feed. Mostly presentation over **A1**.
-
-### B4. Undo window
+### B2. Undo window
 Floor staff scan the wrong shelf. The only fix today is an Adjust with manager
 approval — heavy for a thirty-second-old mistake, and it trains people to be
 afraid of the app. `entries.locked_until` already exists; surface it as an
 "undo" on a person's own recent entries, inside the configured window.
 
-### B5. Empty states
+### B3. Empty states
 Every list screen with no data should say what to do next and link there, rather
 than sitting blank. Cheap, and it is most of the distance between "unfinished"
 and "polished" in a demo.
 
-### B6. Speed on cheap phones
+### B4. Speed on cheap phones
 The main bundle is one ~2 MB chunk, loaded over warehouse Wi-Fi on entry-level
 Android. Route-level lazy loading is roughly a day and directly affects the
 first impression of the people who use the app most (PRD 8.1 targets < 2s).
 
-### B7. WhatsApp alerts
+### B5. WhatsApp alerts
 The in-app bell assumes people open the app; WhatsApp assumes nothing. In this
 market it is the notification channel that actually gets read, and the feature
 most likely to be asked for in a sales meeting. Needs a WhatsApp Business API
@@ -148,12 +124,12 @@ account and template approval — modest code, real admin overhead. Formally
 deferred in the PRD; worth revisiting as a commercial decision, not a technical
 one.
 
-### B8. Hindi UI
+### B6. Hindi UI
 Halves training time for floor roles and is a visible differentiator against
 imported software. Honest cost: an i18n retrofit across every screen, not a
 toggle.
 
-### B9. Multi-warehouse — decide the answer before you're asked
+### B7. Multi-warehouse — decide the answer before you're asked
 Plenty of companies run two or three godowns. Deferred by design (one warehouse
 per tenant), but it **will** come up in a sales call. Decide now whether the
 answer is "roadmap", "one tenant per godown", or "we'll build it".
@@ -237,7 +213,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0018**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0020**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.
@@ -259,7 +235,7 @@ any of these without Product Owner sign-off.
    real codes to replace them?
 3. **Unit of measure** — their master has no UOM column, so everything defaults
    to `pcs`. Do rolls/metres/kg matter for the counts they want?
-4. **Who prints labels day to day** — admin in the office, or the storekeeper at
-   receiving? Decides where the print action belongs long-term (see A2).
+4. **Who prints labels day to day** — both work now (Admin → Items and the
+   receiving screen). Worth confirming which one U&M actually adopt.
 5. **Employee IDs** — will HR supply them, or do staff enter their own? Both work
    today; only the position is admin-only.

@@ -14,7 +14,7 @@ Three facts to memorize:
 
 1. **It never shows money.** Quantities only. It complements the client's ERP, never competes with it.
 2. **Existing item codes are kept exactly as they are.** No renumbering, no migration pain.
-3. **Every movement has evidence**: who, when, which shelf, and a photograph — in a tamper-proof log even the admin cannot edit.
+3. **Every movement has evidence**: who, when, which shelf, and a photograph — in a tamper-proof log even the admin cannot edit. Any product's whole history is one click away.
 
 ---
 
@@ -63,7 +63,9 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 1. Open **Find Item** (or the search bar on the home screen): **"Find any item… name, code or barcode."**
 2. Type `cupcake` → the fabric appears with **zone, location, and quantity**.
 3. Now do it **the other way round**: scan (or type) a location code like `Z01-S003` → Golai lists **everything on that spot with quantities**. **Say:** *"At the rack, your man sees all five things stored there and how many of each."*
-4. **Say:** *"This is the whole product in one screen. Your storekeeper retires or goes on leave — the knowledge doesn't leave with him. Anyone can find any material instantly."*
+4. **Now click the product's name** → its **stock card**: every movement ever — received, issued, returned, dispatched — with who did it, against which document, and **what was left after each one**.
+5. **Say:** *"This is the question every owner asks and no spreadsheet answers: we bought a hundred, where did they go? Received 100 on the 12th, issued 12 to Carpentry for SO-1234, 2 came back — 88 left. Ten seconds, with the paperwork one tap away."*
+6. **Say:** *"This is the whole product in one screen. Your storekeeper retires or goes on leave — the knowledge doesn't leave with him. Anyone can find any material instantly."*
 
 ### Act 2 — Material arrives at the gate (3 min, as `security@test.com`)
 
@@ -78,7 +80,8 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 2. **Receiving (GRN)** → open the draft → scan/type `AU162590` → enter PO qty `20`, invoice qty `20`, **received qty `18`**.
 3. A **variance reason** field appears and blocks submission until filled. **Say:** *"Short deliveries get caught at the gate, with a reason on record — not discovered three weeks later during a stock-take."*
 4. Submit → **Place** → qty 18 → shelf `Z01-S003` → GRN turns **COMPLETED**.
-5. Search `cupcake` again → the new shelf and quantity are already there.
+5. Press **Print item labels** on the verified lines → it offers **one label per unit received**. **Say:** *"Eighteen stickers, one per roll, printed at the point the goods arrive — nothing reaches your shelf unlabelled."*
+6. Search `cupcake` again → the new shelf and quantity are already there.
 
 ### Act 4 — Production requests material (4 min, planner → manager → storekeeper)
 
@@ -96,9 +99,10 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 
 ### Act 6 — The owner's view (2 min, as `manager@test.com`)
 
-1. **SO-wise Movement** → type `SO-5001` → the full timeline appears: receipt → release → issuance → dispatch, each entry opening to its photos and signatures.
-2. **Say:** *"Customer disputes the delivery? This is your answer — every step, every person, every photo, timestamped. And your auditor gets the same trail; even the admin cannot edit this log."*
-3. Optionally show **ERP Export** → download the CSV → *"this reconciles against Tally monthly. Quantities only — Golai never touches your valuations."*
+1. **Start on the home screen** — **Stock right now**: products in stock, how many are **low** (at or below reorder point), how many have **nothing on the shelf**, and how many haven't moved in 90 days, with a live feed of the last movements. **Say:** *"This is your morning tea screen. Four items below reorder point — forward that to purchasing before the factory notices."*
+2. **SO-wise Movement** → type `SO-5001` → the full timeline appears: receipt → release → issuance → dispatch, each entry opening to its photos and signatures.
+3. **Say:** *"Customer disputes the delivery? This is your answer — every step, every person, every photo, timestamped. And your auditor gets the same trail; even the admin cannot edit this log."*
+4. Optionally show **ERP Export** → download the CSV → *"this reconciles against Tally monthly. Quantities only — Golai never touches your valuations."*
 
 ### Act 7 — The clincher (1 min, on the phone)
 
@@ -124,6 +128,8 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 | "Half our floor staff have no email." | They log in with their **mobile number** and a password. No SMS, no OTP, no cost. |
 | "iPhone / Android app?" | It installs from the browser today (PWA); native Play Store / App Store builds are on the roadmap. |
 | "Costing, valuation, stock value reports?" | Out of scope by design — that's ERP territory. Golai shows units only. |
+| "Can I see the history of one product?" | Yes — click any product name for its **stock card**: every receipt, issue, return and dispatch with the balance after each one. |
+| "How much hand-holding does setup need?" | The app has a **setup checklist** on the admin home that walks them through it and ticks itself off. Most clients can do it themselves. |
 
 **Do not promise** (log the request instead): BOM/auto-issuance, stock reservation against SO, work-order management, valuation, vendor portals, multi-warehouse. These are ERP scope or later versions.
 
@@ -156,6 +162,11 @@ process you'll follow the same way for every client.
   client, enforced at the database level.
 
 ### 5.2 Migrating the client's existing data (Excel → Golai)
+
+**The app now walks the client through this itself** — a **setup checklist** on
+the admin home lists these steps in order and ticks each one off as the data
+appears, disappearing when they're done. Use the detail below to answer
+questions, not to read out.
 
 A client usually has two things: a **zone list** and an **item master with no
 locations in it**. That's the normal, expected input — in Golai an item's

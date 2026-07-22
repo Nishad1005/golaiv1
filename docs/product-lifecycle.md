@@ -95,12 +95,15 @@ confirms 98 pcs, and submits. The GRN closes automatically.
 ---
 
 ## Day 1 — Giving the product its own barcode
-### Admin · Items → Print labels
+### Storekeeper · Receiving → Print item labels
 
-Zone 4 holds several timber sizes that look alike. Nishad selects Wood 50×20,
-prints a label (name, code `UM-000221`, barcode + QR) and it goes on the bundle.
+Zone 4 holds several timber sizes that look alike, so before the wood leaves his
+bench Rajesh presses **Print item labels** on the GRN. It offers **one label per
+unit received** — 98 stickers, each carrying the name, code `UM-000221`, a
+barcode and a QR code.
 
-> Now a worker can scan the *product*, not just the rack.
+> Now a worker can scan the *product*, not just the rack. (The same print
+> dialog also lives in Admin → Items if the office prefers to batch it.)
 
 ---
 
@@ -111,8 +114,11 @@ Nothing happens to the wood, but it is **visible**:
 - **Find** → type "wood 50" → *Wood (Z04) · Rack 3 — 98 pcs*
 - **Find** → scan `Z04-R003` → lists every timber on that rack with quantities,
   so nobody grabs the wrong size
-- Manager's home shows it in the stock picture; if it drops below its reorder
-  point, a **low-stock alert** fires
+- **Click the name** → the **stock card**: everything that has ever happened to
+  this wood, with the balance after each move
+- Suhel's home shows it in **Stock right now**; if it drops below its reorder
+  point it appears under **low stock**, and if it sits untouched for 90 days it
+  turns up as **dead stock**
 
 **If it moves:** Rajesh uses **Transfer** — scan source rack, scan the wood,
 quantity, scan the new rack. The location updates everywhere instantly.
@@ -239,9 +245,17 @@ Suhel types **SO-1234** and sees the entire journey in one timeline:
 Every entry opens to its photos, signatures and timestamps. **Nobody can edit
 this history** — not even the admin.
 
+The same journey read the other way — **by product instead of by order** — is the
+**stock card**: open Wood 50×20 from Find and the ledger below shows every one of
+these movements with the running balance, so "we bought 100, where did they go?"
+is a ten-second answer.
+
 ---
 
 ## The ledger at a glance
+
+*This is exactly what the **stock card** shows on screen — open Wood 50×20 from
+Find and it is all there, newest first.*
 
 | Day | Event | Change | Balance at Z04-R003 |
 |---|---|---|---|
@@ -274,6 +288,7 @@ this history** — not even the admin.
 - **What went out, when and why** — 12 pcs to Carpentry for SO-1234, signed for
 - **What came back** — 2 pcs surplus, against the original issue
 - **What's left** — a live balance, corrected only through approved adjustments
+- **The whole story on one screen** — the stock card, for any product, in seconds
 - **Proof** — photos, signatures and timestamps that cannot be altered
 
 *Prepared by DBBS Group for U&M Designs Pvt Ltd · Golai v1.0*

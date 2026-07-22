@@ -31,6 +31,12 @@ employee ID**, and see their **position, role and contact details** (set by you)
 plus shortcuts to every section they're allowed to open. Handy answer to "why
 can't I see Dispatch?" — the list shows exactly what they have.
 
+**The app walks you through setup.** Your home screen shows a **Getting set up**
+checklist — company logo, zones, locations, labels, products, staff, and the
+walk — in the order that works. Each step ticks itself off as you do it, and the
+whole panel disappears once you're finished. The sections below explain each
+step in more detail, but you can simply follow the highlighted one.
+
 Your 13 warehouse zones are **already set up** from your Zone Master sheet
 (Z01 Main Store Hardware … Z13 Sample Hold + Finished Goods). You can rename
 them or add more anytime — see section 4.
@@ -151,6 +157,11 @@ each product its own label:
 Each label shows the **product name and its number**, plus a barcode and a QR
 code. Scanning it anywhere in Golai brings up that exact product.
 
+**Day to day, print them as goods arrive instead.** On a verified delivery
+(Receiving → open the GRN) there's a **Print item labels** button that defaults
+to **one label per unit received** — so the storekeeper labels the cartons on
+the spot, and nothing reaches a shelf unlabelled.
+
 ---
 
 ## 7. Record where each product sits (the walk)
@@ -180,6 +191,9 @@ so it is obvious if you revisit one.
 - **Scan a location sticker** → Golai lists *everything sitting on that spot*
   with quantities — so at the rack you can see all five screw types and how many
   of each there are.
+- **Click any product's name** → its **stock card**: everything that ever came
+  in or went out, who did it, against which document, and what was left after
+  each move. "We bought 100 — where did they go?" becomes a ten-second answer.
 
 ---
 
@@ -201,6 +215,10 @@ so it is obvious if you revisit one.
   scan a location sticker to see everything on it with quantities.
 - **Stock checking** → Manager creates a **Stock Count**, storekeeper counts by
   scan, differences need a reason and Manager approval.
+- **A glance at your stock** → the Manager and Admin home screens open with
+  **Stock right now**: how many products are in stock, which are **low** (at or
+  below reorder point), which have **nothing on the shelf**, and which haven't
+  moved in 90 days — plus a live feed of the last movements.
 - **For your accountant / Tally** → Manager → **ERP Export** → download the
   quantity CSV anytime.
 
@@ -223,6 +241,8 @@ order's entire journey with all the evidence.
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
 | A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |
 | Label prints tiny / all on one sticker | In the print dialog set **Actual size / 100%** (not "Fit to page"), and pick the label size that matches your roll |
+| "Where did all our stock go?" | Open the product from **Find** → the stock card lists every movement with the balance after each one |
+| Setup checklist won't tick a step | It only ticks when the work is really done — e.g. "print location labels" needs an actual label PDF generated from Zones & Locations |
 | Anything else | Contact DBBS: ____________________ *(support contact)* |
 
 ---

@@ -18,7 +18,7 @@ the **Demo guide**.
     → putaway)           Stock Counts · QC Hold           Returns (comes back in)
                               │
                               ▼
-                     Find · Alerts · SO Movement · ERP Export
+          Find · Stock Card · Alerts · SO Movement · ERP Export
 ```
 
 Everything is built on one simple fact: **every product sits at a location, and
@@ -31,6 +31,8 @@ every movement is recorded** — who, when, how much, with photos.
 | Your situation | Use this |
 |---|---|
 | "Where is this product?" | **Find** |
+| "What came in and what went out of this product?" | **Stock Card** (click any product name) |
+| "How much stock do we have overall?" | **Manager home** — Stock right now |
 | "What's on this shelf?" | **Find** (scan the location sticker) |
 | A truck has arrived at the gate | **Receiving** (Gate Entry) |
 | Delivery needs checking against the invoice | **Receiving** (Verify) |
@@ -48,6 +50,8 @@ every movement is recorded** — who, when, how much, with photos.
 | Accounts want the numbers for Tally | **ERP Export** |
 | New shelf / ghoda / rack needs a barcode | **Zones & Locations** |
 | New product, or printing product labels | **Items** |
+| Labelling goods that just arrived | **Receiving** (Print item labels) |
+| Setting the warehouse up for the first time | **Admin home** — the setup checklist |
 | New staff member needs a login | **Users & Roles** |
 
 ---
@@ -69,6 +73,28 @@ Works in both directions:
 
 **Good to know:** an item can show "not counted yet" — that means its location is
 known but nobody has counted the quantity. Still useful; the count comes later.
+
+**Click any product name** to open its **Stock Card** — its whole history.
+
+---
+
+## Stock Card
+**Who:** everyone who can use Find · *Open it by clicking a product name
+anywhere — Find, the Items list, or a location's contents.*
+
+One product's whole life: how much is in stock, where it sits, and a dated
+ledger of every movement — received, counted, transferred, issued, returned,
+dispatched, adjusted, released from QC, located — with who did it, against which
+document, and **what was left after each move**.
+
+> **Use case.** The manager is sure 50 foam blocks were bought but only 38 are on
+> the shelf. He opens the stock card: *received 50 on 12 July · issued 8 to
+> Upholstery for SO-1180 · issued 4 for SO-1192 · 38 left.* Question answered in
+> ten seconds, with the issuance documents one tap away. No stock-take, no
+> argument.
+
+**Good to know:** the running balance is calculated back from today's real
+count, so the top line always matches what is physically in stock.
 
 ---
 
@@ -153,6 +179,11 @@ immediately. Nothing is ever changed silently.
 3. **Putaway** (storekeeper) — scan the destination location for each line;
    stock updates. Can be split across several locations. When everything is
    placed the GRN closes automatically.
+
+**Print item labels** sits on the verified lines, defaulting to **one label per
+unit received** — so goods get their barcode stickers before they reach the
+shelf, rather than arriving unlabelled and needing a second trip. Rejected lines
+are skipped, since they never go on a shelf.
 
 > **Use case.** A fabric delivery arrives. Suresh photographs the vehicle,
 > driver and invoice at the gate — the system won't let him submit without the
@@ -254,6 +285,22 @@ real adjustments, so the audit trail explains every change.
 
 # Reports and visibility
 
+## Stock overview *(manager home)*
+**Who:** manager, admin — it's the top of your home screen, not a menu item
+
+The answer to "how much do we have?" at a glance: products in stock, products
+**low** (at or below their reorder point), products with **nothing on the
+shelf**, and **dead stock** — still holding material but untouched for 90 days.
+Below that, how far the location mapping has got, and a live feed of the last
+movements in the warehouse.
+
+> **Use case.** Suhel opens Golai with his morning tea. Four products are below
+> reorder point and eleven have not moved in three months. He taps the low-stock
+> tile, sees exactly which, and forwards the list to purchasing before the
+> factory notices.
+
+---
+
 ## Alerts
 **Who:** everyone (the bell, top right)
 
@@ -294,6 +341,21 @@ never values.
 
 # Setup and administration
 
+## Setup checklist *(admin home)*
+**Who:** admin — appears automatically on a new company's home screen
+
+Seven steps in the order that works: company name and logo → zones → locations →
+print location labels → product list → staff logins → record where products sit.
+Each ticks itself off when the work is actually done, and the next step is
+highlighted.
+
+> **Use case.** A new admin logs in on day one and doesn't have to remember any
+> of it. They follow the highlighted step, and when the seventh is done the
+> whole panel **disappears** — a running warehouse shouldn't be nagged by a
+> setup guide.
+
+---
+
 ## Zones & Locations
 **Who:** admin (manager can view/edit)
 
@@ -324,6 +386,10 @@ The product master, plus **product barcode labels**.
 > **Use case.** One shelf holds five kinds of screws. The admin selects those
 > five, prints one label each at 50 × 25 mm, and the storekeeper sticks them on
 > the bins. Now the floor can tell them apart and scan the right one.
+
+**Good to know:** the same print dialog also sits on the **Receiving** screen, so
+day to day the storekeeper labels goods as they arrive rather than the admin
+doing a batch afterwards. Either works — use whichever suits your team.
 
 ---
 
