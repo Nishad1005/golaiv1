@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Loader2, MapPin, PackagePlus, RotateCcw } from 'lucide-react'
+import { CheckCircle2, Loader2, MapPin, PackagePlus, RotateCcw, Undo2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
 import { uploadPhoto } from '../../lib/photos'
 import { useOffline } from '../../lib/offline/queue'
+import { useSettings, DEFAULT_EDIT_LOCK_HOURS, undoWindowLabel } from '../../lib/settings'
 import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
@@ -32,6 +33,11 @@ export function Capture() {
   const [qty, setQty] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [lastSaved, setLastSaved] = useState<string | null>(null)
+  // The entry just recorded, so a mis-scan can be undone without an Adjust.
+  const [lastEntry, setLastEntry] = useState<{ id: string; lockedUntil: string } | null>(null)
+
+  const { data: settings } = useSettings()
+  const lockHours = settings?.edit_lock_hours ?? DEFAULT_EDIT_LOCK_HOURS
 
   // Current balance for the scanned item on this shelf → merge-or-replace prompt
   const { data: existingQty } = useQuery({
@@ -164,7 +170,7 @@ export function Capture() {
             p_item_id: item!.id,
             p_qty: Number(qty),
             p_mode: mode,
-            p_lock_hours: 24,
+            p_lock_hours: lockHours,
           },
           { p_photo_urls: photos },
           'capture',
@@ -182,7 +188,7 @@ export function Capture() {
         p_qty: Number(qty),
         p_mode: mode,
         p_photo_urls: photoPaths,
-        p_lock_hours: 24,
+        p_lock_hours: lockHours,
       })
       if (error) throw error
       await logActivity({
@@ -194,13 +200,44 @@ export function Capture() {
         entityId: data as string,
         after: { shelf: shelf!.code, item: item!.code, qty: Number(qty), mode },
       })
+      return data as string
     },
-    onSuccess: () => {
+    onSuccess: (entryId) => {
       setLastSaved(`${item!.name} — ${qty} ${item!.uom} on ${shelf!.code}`)
+      // Offline saves return nothing yet — there is no server row to undo.
+      setLastEntry(
+        entryId
+          ? { id: entryId, lockedUntil: new Date(Date.now() + lockHours * 3_600_000).toISOString() }
+          : null,
+      )
       setItem(null)
       setQty('')
       setPhotos([])
       void queryClient.invalidateQueries({ queryKey: ['item-locator'] })
+    },
+  })
+
+  /**
+   * Undo the capture just made. Scanning the wrong shelf is the commonest
+   * floor mistake, and forcing an Adjust (reason + manager approval) for a
+   * thirty-second-old slip teaches people to be afraid of the app. The window
+   * is the company's edit-lock setting; after it closes, Adjust is the only
+   * route — which is what keeps the audit trail honest.
+   */
+  const undo = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('undo_capture_entry', { p_entry_id: lastEntry!.id })
+      if (error) throw error
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'undo.entry', entityType: 'entry', entityId: lastEntry!.id,
+      })
+    },
+    onSuccess: () => {
+      setLastSaved(null)
+      setLastEntry(null)
+      void queryClient.invalidateQueries({ queryKey: ['item-locator'] })
+      void queryClient.invalidateQueries({ queryKey: ['balance'] })
     },
   })
 
@@ -211,6 +248,7 @@ export function Capture() {
     setQty('')
     setPhotos([])
     setLastSaved(null)
+    setLastEntry(null)
   }
 
   return (
@@ -244,8 +282,30 @@ export function Capture() {
       )}
 
       {lastSaved && (
-        <div className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
-          <CheckCircle2 className="h-5 w-5 shrink-0" /> Saved: {lastSaved}. Scan the next item.
+        <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 shrink-0" /> Saved: {lastSaved}. Scan the next item.
+          </div>
+          {lastEntry && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-green-200 pt-2">
+              <span className="text-xs text-green-700">
+                Wrong shelf or wrong number? {undoWindowLabel(lastEntry.lockedUntil)} to undo it.
+              </span>
+              <button
+                className="ml-auto inline-flex min-h-tap items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-green-900 underline decoration-green-400 underline-offset-2 hover:bg-green-100 disabled:opacity-50"
+                disabled={undo.isPending}
+                onClick={() => undo.mutate()}
+              >
+                {undo.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+                Undo this
+              </button>
+            </div>
+          )}
+          {undo.isError && (
+            <p role="alert" className="mt-2 text-xs font-medium text-red-700">
+              {(undo.error as Error).message}
+            </p>
+          )}
         </div>
       )}
 

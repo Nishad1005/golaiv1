@@ -31,7 +31,7 @@ export function AdminHome() {
           <ModuleTile icon={PackageCheck} title="Receiving (GRN)" subtitle="All gate entries and putaway" to="/grn" />
           <ModuleTile icon={Send} title="Dispatch (DC)" subtitle="Outbound orders and gate-out" to="/dispatch" />
           <ModuleTile icon={Printer} title="Label Printing" subtitle="Location and product barcode label PDFs" to="/admin/zones" />
-          <ModuleTile icon={Settings} title="Settings" subtitle="Edit lock, thresholds, working hours" comingInPhase={2} />
+          <ModuleTile icon={Settings} title="Settings" subtitle="Undo window, working hours, photo retention" to="/admin/settings" />
         </div>
       </section>
     </div>

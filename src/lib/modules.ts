@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Search, MapPin, ScanBarcode, ArrowLeftRight, PencilRuler,
   PackageCheck, PackageOpen, Undo2, Send, ShieldAlert, ListChecks, FileBarChart,
-  Map, Boxes, Building2, Building, Users, Bell,
+  Map, Boxes, Building2, Building, Users, Bell, Settings,
 } from 'lucide-react'
 import type { Profile, UserRole } from './types'
 
@@ -48,6 +48,7 @@ export const MODULES: AppModule[] = [
   { key: 'admin_parties', label: 'Parties', to: '/admin/parties', icon: Building2, defaultRoles: ['manager', 'admin'] },
   { key: 'admin_users', label: 'Users & Roles', to: '/admin/users', icon: Users, defaultRoles: ['admin'] },
   { key: 'admin_company', label: 'Company Profile', to: '/admin/company', icon: Building, defaultRoles: ['admin'] },
+  { key: 'admin_settings', label: 'Settings', to: '/admin/settings', icon: Settings, defaultRoles: ['admin'] },
   { key: 'alerts', label: 'Alerts', to: '/alerts', icon: Bell, defaultRoles: ALL, alwaysOn: true },
 ]
 

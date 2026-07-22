@@ -20,6 +20,7 @@ import { Items } from './pages/admin/Items'
 import { Parties } from './pages/admin/Parties'
 import { Users } from './pages/admin/Users'
 import { CompanyProfile } from './pages/admin/CompanyProfile'
+import { Settings } from './pages/admin/Settings'
 import { ProvisionClient } from './pages/ProvisionClient'
 import { Capture } from './pages/store/Capture'
 import { Transfer } from './pages/store/Transfer'
@@ -185,6 +186,7 @@ export default function App() {
           {can('admin_parties') && <Route path="/admin/parties" element={<Parties />} />}
           {can('admin_users') && <Route path="/admin/users" element={<Users />} />}
           {can('admin_company') && <Route path="/admin/company" element={<CompanyProfile />} />}
+          {can('admin_settings') && <Route path="/admin/settings" element={<Settings />} />}
           {profile.is_platform_admin && <Route path="/provision" element={<ProvisionClient />} />}
           <Route path="*" element={<ComingSoon />} />
         </Route>
