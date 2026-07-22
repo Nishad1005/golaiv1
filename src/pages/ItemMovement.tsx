@@ -1,13 +1,10 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowLeft, ArrowLeftRight, ClipboardCheck, Loader2, MapPin, PackageCheck,
-  PackageOpen, PencilRuler, Send, ShieldAlert, Undo2,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { ArrowLeft, ClipboardCheck, Loader2, MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { locationLabel } from '../lib/places'
+import { MOVEMENTS } from '../lib/movements'
 import { PageHeader } from '../components/PageHeader'
 
 interface Movement {
@@ -28,20 +25,6 @@ interface ShelfRow {
   fixture_type: string | null
   description: string | null
   zones: { code: string; name: string } | null
-}
-
-/** How each movement kind is shown. Tone is the colour of the quantity. */
-const KINDS: Record<string, { label: string; icon: LucideIcon }> = {
-  grn: { label: 'Received', icon: PackageCheck },
-  capture: { label: 'Counted', icon: ClipboardCheck },
-  transfer_in: { label: 'Transferred in', icon: ArrowLeftRight },
-  transfer_out: { label: 'Transferred out', icon: ArrowLeftRight },
-  issue: { label: 'Issued to production', icon: PackageOpen },
-  return: { label: 'Returned', icon: Undo2 },
-  dispatch: { label: 'Dispatched', icon: Send },
-  adjust: { label: 'Adjusted', icon: PencilRuler },
-  qc_release: { label: 'Released from QC', icon: ShieldAlert },
-  placement: { label: 'Located', icon: MapPin },
 }
 
 /**
@@ -212,7 +195,7 @@ export function ItemMovement() {
         ) : (
           <ul className="mt-3 divide-y divide-ink-200/70">
             {ledger.map((m, i) => {
-              const meta = KINDS[m.kind] ?? { label: m.kind, icon: ClipboardCheck }
+              const meta = MOVEMENTS[m.kind] ?? { label: m.kind, icon: ClipboardCheck }
               const Icon = meta.icon
               const shelf = m.shelf_id ? shelves?.get(m.shelf_id) : undefined
               const person = m.person_id ? people?.get(m.person_id) : undefined

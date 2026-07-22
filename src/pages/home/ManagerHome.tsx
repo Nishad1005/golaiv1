@@ -8,6 +8,7 @@ import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 import { PageHeader } from '../../components/PageHeader'
 import { StatCard } from '../../components/StatCard'
+import { StockOverview } from '../../components/StockOverview'
 import { useAuth } from '../../stores/auth'
 
 function greeting() {
@@ -63,12 +64,17 @@ export function ManagerHome() {
 
       <ItemLocator />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={Truck} label="GRNs today" value={kpis?.grnsToday ?? 0} tone="brand" to="/grn" loading={isLoading} />
-        <StatCard icon={Send} label="Dispatches today" value={kpis?.dispatchesToday ?? 0} tone="brand" to="/dispatch" loading={isLoading} />
-        <StatCard icon={BadgeCheck} label="Pending approvals" value={pendingTotal} tone={pendingTotal > 0 ? 'amber' : 'slate'} hint="Releases, dispatches, adjustments" loading={isLoading} />
-        <StatCard icon={AlertTriangle} label="Low / out of stock" value={kpis?.lowStock ?? 0} tone={(kpis?.lowStock ?? 0) > 0 ? 'red' : 'slate'} to="/alerts" loading={isLoading} />
-      </div>
+      <StockOverview />
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-400">Today's activity</h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard icon={Truck} label="GRNs today" value={kpis?.grnsToday ?? 0} tone="brand" to="/grn" loading={isLoading} />
+          <StatCard icon={Send} label="Dispatches today" value={kpis?.dispatchesToday ?? 0} tone="brand" to="/dispatch" loading={isLoading} />
+          <StatCard icon={BadgeCheck} label="Pending approvals" value={pendingTotal} tone={pendingTotal > 0 ? 'amber' : 'slate'} hint="Releases, dispatches, adjustments" loading={isLoading} />
+          <StatCard icon={AlertTriangle} label="Low / out of stock" value={kpis?.lowStock ?? 0} tone={(kpis?.lowStock ?? 0) > 0 ? 'red' : 'slate'} to="/alerts" loading={isLoading} />
+        </div>
+      </section>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-400">Approvals & review</h2>
