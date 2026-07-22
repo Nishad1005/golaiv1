@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, FileDown, Loader2, Pencil, Plus, Printer, Upload } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Upload } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -313,9 +314,11 @@ export function ZonesShelves() {
       )}
 
       {(zones ?? []).length === 0 && (
-        <div className="card py-10 text-center text-ink-400">
-          No zones yet. Import the client's zone list as CSV, or create zones one by one.
-        </div>
+        <EmptyState
+          icon={Map}
+          title="No zones yet"
+          detail="Zones are the areas of your warehouse. Add them one by one, or import your whole list from a CSV — then add the shelves, ghodas or racks inside each one and print their barcode labels."
+        />
       )}
 
       {(zones ?? []).map((zone) => {

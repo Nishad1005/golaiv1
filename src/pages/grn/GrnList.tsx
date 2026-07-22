@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2, Plus, Truck } from 'lucide-react'
+import { Loader2, PackageCheck, Plus, Truck } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 
@@ -85,9 +86,12 @@ export function GrnList() {
             </Link>
           ))}
           {(grns ?? []).length === 0 && (
-            <div className="card py-10 text-center text-ink-400">
-              No GRNs yet. Gate entries created by Security appear here.
-            </div>
+            <EmptyState
+              icon={PackageCheck}
+              title="No deliveries recorded yet"
+              detail="When a truck reaches the gate, Security records the vehicle, driver and paperwork here — then the storekeeper verifies and puts the goods away."
+              action={canCreate ? { label: 'New Gate Entry', to: '/grn/new' } : undefined}
+            />
           )}
         </div>
       )}

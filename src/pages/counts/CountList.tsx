@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ClipboardList, Loader2, Plus } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -155,9 +156,11 @@ export function CountList() {
             </Link>
           ))}
           {(counts ?? []).length === 0 && (
-            <div className="card py-10 text-center text-ink-400">
-              No stock counts yet. Managers create count plans; storekeepers execute them.
-            </div>
+            <EmptyState
+              icon={ClipboardList}
+              title="No stock counts yet"
+              detail="A count checks what is physically on the shelves against what Golai believes. The manager plans one and assigns it; the storekeeper walks the floor and enters what they see."
+            />
           )}
         </div>
       )}

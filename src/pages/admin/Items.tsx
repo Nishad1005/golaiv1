@@ -484,9 +484,15 @@ export function Items() {
               ))}
               {(items ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-ink-400">
-                    No items yet. Import the client's CSV or create items manually — existing codes
-                    are always kept unchanged.
+                  <td colSpan={6} className="px-4 py-10 text-center">
+                    <p className="font-semibold text-ink-800">
+                      {search || onlyAuto ? 'Nothing matches that' : 'No products yet'}
+                    </p>
+                    <p className="mx-auto mt-1 max-w-sm text-sm text-ink-400">
+                      {search || onlyAuto
+                        ? 'Try a different search, or clear the filters.'
+                        : 'Import your product list from a CSV, or add products one at a time. Your existing codes are always kept exactly as they are.'}
+                    </p>
                   </td>
                 </tr>
               )}

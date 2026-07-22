@@ -171,7 +171,13 @@ export function Parties() {
             </div>
           ))}
           {(rows ?? []).length === 0 && (
-            <p className="px-4 py-8 text-center text-ink-400">Nothing here yet.</p>
+            <div className="px-4 py-10 text-center">
+              <p className="font-semibold text-ink-800">Nothing here yet</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-ink-400">
+                Suppliers appear at the gate, customers on dispatches, and departments on release
+                requests. Names and contacts only — no payments or pricing.
+              </p>
+            </div>
           )}
         </div>
       )}

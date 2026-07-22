@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, Plus, Send } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 
@@ -81,9 +82,12 @@ export function DispatchList() {
             </Link>
           ))}
           {(dcs ?? []).length === 0 && (
-            <div className="card py-10 text-center text-ink-400">
-              No dispatches yet. Storekeepers create them by picking against an SO reference.
-            </div>
+            <EmptyState
+              icon={Send}
+              title="Nothing has been dispatched yet"
+              detail="A dispatch starts when the storekeeper picks goods against a sales order. The manager approves it, then Security scans every carton at the gate."
+              action={canCreate ? { label: 'New Dispatch', to: '/dispatch/new' } : undefined}
+            />
           )}
         </div>
       )}

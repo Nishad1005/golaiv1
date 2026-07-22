@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, Check, CheckCheck, Loader2 } from 'lucide-react'
+import { Bell, BellOff, Check, CheckCheck, Loader2 } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -66,7 +67,11 @@ export function Alerts() {
       {isLoading ? (
         <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (alerts ?? []).length === 0 ? (
-        <div className="card py-10 text-center text-ink-400">No alerts. All clear.</div>
+        <EmptyState
+          icon={BellOff}
+          title="All clear"
+          detail="Golai raises an alert when something needs a person: a truck at the gate, a request waiting for approval, stock running low, or a count ready for review."
+        />
       ) : (
         <div className="space-y-2">
           {(alerts ?? []).map((a) => (

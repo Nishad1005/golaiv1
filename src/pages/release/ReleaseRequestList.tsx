@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, PackageOpen, Plus } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 
@@ -84,9 +85,12 @@ export function ReleaseRequestList() {
             </Link>
           ))}
           {(rrs ?? []).length === 0 && (
-            <div className="card py-10 text-center text-ink-400">
-              No release requests yet. Planners create them against SO references.
-            </div>
+            <EmptyState
+              icon={PackageOpen}
+              title="No material has been requested yet"
+              detail="This is how material leaves the store for production: the planner asks against a sales order, the manager approves, and the storekeeper issues it with the foreman's signature."
+              action={canCreate ? { label: 'New Request', to: '/release/new' } : undefined}
+            />
           )}
         </div>
       )}

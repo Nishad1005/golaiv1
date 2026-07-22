@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Loader2, ShieldAlert, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { CheckCircle2, Loader2, ShieldAlert, ShieldCheck, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -91,9 +92,11 @@ export function QcHolds() {
       {isLoading ? (
         <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-brand-500" />
       ) : (holds ?? []).length === 0 ? (
-        <div className="card py-10 text-center text-ink-400">
-          Nothing in quarantine. Items marked "Hold for QC" during GRN verification appear here.
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="Nothing is waiting for inspection"
+          detail={'Products marked "Hold for QC" while a delivery is verified land here. They stay on the shelf but cannot be issued or dispatched until you release or reject them.'}
+        />
       ) : (
         (holds ?? []).map((hold) => (
           <div key={hold.id} className="card space-y-3">
