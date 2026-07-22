@@ -40,6 +40,7 @@ every movement is recorded** — who, when, how much, with photos.
 | Recording what already sits on a shelf (first-time setup) | **Assign Location** |
 | Found stock nobody had recorded | **Capture** |
 | Moving stock from one shelf to another | **Transfer** |
+| Just scanned the wrong shelf | **Undo** on the confirmation — for a short window |
 | The count is wrong and needs correcting | **Adjust** |
 | Production needs material | **Release Requests** |
 | Production is returning unused material | **Returns** |
@@ -53,6 +54,7 @@ every movement is recorded** — who, when, how much, with photos.
 | Labelling goods that just arrived | **Receiving** (Print item labels) |
 | Setting the warehouse up for the first time | **Admin home** — the setup checklist |
 | New staff member needs a login | **Users & Roles** |
+| Change the undo window or working hours | **Settings** |
 
 ---
 
@@ -129,6 +131,13 @@ recognised, it offers to create the product on the spot.
 **Good to know:** if the product is already recorded on that shelf, you choose
 **add on top** or **replace the count** — so re-counting never doubles a figure
 by accident.
+
+**Made a mistake?** The confirmation carries an **Undo this** button with the
+time remaining. Scanning the wrong shelf is the commonest slip on the floor, and
+inside the window you can put it right yourself. Once the window closes — your
+admin sets how long in Settings — the only correction is an **Adjust**, with a
+reason and a manager approval. You cannot undo someone else's entry, or one
+whose stock has already been issued.
 
 ---
 
@@ -272,14 +281,22 @@ still physically on the shelf, but **not available to issue or dispatch**.
 
 Periodic physical verification, in units only.
 
-> **Use case.** Monthly count of Zone 1. Suhel creates a plan and assigns it to
-> Rajesh, who gets an alert. Rajesh scans each shelf and product and enters what
-> he physically sees; every difference needs a reason. He finishes, Suhel
-> reviews the variances and approves — stock is corrected and each correction is
-> written as an adjustment record.
+When a location is scanned, Golai lists **everything it believes is there** with
+a tick against each one counted and a running "4 of 7 counted" badge. Products
+without a barcode are counted by **tapping the row** — no scanning needed.
 
-**Good to know:** rejecting a count sends it back for a recount. Approving posts
-real adjustments, so the audit trail explains every change.
+> **Use case.** Monthly count of Zone 1. Suhel creates a plan and assigns it to
+> Rajesh, who gets an alert. Rajesh scans a ghoda and sees the seven products
+> Golai expects on it. He works down the list entering what he actually sees;
+> one product is missing entirely, so he enters **0**. Every difference needs a
+> reason. He finishes, Suhel reviews the variances and approves — stock is
+> corrected and each correction is written as an adjustment record.
+
+**Good to know:** anything left uncounted **keeps its old figure** — so the
+screen flags what you have not reached yet. If something is not there, enter
+**0**; that is a real count, not a skip. Rejecting a count sends it back for a
+recount; approving posts real adjustments, so the audit trail explains every
+change.
 
 ---
 
@@ -434,6 +451,24 @@ plus setup).
 
 Your company name, **logo**, GST number and contact details. The name and logo
 appear top-right for everyone in your company.
+
+---
+
+## Settings
+**Who:** admin
+
+The few company-wide rules that change how the floor behaves:
+
+- **Undo window** — how long someone can undo their own capture before it can
+  only be fixed with an Adjust. Default 24 hours.
+- **Working hours** — your normal shift, so activity outside it can be told
+  apart in the audit trail.
+- **Photo retention** — how long gate, damage and handover photographs are kept.
+  Two years covers most disputes.
+
+> **Use case.** A warehouse running two shifts finds 24 hours too generous —
+> yesterday's mistakes should not be quietly undone today. The admin sets the
+> window to 6 hours. Anything older now needs a reason and a manager.
 
 ---
 

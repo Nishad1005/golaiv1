@@ -5,12 +5,12 @@ Updated 2026-07-22.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0020.
+0001 → 0021.
 
-**Shipped since the last revision:** the stock card (A1), the manager stock
-dashboard (B3), item labels at receiving (A2) and the first-run checklist (B1).
-Building the stock card also fixed two silent data bugs — see the note under
-A3.
+**Shipped since the last revision:** the stock card, the manager stock
+dashboard, item labels at receiving, the first-run checklist, the stock-count
+blind-spot fix, and the Settings screen with a working undo window. Building
+these also fixed three silent data bugs — see the notes under A1.
 
 This file is **two different roadmaps**, deliberately separated:
 
@@ -28,38 +28,21 @@ Legend: **★** = also fixes a general product gap, not just a U&M request.
 
 # Part A — Finish U&M
 
-> **Does building these actually improve the app?** For almost everything below,
-> yes — they are marked ★. U&M are the first real users, so what they hit are
-> the gaps the PRD never noticed, not U&M quirks. The test to keep applying:
-> **would the next client want this without being asked?** If yes it belongs in
-> the product; if no, it belongs in settings, or nowhere.
+**Every feature U&M asked for is now built.** What remains is verification and
+their own data — no code.
 
-### A1. Stock count blind spot ★
-*This is a correctness bug, not a preference.*
+> **Did building their requests improve the app?** Yes, almost without
+> exception. U&M were the first real users, so what they hit were the gaps the
+> PRD never noticed, not U&M quirks: codes kept verbatim, client-named
+> locations, a mapping walk that needs no barcodes, phone logins, the stock
+> card. The test to keep applying to the next client: **would anyone else want
+> this without being asked?** If yes it belongs in the product; if no, it
+> belongs in settings, or nowhere.
 
-The count screen never shows what *should* be at a location — lines appear only
-as the storekeeper scans. If they miss one of five products on a shelf, that
-item is silently never counted and no variance is raised.
-
-**Build (minimal):** when a location is scanned during a count, list the items
-already recorded there with expected quantities and mark off what's been
-counted. Reuses the existing approval workflow.
-
-### A2. Settings screen ★
-`tenant_settings` exists in the database (edit-lock window, approval quantity
-threshold, working hours, photo retention) but **has no UI** — the Admin home
-tile is still marked "Phase 2". Several PRD behaviours are written but dead:
-
-- **Edit lock** — `entries.locked_until` is written but never enforced; the
-  manager-override password flow doesn't exist.
-- **Approval threshold** — `approval_qty_threshold` is unused, so high-quantity
-  transactions are never auto-held for manager sign-off (PRD 4.3).
-- **Manual-entry password gate** — typing a location code instead of scanning is
-  audit-flagged but not password-gated (PRD 4.2).
-
-### A3. Verify migrations 0016 → 0020 in production
+### A1. Verify migrations 0016 → 0021 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
-movement ledger (0019) and the stock overview (0020). 0017 rewrote every write
+movement ledger (0019), the stock overview (0020) and settings + undo (0021).
+0017 rewrote every write
 path (guarded RPC wrappers, dropped direct-write policies, revoked internal
 helpers), so it needs a real regression pass: capture, assign location, GRN
 through putaway, release → issuance, dispatch, Users & Roles, and My Account
@@ -73,12 +56,17 @@ through putaway, release → issuance, dispatch, Users & Roles, and My Account
 - `assign_placements` now writes a `placements` audit row. Run the mapping walk
   and confirm each assignment appears on the stock card as "Located".
 
+**0021 adds `undo_capture_entry`.** Check all four refusals: undoing someone
+else's entry as a storekeeper, undoing twice, undoing after the window has
+closed, and undoing after the stock has already left the shelf (which would
+drive it negative).
+
 Rows that existed before 0019 have `qty_delta` backfilled from `qty`, which is
 right for 'add' captures and unknowable for old 'set' ones — so a stock card may
 show one wrong historical figure for any recount done before the migration. The
 current balance is always correct; only that one row's delta is suspect.
 
-### A4. Complete the onboarding
+### A2. Complete the onboarding
 - Import their real item master into the **U&M tenant** (currently only loaded
   into the demo tenant for testing).
 - Create their locations, print and stick the barcode stickers.
@@ -100,23 +88,17 @@ warehouse in ten seconds — zones, locations, items, stock, one GRN, one
 issuance. Also the fastest way to reset a demo tenant (see the SQL appendix in
 `docs/demo-guide.md`).
 
-### B2. Undo window
-Floor staff scan the wrong shelf. The only fix today is an Adjust with manager
-approval — heavy for a thirty-second-old mistake, and it trains people to be
-afraid of the app. `entries.locked_until` already exists; surface it as an
-"undo" on a person's own recent entries, inside the configured window.
-
-### B3. Empty states
+### B2. Empty states
 Every list screen with no data should say what to do next and link there, rather
 than sitting blank. Cheap, and it is most of the distance between "unfinished"
 and "polished" in a demo.
 
-### B4. Speed on cheap phones
+### B3. Speed on cheap phones
 The main bundle is one ~2 MB chunk, loaded over warehouse Wi-Fi on entry-level
 Android. Route-level lazy loading is roughly a day and directly affects the
 first impression of the people who use the app most (PRD 8.1 targets < 2s).
 
-### B5. WhatsApp alerts
+### B4. WhatsApp alerts
 The in-app bell assumes people open the app; WhatsApp assumes nothing. In this
 market it is the notification channel that actually gets read, and the feature
 most likely to be asked for in a sales meeting. Needs a WhatsApp Business API
@@ -124,12 +106,12 @@ account and template approval — modest code, real admin overhead. Formally
 deferred in the PRD; worth revisiting as a commercial decision, not a technical
 one.
 
-### B6. Hindi UI
+### B5. Hindi UI
 Halves training time for floor roles and is a visible differentiator against
 imported software. Honest cost: an i18n retrofit across every screen, not a
 toggle.
 
-### B7. Multi-warehouse — decide the answer before you're asked
+### B6. Multi-warehouse — decide the answer before you're asked
 Plenty of companies run two or three godowns. Deferred by design (one warehouse
 per tenant), but it **will** come up in a sales call. Decide now whether the
 answer is "roadmap", "one tenant per godown", or "we'll build it".
@@ -167,7 +149,20 @@ Capacitor plugin is wired, but **nothing sends a push**. Requires a Firebase
 project, `google-services.json`, the FCM key as a function secret, and an Edge
 Function triggered on `alerts` inserts. In-app bell works today.
 
-### C5. Field-verify the label and scan work
+### C5. The last two dead settings
+0021 gave `tenant_settings` a screen and made `edit_lock_hours` real. Two PRD
+behaviours are still written into the schema but not enforced, and are kept
+**off** the Settings screen until they are — a switch that does nothing is worse
+than no switch:
+
+- **Approval threshold** — `approval_qty_threshold` is unused, so a
+  high-quantity transaction is never auto-held for manager sign-off (PRD 4.3).
+  Needs a decision first: which transactions does it gate, and does it block or
+  merely flag?
+- **Manual-entry password gate** — typing a location code instead of scanning is
+  audit-flagged but not password-gated (PRD 4.2).
+
+### C6. Field-verify the label and scan work
 Confirm on the client's own hardware: item labels at 100 × 50 mm on the TSC
 TE244, scanning the printed Code128 with a USB scanner and the QR with a phone,
 and the Returns camera scan that originally failed.
@@ -213,7 +208,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0020**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0021**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.
@@ -235,7 +230,9 @@ any of these without Product Owner sign-off.
    real codes to replace them?
 3. **Unit of measure** — their master has no UOM column, so everything defaults
    to `pcs`. Do rolls/metres/kg matter for the counts they want?
-4. **Who prints labels day to day** — both work now (Admin → Items and the
+4. **Undo window length** — Settings defaults to 24 hours. Does U&M want it
+   shorter (tighter audit) or longer (kinder to the floor)?
+5. **Who prints labels day to day** — both work now (Admin → Items and the
    receiving screen). Worth confirming which one U&M actually adopt.
-5. **Employee IDs** — will HR supply them, or do staff enter their own? Both work
+6. **Employee IDs** — will HR supply them, or do staff enter their own? Both work
    today; only the position is admin-only.

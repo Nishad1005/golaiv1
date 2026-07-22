@@ -90,6 +90,11 @@ add GST/contact details. Your name and logo then appear in the top-right of the
 app for everyone on your team, so staff see they're working in U&M's system.
 PNG or JPG, square works best, under 2 MB.
 
+**Settings** (Admin) holds three company-wide rules: the **undo window** (how
+long staff can undo their own scan before it needs an Adjust — 24 hours by
+default), your **working hours**, and how long **photos** are kept. The defaults
+suit most warehouses; change them once and forget them.
+
 ---
 
 ## 4. Give every storage spot a barcode (one-time setup)
@@ -213,8 +218,14 @@ so it is obvious if you revisit one.
   is refused automatically.
 - **Finding anything** → **Find** → type a product name to see its location, or
   scan a location sticker to see everything on it with quantities.
-- **Stock checking** → Manager creates a **Stock Count**, storekeeper counts by
-  scan, differences need a reason and Manager approval.
+- **Stock checking** → Manager creates a **Stock Count**; the storekeeper scans a
+  location and Golai **lists everything it expects there**, ticking each one off
+  as it is counted. If something is missing, enter **0** — leaving it out keeps
+  the old figure. Differences need a reason and Manager approval.
+- **Scanned the wrong shelf?** The green confirmation has an **Undo this**
+  button with the time left. Inside that window the person who made the mistake
+  can fix it themselves; afterwards it takes an **Adjust** with a reason and your
+  approval. You choose the window length in **Settings** (24 hours by default).
 - **A glance at your stock** → the Manager and Admin home screens open with
   **Stock right now**: how many products are in stock, which are **low** (at or
   below reorder point), which have **nothing on the shelf**, and which haven't
@@ -237,7 +248,9 @@ order's entire journey with all the evidence.
 | Forgot password | Ask your Admin: **Users & Roles → Reset password** → they set a new one and tell you. Takes 10 seconds. |
 | Scanner won't read a label | Type the code by hand using the keyboard button next to the scan box, or use the QR square with a phone camera |
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |
+| Just scanned the wrong shelf | Press **Undo this** on the green confirmation — available for as long as your undo window allows |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |
+| Undo says the window has closed | That is deliberate. Use **Adjust Quantity** instead, which keeps a reason on record |
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
 | A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |
 | Label prints tiny / all on one sticker | In the print dialog set **Actual size / 100%** (not "Fit to page"), and pick the label size that matches your roll |

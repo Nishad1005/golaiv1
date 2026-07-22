@@ -106,9 +106,10 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 
 ### Act 7 — The clincher (1 min, on the phone)
 
-1. Turn on **airplane mode** → the amber **Offline** banner appears → do a capture anyway → it saves.
-2. Turn Wi-Fi back on → watch it sync. **Say:** *"Factory Wi-Fi dies; work doesn't."*
-3. Show **Add to Home Screen** → the Golai icon lands next to WhatsApp. No app store needed.
+1. As `store@test.com`, do a quick **Capture** onto the wrong shelf, then press **Undo this** on the green confirmation. **Say:** *"Your floor staff will make mistakes. Inside the window they fix it themselves; after that it needs a reason and the manager. You set that window in Settings."*
+2. Turn on **airplane mode** → the amber **Offline** banner appears → do a capture anyway → it saves.
+3. Turn Wi-Fi back on → watch it sync. **Say:** *"Factory Wi-Fi dies; work doesn't."*
+4. Show **Add to Home Screen** → the Golai icon lands next to WhatsApp. No app store needed.
 
 ---
 
@@ -120,6 +121,8 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 | "We already have item codes everywhere." | **They stay exactly as they are.** Golai imports your CSV verbatim — it only generates a code when an item has none at all. |
 | "What if the internet goes down?" | Scanning, capture, and gate entry keep working offline and sync automatically when the network returns. |
 | "Can my staff handle it?" | Each role sees only their own screens, with big buttons designed for a 5-second interaction. The guard's screen is photos and one button. |
+| "What happens when someone scans the wrong shelf?" | They press **Undo** — for a window you set (24 hours by default). After that it takes an Adjust with a reason and a manager's approval, so nothing is ever changed silently. |
+| "How do we know a stock count was done properly?" | Scanning a location shows **everything the system expects there**, ticked off as counted. Nothing can be quietly skipped — a missing product is entered as 0 and raises a variance. |
 | "Is our data safe? We have competitors." | Each company's data is isolated at the database level (row-level security), photos are private with expiring links, and the audit log is append-only — nobody, including us, can rewrite history. |
 | "What about our existing barcodes on products?" | Any existing barcode scans straight in — it's stored alongside the item and both work. And for products with none, Golai prints labels from their own code. |
 | "Our products aren't barcoded at all — how long before we can search?" | **One walk of the floor.** Locations get stickers, then a storekeeper scans a spot and types product names to record what's on it. No product barcodes needed to start. |

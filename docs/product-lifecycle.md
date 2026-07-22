@@ -276,6 +276,8 @@ Find and it is all there, newest first.*
 | **Wrong rack scanned when picking** | Golai refuses — it only allows picking from a location that actually holds that product |
 | **Someone tries to issue more than requested** | Refused. The request stays open showing what's still outstanding |
 | **Physical count doesn't match** | **Stock Count** (planned) or **Adjust** (one-off) — both need a reason and manager approval, and both leave an audit record |
+| **Someone scans the wrong rack** | The confirmation offers **Undo this** for as long as the company's undo window allows (24 hours by default). After that, an Adjust with a reason |
+| **A product gets missed in a stock count** | It cannot be missed quietly — scanning a location lists everything expected there, and anything uncounted is flagged. A product that is not there is entered as 0, which raises a variance |
 | **Wrong carton at the gate** | Scanning refuses it, and gate-out won't complete until every carton matches the DC |
 | **Wi-Fi drops in the warehouse** | Receiving at the gate, Capture and Transfer keep working offline and sync automatically when the connection returns |
 
