@@ -349,6 +349,9 @@ Create staff logins, set roles, control access.
   stays. **Delete** is only for accounts created by mistake.
 - **Access** lets you tick or untick individual modules per person, on top of
   their role.
+- **ID card** sets someone's **employee ID** and **position** (job title). Staff
+  can add their own photo and employee number, but **only an admin can set the
+  position** — nobody can give themselves a title.
 
 > **Use case.** A new storekeeper joins but shouldn't handle dispatches yet. The
 > admin creates him as a storekeeper, opens **Access**, and unticks Dispatch —

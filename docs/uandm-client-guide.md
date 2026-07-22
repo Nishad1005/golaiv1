@@ -22,9 +22,14 @@ with its own icon. It even keeps working when the warehouse Wi-Fi drops
 (everything syncs automatically when the connection returns).
 
 > **Change your password after first login.** Click your name at the bottom of
-> the menu (or **My account** in the phone menu) → **Change password**. Every
-> user can do this for themselves — staff should do it as soon as they receive
-> their temporary password.
+> the menu (or **My account** in the phone menu) → **Change** next to Password.
+> Every user can do this for themselves — staff should do it as soon as they
+> receive their temporary password.
+
+**My Account** is also each person's ID card: they can add **their own photo and
+employee ID**, and see their **position, role and contact details** (set by you)
+plus shortcuts to every section they're allowed to open. Handy answer to "why
+can't I see Dispatch?" — the list shows exactly what they have.
 
 Your 13 warehouse zones are **already set up** from your Zone Master sheet
 (Z01 Main Store Hardware … Z13 Sample Hold + Finished Goods). You can rename

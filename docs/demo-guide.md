@@ -24,13 +24,17 @@ Three facts to memorize:
 |---|---|
 | **Web app** | `https://golaiv1.netlify.app/`  |
 | **Works on** | Any phone or laptop browser. On a phone, the browser offers **"Add to Home Screen"** — it installs like an app. |
-| **Demo company** | U&M Designs Pvt Ltd (furniture manufacturer) |
+| **Demo company** | DBBS Demo — a furniture manufacturer |
+
+> **Never demo on a real client's account.** The demo tenant and every client
+> tenant share the same tables, separated at the database level. Log in with the
+> `@test.com` accounts below and you are always in demo data.
 
 ### Demo accounts (one per role — each sees a different home screen)
 
 | Login | Role | Plays | Home screen shows |
 |---|---|---|---|
-| `user1@test.com` | **Admin** | IT / setup person | Masters: zones, shelves, items, users |
+| `user1@test.com` | **Admin** | IT / setup person | Masters: zones & locations, items, parties, users, company |
 | `manager@test.com` | **Manager** | Owner / MD ("Suhel") | Approvals, reports, QC, exports |
 | `planner@test.com` | **Production Planner** | Production head ("Amit") | Release requests, dept status |
 | `store@test.com` | **Storekeeper** | Store in-charge ("Rajesh") | Scan-first task tiles |
@@ -43,7 +47,7 @@ Three facts to memorize:
 1. Open **two browser windows** (one normal, one incognito) so you can switch roles fast without logging in and out.
 2. Log in as `store@test.com` in one and `manager@test.com` in the other.
 3. Check the item locator finds something: type `cupcake` in the search bar — a fabric with shelf locations should appear. If the database is empty, run the **Appendix B seed** first.
-4. Have one printed **shelf label** and one printed **issuance label** on the table if possible (print from the app: Admin → Zones & Shelves → Labels). Physical labels make the demo tangible.
+4. Have printed labels on the table if possible — one **location label**, one **product label**, one **issuance label** (Admin → Zones & Locations → Labels, and Admin → Items → Print labels). Physical labels make the demo tangible.
 5. Phone charged — the phone camera scan and "Add to Home Screen" moments land better on a phone than a laptop.
 
 ---
@@ -56,9 +60,10 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 
 ### Act 1 — "Find anything in five seconds" (2 min, as any role)
 
-1. On the home screen, click the search bar: **"Find any item… name, code or barcode."**
-2. Type `cupcake` → the fabric appears with **zone, shelf, and quantity**.
-3. **Say:** *"This is the whole product in one screen. Your storekeeper retires or goes on leave — the knowledge doesn't leave with him. Anyone can find any material instantly."*
+1. Open **Find Item** (or the search bar on the home screen): **"Find any item… name, code or barcode."**
+2. Type `cupcake` → the fabric appears with **zone, location, and quantity**.
+3. Now do it **the other way round**: scan (or type) a location code like `Z01-S003` → Golai lists **everything on that spot with quantities**. **Say:** *"At the rack, your man sees all five things stored there and how many of each."*
+4. **Say:** *"This is the whole product in one screen. Your storekeeper retires or goes on leave — the knowledge doesn't leave with him. Anyone can find any material instantly."*
 
 ### Act 2 — Material arrives at the gate (3 min, as `security@test.com`)
 
@@ -112,7 +117,11 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 | "What if the internet goes down?" | Scanning, capture, and gate entry keep working offline and sync automatically when the network returns. |
 | "Can my staff handle it?" | Each role sees only their own screens, with big buttons designed for a 5-second interaction. The guard's screen is photos and one button. |
 | "Is our data safe? We have competitors." | Each company's data is isolated at the database level (row-level security), photos are private with expiring links, and the audit log is append-only — nobody, including us, can rewrite history. |
-| "What about our existing barcodes on products?" | Any existing barcode scans straight in — it's stored alongside the item and both work. |
+| "What about our existing barcodes on products?" | Any existing barcode scans straight in — it's stored alongside the item and both work. And for products with none, Golai prints labels from their own code. |
+| "Our products aren't barcoded at all — how long before we can search?" | **One walk of the floor.** Locations get stickers, then a storekeeper scans a spot and types product names to record what's on it. No product barcodes needed to start. |
+| "Can it carry our company name and logo?" | Yes — the client's admin uploads it under Company Profile, and it appears in the app for their whole team. Golai's name stays in the menu. |
+| "Can we control what each person sees?" | Beyond the five roles, the admin can tick individual sections on or off **per person**. Unticked sections disappear from that person's menu entirely — and the database refuses them too, not just the screen. |
+| "Half our floor staff have no email." | They log in with their **mobile number** and a password. No SMS, no OTP, no cost. |
 | "iPhone / Android app?" | It installs from the browser today (PWA); native Play Store / App Store builds are on the roadmap. |
 | "Costing, valuation, stock value reports?" | Out of scope by design — that's ERP territory. Golai shows units only. |
 
@@ -127,64 +136,80 @@ process you'll follow the same way for every client.
 
 ### 5.1 Who creates the logins?
 
-- **You (DBBS) create ONE account: the client's Admin.** (Supabase Auth → add
-  user, then insert their `profiles` row with role `admin` and their tenant id —
-  the same two-step you used for the demo accounts.)
-- **The client's Admin creates everyone else from inside the app** — no Supabase
-  access needed. Admin → **Users & Roles → New User** → name, email **or mobile
-  number** (staff without email log in with their 10-digit mobile), role →
-  **Create & send invite**. Golai shows a **temporary password on screen** — the
-  admin hands it to the staff member, who logs in with their email/mobile + that
-  password (no email is sent; they can change the password later). When staff
-  leave, the admin **Deactivates** them from the same screen (login blocked,
-  history preserved); permanent Delete is only for accounts created by mistake.
+- **You (DBBS) create the client in one step, inside the app.** Log in as a
+  platform admin → **Provision Client** → enter the company name and the admin's
+  name, email/mobile and password → submit. Golai creates the **company and its
+  first admin login together**, so a client's data can never land in the wrong
+  company by accident. No Supabase dashboard, no SQL.
+- **The client's Admin creates everyone else from inside the app.** Admin →
+  **Users & Roles → New User** → name, email **or mobile number** (staff without
+  email log in with their 10-digit mobile), role → **Create**. Golai shows a
+  **temporary password on screen** — the admin hands it over, and the staff
+  member changes it under **My Account**. No email is ever sent.
+  - Forgotten password? **Reset password** next to their name issues a new one
+    in seconds.
+  - Staff left? **Deactivate** (login blocked, history preserved). Permanent
+    Delete is only for accounts created by mistake.
+- **The client brands it as their own.** Admin → **Company Profile** → company
+  name + logo, which then appear top-right for their whole team.
 - Each client is a separate **tenant**: their data is invisible to every other
   client, enforced at the database level.
 
 ### 5.2 Migrating the client's existing data (Excel → Golai)
 
-A client usually has two things: a **zone/shelf list** (often with barcodes
-already) and an **item master** (usually with no locations). That's the ideal
-input — in Golai an item's location isn't a field in the item master, it's
-created when someone scans the item onto a shelf. So:
+A client usually has two things: a **zone list** and an **item master with no
+locations in it**. That's the normal, expected input — in Golai an item's
+location isn't a field on the item, it's created when someone puts that item on
+a spot. The order below matters:
 
-1. **Zones & shelves** — create them from the client's list (Admin → Zones &
-   Shelves), keeping their existing shelf codes/barcodes. If they have none,
-   print Golai's shelf-label PDFs (**Labels** button per zone) and stick them.
-2. **Item master** — import their Excel/CSV (Admin → Items → **Import CSV**).
-   Existing item codes are kept **exactly as-is**; only items with no code get an
-   auto `ITM-` code. At this point every item exists but sits on **no shelf** —
-   that's expected, not a problem to fix.
-3. **Print item barcode labels** (see 5.3) and stick one on each physical piece.
-4. **The client assigns locations by scanning** — a storekeeper walks the floor
-   with the app: **Capture → scan shelf → scan each item on it → enter quantity**.
-   Every scan places that item on that shelf with its real quantity. After one
-   walk-through, the item locator finds everything. This is the client's own work
-   (they know their floor) and doubles as staff training — and it's more accurate
-   than importing planned locations from a spreadsheet, because it records where
-   stock *actually* is.
+1. **Zones** — Admin → **Zones & Locations**. Create them, or **Import zones
+   CSV** for a long list (a template is provided). Any zone can be renamed later.
+2. **Locations** — inside each zone, add the spots and **let the client name
+   them**: they type `Ghoda`, `Shelf`, `Rack` — whatever they call it — and Golai
+   builds codes from the first letter (`Ghoda` → `Z03-G001…`). Print the labels
+   (**Labels** button) and stick one on each physical spot. *It doesn't matter
+   which sticker goes where* — that gets recorded in step 4.
+3. **Item master** — Admin → Items → **Import CSV**. Existing item codes are kept
+   **exactly as-is**; items with no code get an auto `ITM-` code, **flagged
+   "auto"** in the list so the client can replace it with a real one later. The
+   client's own grouping column (U&M call theirs "Definition") maps to **Type**,
+   which is searchable — typing "Thread" finds every thread.
+4. **The location walk — the step that makes search work.** A storekeeper walks
+   the floor with a phone: **Assign Location → scan the location sticker → type a
+   product's name → tap to add** → repeat for everything on that spot → **Next
+   location**. Quantity is optional; leave it blank if they're not counting yet.
 
-> Optional: if the client wants rough default zones in the import, we can map a
-> "default zone" per item — but actual stock still comes from the scan-walk.
+> **Say this clearly, because it's the objection that comes up:** the walk needs
+> **no product barcodes at all** — products are found by name. That's why it can
+> start on day one, before a single product label is printed. A progress counter
+> ("312 of 4,565 products located") means it can be done over several days.
 
-### 5.3 Printing item barcode labels
+5. **Product labels** (see 5.3) — optional but recommended wherever one spot
+   holds several similar things. Stick one on each bin/box so the floor can scan
+   the product, not just the shelf.
+6. **Quantities** — either entered during the walk, or filled in later with a
+   **Stock Count**. Knowing *where* things are starts paying off immediately.
+
+### 5.3 Printing product barcode labels
 
 For items that arrive without a barcode, Golai generates one from the item's
-code. Admin → **Items** → tick the items (or **Select all**) → **Print labels**:
+code. Admin → **Items** → tick the items (search first, then use the header
+checkbox to take a whole group) → **Print labels**:
 
-- **Label size**: A4 sticker sheets (24 or 12 per page) for an office printer, or
-  50×25mm for a thermal label printer (the daily-use option at scale).
-- **Copies per item**: one sticker per physical piece — e.g. 12 for 12 rolls of
-  the same fabric.
+- **Label size** — match it to the client's hardware:
+  - **Thermal roll**: 100 × 50 mm, 75 × 50 mm or 50 × 25 mm. Each label prints
+    on **its own page**, which is what a label printer (e.g. TSC TE244) expects.
+  - **A4 sheet**: only for sticker sheets in an office printer.
+- **Copies per item**: one sticker per physical bin, box or roll.
 
-Each label carries the item name, its code, a **Code128 barcode** (USB laser
-scanners) and a **QR code** (phone cameras). (Printing works on the currently
-listed items — use the search box to filter to a category/zone, then Select all,
-for large masters.)
+Each label carries the **product name and its number in large type**, a
+**Code128 barcode** (USB laser scanners) and a **QR code** (phone cameras).
 
-*Migration-day order:* import zones → stick shelf labels → import items → bulk
-print item labels → team walks the floor sticking item labels and scanning each
-onto its shelf.
+> If a label prints tiny or several land on one sticker, the print dialog is set
+> to "Fit to page" — switch it to **Actual size / 100%**.
+
+*Migration-day order:* zones → locations → **stick location labels** → import
+items → **the location walk** → print and stick product labels → counts.
 
 ---
 
@@ -209,7 +234,7 @@ update sequences set current_value = 0;
 
 If the item locator finds nothing, do this once (5 minutes, as `user1@test.com`):
 
-1. **Zones & Shelves**: zone `Z01` "Fabric Store" with shelves S001–S010; zone `Z02` "Foam Store" with S001–S005.
+1. **Zones & Locations**: zone `Z01` "Fabric Store" → add locations named `Shelf`, 1–10 (`Z01-S001…`); zone `Z02` "Foam Store" → `Shelf` 1–5.
 2. **Items**: `AU162590` / "Cupcake Fabric" / unit `m`, and one with a blank code → "Test Foam Block" / `pcs` (shows auto-coding).
 3. **Parties**: supplier "Cupcake Fabric Supplier", customer "Demo Client Mumbai", departments "Upholstery" and "Carpentry".
 4. **Stock**: as `store@test.com` → Capture → shelf `Z01-S001` → item `AU162590` → qty `25`; and foam onto `Z02-S001` → qty `10`.

@@ -19,7 +19,7 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
 
 2. **Create a Supabase project** at [supabase.com](https://supabase.com) (free tier is fine).
 
-3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0015)**, or use the Supabase CLI:
+3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0018)**, or use the Supabase CLI:
 
    ```sh
    npx supabase link --project-ref YOUR_PROJECT_REF
@@ -78,16 +78,20 @@ Connect the repo to Netlify — `netlify.toml` in the repo sets the build comman
 
 ```
 supabase/migrations/     Database schema, RLS policies, SQL functions (source of truth)
-supabase/functions/      Edge Functions: create-user, delete-user (admin user management)
+supabase/functions/      Edge Functions: create-user, delete-user, reset-password, provision-tenant
 supabase/seeds/          Client onboarding seeds (tenant + admin + zones)
 src/lib/                 Supabase client, domain types, phone/CSV/label/audit helpers
+src/lib/modules.ts       Single source of truth for nav + routes + per-user access
 src/lib/offline/         IndexedDB queue + sync engine + cached masters (offline mode)
 src/stores/              Zustand stores (auth/session/role)
 src/components/          Shared UI (Layout shell, ItemLocator, ScanInput, StatCard, …)
 src/pages/               Login + role-segregated screens (home, store, grn, release, dispatch, counts, admin, manager)
-docs/demo-guide.md       Sales demo manual (accounts, 15-min script, FAQ, reset)
-docs/uandm-client-guide.md  Client self-service guide (U&M)
-docs/superpowers/specs/  Design documents
+docs/demo-guide.md          Sales demo manual (accounts, 15-min script, FAQ, reset)
+docs/uandm-client-guide.md  Client self-service guide — setup, in order (U&M)
+docs/module-guide.md        Reference: every module, who uses it, and a use case
+docs/product-lifecycle.md   One product's journey from gate to finished sofa
+docs/open-items.md          Backlog before customer handover
+docs/superpowers/specs/     Design documents
 ```
 
 ## Offline mode
@@ -116,3 +120,5 @@ npx cap open android                    # opens Android Studio to run/build
 ## The five roles
 
 Each role lands on its own home screen: **Security** (gate dashboard), **Storekeeper** (task list), **Production Planner** (department status), **Manager** (KPIs + approvals), **Admin** (masters + settings).
+
+On top of the role, an admin can switch individual modules on or off **per person** (Users & Roles → Access). `src/lib/modules.ts` and the `modules` table must stay in sync — the database enforces access independently of the UI (migration 0017), so a mismatch means the app offers something the server will refuse.
