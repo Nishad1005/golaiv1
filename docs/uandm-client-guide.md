@@ -238,6 +238,11 @@ so it is obvious if you revisit one.
 - **For your accountant / Tally** → Manager → **ERP Export** → download the
   quantity CSV anytime.
 
+**The bell only rings for you.** Each alert reaches the people who act on it —
+your guard is told a truck is waiting and a dispatch is ready to leave, your
+manager is asked for approvals, your planner hears when material is running low.
+Nobody has to wade through other people's notifications.
+
 Every action is recorded — who, when, where, with photos — in a log nobody
 can edit. If there's ever a dispute, **SO-wise Movement** shows a sales
 order's entire journey with all the evidence.

@@ -71,7 +71,7 @@ export function ManagerHome() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard icon={Truck} label="GRNs today" value={kpis?.grnsToday ?? 0} tone="brand" to="/grn" loading={isLoading} />
           <StatCard icon={Send} label="Dispatches today" value={kpis?.dispatchesToday ?? 0} tone="brand" to="/dispatch" loading={isLoading} />
-          <StatCard icon={BadgeCheck} label="Pending approvals" value={pendingTotal} tone={pendingTotal > 0 ? 'amber' : 'slate'} hint="Releases, dispatches, adjustments" loading={isLoading} />
+          <StatCard icon={BadgeCheck} label="Pending approvals" value={pendingTotal} tone={pendingTotal > 0 ? 'amber' : 'slate'} hint="Releases, dispatches, adjustments" to="/alerts" loading={isLoading} />
           <StatCard icon={AlertTriangle} label="Low / out of stock" value={kpis?.lowStock ?? 0} tone={(kpis?.lowStock ?? 0) > 0 ? 'red' : 'slate'} to="/alerts" loading={isLoading} />
         </div>
       </section>

@@ -326,6 +326,20 @@ at the gate, a release request needing approval, an approved request ready to
 fulfil, a dispatch awaiting approval or gate-out, and stock counts assigned or
 awaiting review.
 
+**Each alert goes only to the people who act on it** — the gate guard is told a
+dispatch is ready to leave, not that thread is running low; the manager is asked
+for approvals, not told to verify a delivery. Work assigned to one person (a
+stock count) goes to that person alone.
+
+| Alert | Who is told |
+|---|---|
+| Vehicle at the gate | Storekeeper, Manager, Admin |
+| Request or dispatch awaiting approval · count to review | Manager, Admin |
+| Approved request ready to fulfil | Storekeeper, Manager, Admin |
+| Dispatch ready for gate-out | Security, Manager, Admin |
+| Low stock / out of stock | Planner, Manager, Admin |
+| Stock count assigned | The person it was assigned to |
+
 > **Use case.** Suhel is at a meeting. The bell shows a release request pending;
 > he opens it on his phone and approves — production isn't held up waiting for
 > him to reach the office.

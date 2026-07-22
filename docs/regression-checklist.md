@@ -29,6 +29,7 @@ select
   to_regprocedure('public.tenant_edit_lock_hours()')  is not null as f_edit_lock,
   to_regprocedure('public.load_sample_data()')        is not null as f_sample_load,
   to_regprocedure('public.clear_sample_data()')       is not null as f_sample_clear,
+  to_regprocedure('public.alert_roles_for(text)')     is not null as f_alert_roles,
   (select count(*) from modules)                                  as module_count,
   exists(select 1 from information_schema.columns
           where table_name = 'entries'  and column_name = 'qty_delta')   as c_qty_delta,
@@ -166,6 +167,23 @@ login. Sign in as that admin.
 
 > 6.8 is the safety guard. If the card appears on a tenant with real stock,
 > stop and report it.
+
+---
+
+## Stage 6b — Alerts reach only the right people (0023)
+
+Trigger one of each and check who can see it. Two browsers side by side makes
+this quick.
+
+| # | Do | Expect |
+|---|---|---|
+| 6b.1 | security: create a gate entry | Storekeeper's bell rings. **Planner's does not** |
+| 6b.2 | planner: raise a release request | Manager's bell rings. **Security's does not** |
+| 6b.3 | manager: approve it | Storekeeper is told it is ready to fulfil |
+| 6b.4 | manager: approve a dispatch | **Security** is told it is ready for gate-out |
+| 6b.5 | manager: assign a stock count to one storekeeper | Only that person is told — not other storekeepers |
+| 6b.6 | Drop a product below its reorder point | Planner, manager and admin see it. **Security and storekeeper do not** |
+| 6b.7 | manager: mark an alert read | It stays unread for the storekeeper's own alerts |
 
 ---
 

@@ -5,7 +5,7 @@ Updated 2026-07-22.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0022.
+0001 → 0023.
 
 **Shipped since the last revision:** the stock card, the manager stock
 dashboard, item labels at receiving, the first-run checklist, the stock-count
@@ -45,10 +45,10 @@ their own data — no code.
 > this without being asked?** If yes it belongs in the product; if no, it
 > belongs in settings, or nowhere.
 
-### A1. Verify migrations 0016 → 0022 in production
+### A1. Verify migrations 0016 → 0023 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
 movement ledger (0019), the stock overview (0020), settings + undo (0021) and
-sample data (0022). 0017 rewrote every write path (guarded RPC wrappers, dropped direct-write policies, revoked internal
+sample data (0022) and targeted alerts (0023). 0017 rewrote every write path (guarded RPC wrappers, dropped direct-write policies, revoked internal
 helpers), so it needs a real regression pass: capture, assign location, GRN
 through putaway, release → issuance, dispatch, Users & Roles, and My Account
 (photo upload, employee ID, admin-set position).
@@ -202,7 +202,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0022**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0023**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.
