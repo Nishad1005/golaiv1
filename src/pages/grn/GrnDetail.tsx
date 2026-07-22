@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, Loader2, PackageCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, PackageCheck, Printer, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -9,6 +9,7 @@ import { uploadPhoto } from '../../lib/photos'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
 import { PhotoGallery } from '../../components/PhotoGallery'
+import { ItemLabelDialog } from '../../components/ItemLabelDialog'
 import type { Item } from '../../lib/types'
 
 interface GrnDetailData {
@@ -330,10 +331,39 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
 // Verified lines (read view)
 // ---------------------------------------------------------------------------
 function LinesView({ grn }: { grn: GrnDetailData }) {
+  const [printing, setPrinting] = useState(false)
   if (grn.grn_lines.length === 0) return null
+
+  // Rejected lines never reach a shelf, so they never need a sticker.
+  const labelRows = grn.grn_lines
+    .filter((l) => l.qc_status !== 'REJECT')
+    .map((l) => ({
+      code: l.items.code,
+      name: l.items.name,
+      uom: l.items.uom,
+      category: l.items.category ?? null,
+      quantity: l.qty_received,
+    }))
+
   return (
     <div className="card space-y-2">
-      <p className="font-semibold">Verified items</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold">Verified items</p>
+        {labelRows.length > 0 && (
+          <button className="btn-secondary" onClick={() => setPrinting(true)}>
+            <Printer className="h-5 w-5" /> Print item labels
+          </button>
+        )}
+      </div>
+
+      {printing && (
+        <ItemLabelDialog
+          rows={labelRows}
+          source={`grn:${grn.grn_number}`}
+          title={`Label what arrived on ${grn.grn_number}`}
+          onClose={() => setPrinting(false)}
+        />
+      )}
       {grn.grn_lines.map((line) => {
         const placed = line.grn_putaways.reduce((s, p) => s + p.qty, 0)
         return (

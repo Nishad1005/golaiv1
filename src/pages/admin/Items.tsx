@@ -7,7 +7,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { resolveItemCode } from '../../lib/itemCode'
 import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
-import { generateItemLabelsPdf, ITEM_LABEL_SIZES, type ItemLabelSize } from '../../lib/labels'
+import { ItemLabelDialog } from '../../components/ItemLabelDialog'
 import type { Item } from '../../lib/types'
 
 interface CsvPreview {
@@ -37,9 +37,6 @@ export function Items() {
   // --- Label printing --------------------------------------------------------
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showPrint, setShowPrint] = useState(false)
-  const [labelSize, setLabelSize] = useState<ItemLabelSize>('thermal-50x25')
-  const [copies, setCopies] = useState('1')
-  const [printing, setPrinting] = useState(false)
 
   const [onlyAuto, setOnlyAuto] = useState(false)
   const [editingCode, setEditingCode] = useState<{ id: string; value: string } | null>(null)
@@ -361,68 +358,13 @@ export function Items() {
       )}
 
       {showPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => !printing && setShowPrint(false)}>
-          <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
-            <p className="text-lg font-bold">Print item labels</p>
-            <p className="text-sm text-ink-400">
-              {selected.size} item{selected.size > 1 ? 's' : ''} · each label carries the item name,
-              its code, a Code128 barcode (USB scanners) and a QR code (phone cameras).
-            </p>
-            <div>
-              <label className="label-text">Label size</label>
-              <select className="input-field" value={labelSize} onChange={(e) => setLabelSize(e.target.value as ItemLabelSize)}>
-                {ITEM_LABEL_SIZES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label-text">Copies per item</label>
-              <input type="number" min="1" className="input-field w-32" value={copies}
-                onChange={(e) => setCopies(e.target.value)} />
-              <p className="mt-1 text-xs text-ink-400">
-                One sticker per physical piece — e.g. 12 for 12 rolls of the same fabric.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="btn-primary"
-                disabled={printing}
-                onClick={async () => {
-                  setPrinting(true)
-                  try {
-                    const chosen = (items ?? []).filter((it) => selected.has(it.id))
-                    await generateItemLabelsPdf(
-                      chosen.map((it) => ({
-                        label: { code: it.code, name: it.name, uom: it.uom, category: it.category },
-                        copies: Math.max(1, Number(copies) || 1),
-                      })),
-                      labelSize,
-                      `golai-item-labels-${new Date().toISOString().slice(0, 10)}.pdf`,
-                    )
-                    await logActivity({
-                      tenantId: profile!.tenant_id,
-                      userId: profile!.id,
-                      userRole: profile!.role,
-                      action: 'print.item_labels',
-                      entityType: 'item',
-                      after: { count: chosen.length, size: labelSize, copies: Number(copies) },
-                    })
-                    setShowPrint(false)
-                  } finally {
-                    setPrinting(false)
-                  }
-                }}
-              >
-                {printing && <Loader2 className="h-5 w-5 animate-spin" />}
-                Download PDF
-              </button>
-              <button className="btn-secondary" disabled={printing} onClick={() => setShowPrint(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <ItemLabelDialog
+          rows={(items ?? [])
+            .filter((it) => selected.has(it.id))
+            .map((it) => ({ code: it.code, name: it.name, uom: it.uom, category: it.category }))}
+          source="admin_items"
+          onClose={() => setShowPrint(false)}
+        />
       )}
 
       <div className="flex flex-wrap items-center gap-3">
