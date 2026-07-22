@@ -3,6 +3,7 @@ import { ItemLocator } from '../../components/ItemLocator'
 import { ModuleTile } from '../../components/ModuleTile'
 import { PageHeader } from '../../components/PageHeader'
 import { SetupChecklist } from '../../components/SetupChecklist'
+import { SampleDataCard } from '../../components/SampleDataCard'
 
 /** Settings-heavy home: users, masters, zone setup, integrations (PRD 7.4). */
 export function AdminHome() {
@@ -11,6 +12,8 @@ export function AdminHome() {
       <PageHeader title="Administration" subtitle="Set up the warehouse, masters, and staff." />
 
       <SetupChecklist />
+
+      <SampleDataCard />
 
       <ItemLocator />
 

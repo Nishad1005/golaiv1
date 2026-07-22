@@ -9,6 +9,8 @@ export interface TenantSettings {
   working_hours_start: string
   working_hours_end: string
   photo_retention_days: number
+  /** Schema-flexible extras — currently just the sample-data marker. */
+  settings: Record<string, unknown> | null
 }
 
 /** Same fallback the database uses when a tenant has no settings row yet. */
@@ -33,7 +35,7 @@ export function useSettings() {
     queryFn: async (): Promise<TenantSettings | null> => {
       const { data, error } = await supabase
         .from('tenant_settings')
-        .select('tenant_id, edit_lock_hours, approval_qty_threshold, working_hours_start, working_hours_end, photo_retention_days')
+        .select('tenant_id, edit_lock_hours, approval_qty_threshold, working_hours_start, working_hours_end, photo_retention_days, settings')
         .eq('tenant_id', tenantId!)
         .maybeSingle()
       if (error) throw error
