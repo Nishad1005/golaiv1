@@ -28,7 +28,7 @@ with its own icon. It even keeps working when the warehouse Wi-Fi drops
 
 Your 13 warehouse zones are **already set up** from your Zone Master sheet
 (Z01 Main Store Hardware … Z13 Sample Hold + Finished Goods). You can rename
-them or add more anytime — see section 3.
+them or add more anytime — see section 4.
 
 ---
 
@@ -57,9 +57,25 @@ You (the Admin) create every staff login yourself — no need to contact DBBS.
 4. If someone leaves: **Deactivate** (their login stops working, their history
    stays). Use **Delete** only for accounts created by mistake.
 
+**Fine-tuning what each person can use.** The role sets sensible defaults, but
+you can change them per person: click **Access** next to their name and tick or
+untick each part of the app (Receiving, Dispatch, Stock Counts, Items…). Useful
+when, say, a storekeeper should not handle dispatches. Anything you change away
+from the role shows a small **custom** tag. Removing a tick hides that section
+from them completely — it isn't just greyed out.
+
 ---
 
-## 3. Give every storage spot a barcode (one-time setup)
+## 3. Put your company name and logo on it
+
+**Company Profile** (Admin) → set your company name, upload your **logo**, and
+add GST/contact details. Your name and logo then appear in the top-right of the
+app for everyone on your team, so staff see they're working in U&M's system.
+PNG or JPG, square works best, under 2 MB.
+
+---
+
+## 4. Give every storage spot a barcode (one-time setup)
 
 Your zones exist already. Now tell Golai what's *inside* each zone — and give
 each spot a barcode sticker, so it can be scanned.
@@ -78,7 +94,7 @@ each spot a barcode sticker, so it can be scanned.
 6. Print and **stick one on each ghoda / shelf / rack**
 
 It does not matter which sticker goes on which spot — you record what's on each
-one in section 5. Just make sure every spot in the zone gets a sticker.
+one in section 7. Just make sure every spot in the zone gets a sticker.
 
 To rename a zone, use the **pencil icon**. To add more zones later: **New
 Zone**, or **Import zones CSV** for many at once (**CSV template** gives you the
@@ -86,7 +102,7 @@ exact sheet to fill).
 
 ---
 
-## 4. Bring in your product list (one-time, ~30 minutes)
+## 5. Bring in your product list (one-time, ~30 minutes)
 
 1. **Items** → **CSV template** → a file downloads with example rows
 2. Fill it in Excel — one row per product:
@@ -107,7 +123,26 @@ No location column is needed — you record where things are in the next step.
 
 ---
 
-## 5. Record where each product sits (the walk)
+## 6. Put a barcode on your products (optional but recommended)
+
+If one shelf holds five similar things — five types of screws, three thicknesses
+of wire — a location sticker alone doesn't tell your team which is which. Give
+each product its own label:
+
+1. **Items** → tick the products you want labels for (use the search box, then
+   the header checkbox, to select a whole group at once)
+2. A bar appears at the top → **Print labels**
+3. Choose the **label size** that matches your roll (100 × 50 mm, 75 × 50 mm or
+   50 × 25 mm for a label printer; A4 sheets for an office printer), and
+   **copies per item** — one sticker per physical box, bin or roll
+4. **Download PDF** → print → stick one on each bin/box
+
+Each label shows the **product name and its number**, plus a barcode and a QR
+code. Scanning it anywhere in Golai brings up that exact product.
+
+---
+
+## 7. Record where each product sits (the walk)
 
 This is the step that makes searching work. One person walks the floor with a
 phone. **Products do not need barcodes for this** — you find them by name.
@@ -126,13 +161,18 @@ so it is obvious if you revisit one.
 > Quantities can be filled in later — run a **Stock Count** when you want real
 > numbers. Knowing *where* things are works immediately.
 
-**The payoff:** open **Find Item**, type a product name — Golai shows the exact
-zone and spot, e.g. **Foam (Z03) · Ghoda 1**. Anyone can find anything in
-seconds, without asking the storekeeper.
+**The payoff — the Find screen works both ways:**
+
+- **Type or scan a product** → Golai shows the exact zone and spot, e.g.
+  **Foam (Z03) · Ghoda 1**. Anyone can find anything in seconds, without asking
+  the storekeeper.
+- **Scan a location sticker** → Golai lists *everything sitting on that spot*
+  with quantities — so at the rack you can see all five screw types and how many
+  of each there are.
 
 ---
 
-## 6. Daily operations (after setup)
+## 8. Daily operations (after setup)
 
 - **Material arrives** → Security does **New Gate Entry** at the gate (photos
   of vehicle, driver, invoice) → Storekeeper **verifies** quantities against
@@ -146,6 +186,8 @@ seconds, without asking the storekeeper.
 - **Goods go out** → Storekeeper picks and seals cartons (labels print) →
   Manager approves → Security scans every carton at the gate. A wrong carton
   is refused automatically.
+- **Finding anything** → **Find** → type a product name to see its location, or
+  scan a location sticker to see everything on it with quantities.
 - **Stock checking** → Manager creates a **Stock Count**, storekeeper counts by
   scan, differences need a reason and Manager approval.
 - **For your accountant / Tally** → Manager → **ERP Export** → download the
@@ -157,7 +199,7 @@ order's entire journey with all the evidence.
 
 ---
 
-## 7. If something goes wrong
+## 9. If something goes wrong
 
 | Problem | What to do |
 |---|---|
@@ -167,6 +209,8 @@ order's entire journey with all the evidence.
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
+| A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |
+| Label prints tiny / all on one sticker | In the print dialog set **Actual size / 100%** (not "Fit to page"), and pick the label size that matches your roll |
 | Anything else | Contact DBBS: ____________________ *(support contact)* |
 
 ---
