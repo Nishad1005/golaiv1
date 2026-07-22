@@ -37,6 +37,11 @@ walk — in the order that works. Each step ticks itself off as you do it, and t
 whole panel disappears once you're finished. The sections below explain each
 step in more detail, but you can simply follow the highlighted one.
 
+**Want to try it first?** Before you enter anything real, the admin home offers
+**Load sample data** — a small demo warehouse you can click around, then remove
+in one press. It only appears while your warehouse is empty and can never mix
+with your own stock.
+
 Your 13 warehouse zones are **already set up** from your Zone Master sheet
 (Z01 Main Store Hardware … Z13 Sample Hold + Finished Goods). You can rename
 them or add more anytime — see section 4.

@@ -5,12 +5,18 @@ Updated 2026-07-22.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0021.
+0001 → 0022.
 
 **Shipped since the last revision:** the stock card, the manager stock
 dashboard, item labels at receiving, the first-run checklist, the stock-count
-blind-spot fix, and the Settings screen with a working undo window. Building
-these also fixed three silent data bugs — see the notes under A1.
+blind-spot fix, the Settings screen with a working undo window, empty states
+across every list, one-click sample data, and a first load cut from 1.66 MB to
+584 KB. Building these also fixed three silent data bugs — see the notes under
+A1.
+
+**Part B is down to three items, and all three are decisions rather than
+tickets** — WhatsApp needs a commercial call, Hindi needs a real i18n budget,
+and multi-warehouse needs a product answer.
 
 This file is **two different roadmaps**, deliberately separated:
 
@@ -39,11 +45,10 @@ their own data — no code.
 > this without being asked?** If yes it belongs in the product; if no, it
 > belongs in settings, or nowhere.
 
-### A1. Verify migrations 0016 → 0021 in production
+### A1. Verify migrations 0016 → 0022 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
-movement ledger (0019), the stock overview (0020) and settings + undo (0021).
-0017 rewrote every write
-path (guarded RPC wrappers, dropped direct-write policies, revoked internal
+movement ledger (0019), the stock overview (0020), settings + undo (0021) and
+sample data (0022). 0017 rewrote every write path (guarded RPC wrappers, dropped direct-write policies, revoked internal
 helpers), so it needs a real regression pass: capture, assign location, GRN
 through putaway, release → issuance, dispatch, Users & Roles, and My Account
 (photo upload, employee ID, admin-set position).
@@ -60,6 +65,11 @@ through putaway, release → issuance, dispatch, Users & Roles, and My Account
 else's entry as a storekeeper, undoing twice, undoing after the window has
 closed, and undoing after the stock has already left the shelf (which would
 drive it negative).
+
+**0022 adds sample data.** Load it into an empty tenant, confirm every screen
+fills, then remove it and confirm nothing is left behind. Then check it refuses
+to load into a tenant that already has products — the guard that stops it ever
+touching real stock.
 
 Rows that existed before 0019 have `qty_delta` backfilled from `qty`, which is
 right for 'add' captures and unknowable for old 'set' ones — so a stock card may
@@ -82,23 +92,7 @@ current balance is always correct; only that one row's delta is suspect.
 *None of this is required for U&M. All of it is required before selling to the
 tenth client without a DBBS person doing the setup.*
 
-### B1. Sample data
-A prospect should be able to click **Load sample data** and explore a populated
-warehouse in ten seconds — zones, locations, items, stock, one GRN, one
-issuance. Also the fastest way to reset a demo tenant (see the SQL appendix in
-`docs/demo-guide.md`).
-
-### B2. Empty states
-Every list screen with no data should say what to do next and link there, rather
-than sitting blank. Cheap, and it is most of the distance between "unfinished"
-and "polished" in a demo.
-
-### B3. Speed on cheap phones
-The main bundle is one ~2 MB chunk, loaded over warehouse Wi-Fi on entry-level
-Android. Route-level lazy loading is roughly a day and directly affects the
-first impression of the people who use the app most (PRD 8.1 targets < 2s).
-
-### B4. WhatsApp alerts
+### B1. WhatsApp alerts
 The in-app bell assumes people open the app; WhatsApp assumes nothing. In this
 market it is the notification channel that actually gets read, and the feature
 most likely to be asked for in a sales meeting. Needs a WhatsApp Business API
@@ -106,12 +100,12 @@ account and template approval — modest code, real admin overhead. Formally
 deferred in the PRD; worth revisiting as a commercial decision, not a technical
 one.
 
-### B5. Hindi UI
+### B2. Hindi UI
 Halves training time for floor roles and is a visible differentiator against
 imported software. Honest cost: an i18n retrofit across every screen, not a
 toggle.
 
-### B6. Multi-warehouse — decide the answer before you're asked
+### B3. Multi-warehouse — decide the answer before you're asked
 Plenty of companies run two or three godowns. Deferred by design (one warehouse
 per tenant), but it **will** come up in a sales call. Decide now whether the
 answer is "roadmap", "one tenant per godown", or "we'll build it".
@@ -208,7 +202,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0021**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0022**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.

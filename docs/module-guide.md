@@ -373,6 +373,23 @@ highlighted.
 
 ---
 
+## Sample data *(admin home)*
+**Who:** admin — shown only while the warehouse is empty
+
+**Load sample data** fills Golai with a small demo warehouse: three zones, six
+locations, seven products, stock, a completed delivery and an issuance. Every
+screen has something in it, so you can try the app before entering anything
+real. **Remove sample data** takes it all out again.
+
+> **Use case.** A new admin wants to see what Receiving looks like before their
+> first truck arrives. They load the samples, walk through Find, the stock card
+> and a stock count, then remove it and start with their own zones.
+
+**Good to know:** it refuses to load if you already have products, so it can
+never mix into real stock — and removing it only deletes rows it created.
+
+---
+
 ## Zones & Locations
 **Who:** admin (manager can view/edit)
 

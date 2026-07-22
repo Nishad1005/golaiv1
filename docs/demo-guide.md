@@ -46,7 +46,7 @@ Three facts to memorize:
 
 1. Open **two browser windows** (one normal, one incognito) so you can switch roles fast without logging in and out.
 2. Log in as `store@test.com` in one and `manager@test.com` in the other.
-3. Check the item locator finds something: type `cupcake` in the search bar — a fabric with shelf locations should appear. If the database is empty, run the **Appendix B seed** first.
+3. Check the item locator finds something: type `cupcake` in the search bar — a fabric with shelf locations should appear. If the database is empty, log in as `user1@test.com` and press **Load sample data** on the admin home — a populated warehouse in ten seconds (Appendix B is the manual fallback).
 4. Have printed labels on the table if possible — one **location label**, one **product label**, one **issuance label** (Admin → Zones & Locations → Labels, and Admin → Items → Print labels). Physical labels make the demo tangible.
 5. Phone charged — the phone camera scan and "Add to Home Screen" moments land better on a phone than a laptop.
 
