@@ -5,7 +5,7 @@ import { Check, FileDown, Pencil, Plus, Printer, Upload, Loader2, Search, X } fr
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
-import { resolveItemCode } from '../../lib/itemCode'
+import { resolveItemCode, allocateItemCodes } from '../../lib/itemCode'
 import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
 import { ItemLabelDialog } from '../../components/ItemLabelDialog'
 import type { Item } from '../../lib/types'
@@ -174,20 +174,21 @@ export function Items() {
     mutationFn: async () => {
       if (!preview) return
       // Existing client codes go in verbatim; only no-code rows get ITM- codes.
-      const prepared = []
-      for (const row of preview.rows) {
-        prepared.push({
-          tenant_id: profile!.tenant_id,
-          code: row.code ?? (await resolveItemCode(null)),
-          code_auto_assigned: !row.code, // flag rows that had no client code
-          barcode: row.barcode,
-          name: row.name,
-          item_type: row.item_type,
-          category: row.category,
-          sub_category: row.sub_category,
-          uom: row.uom,
-        })
-      }
+      // Allocate the whole block of auto-codes in one call, not one per row —
+      // a big master would otherwise mean hundreds of round-trips.
+      const autoCodes = await allocateItemCodes(preview.rows.filter((r) => !r.code).length)
+      let nextAuto = 0
+      const prepared = preview.rows.map((row) => ({
+        tenant_id: profile!.tenant_id,
+        code: row.code ?? autoCodes[nextAuto++],
+        code_auto_assigned: !row.code, // flag rows that had no client code
+        barcode: row.barcode,
+        name: row.name,
+        item_type: row.item_type,
+        category: row.category,
+        sub_category: row.sub_category,
+        uom: row.uom,
+      }))
       const chunkSize = 500
       let inserted = 0
       for (let i = 0; i < prepared.length; i += chunkSize) {

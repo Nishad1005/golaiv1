@@ -26,12 +26,13 @@ describe('resolveItemCode', () => {
     expect(await resolveItemCode('  AU162590  ')).toBe('AU162590')
   })
 
-  it('auto-assigns ITM-NNNNN only when the code is empty', async () => {
-    rpcMock.mockResolvedValue({ data: 42, error: null })
+  it('auto-assigns a code only when the code is empty', async () => {
+    // The guarded RPC (0024) returns the formatted code directly.
+    rpcMock.mockResolvedValue({ data: 'ITM-00042', error: null })
     expect(await resolveItemCode('')).toBe('ITM-00042')
     expect(await resolveItemCode(null)).toBe('ITM-00042')
     expect(await resolveItemCode('   ')).toBe('ITM-00042')
-    expect(rpcMock).toHaveBeenCalledWith('next_sequence', { seq_name: 'item_code' })
+    expect(rpcMock).toHaveBeenCalledWith('next_item_code')
   })
 
   it('surfaces sequence allocation failures', async () => {
