@@ -30,6 +30,7 @@ const Parties = lazy(() => import('./pages/admin/Parties').then((m) => ({ defaul
 const Users = lazy(() => import('./pages/admin/Users').then((m) => ({ default: m.Users })))
 const CompanyProfile = lazy(() => import('./pages/admin/CompanyProfile').then((m) => ({ default: m.CompanyProfile })))
 const Settings = lazy(() => import('./pages/admin/Settings').then((m) => ({ default: m.Settings })))
+const PlatformConsole = lazy(() => import('./pages/PlatformConsole').then((m) => ({ default: m.PlatformConsole })))
 const ProvisionClient = lazy(() => import('./pages/ProvisionClient').then((m) => ({ default: m.ProvisionClient })))
 const Capture = lazy(() => import('./pages/store/Capture').then((m) => ({ default: m.Capture })))
 const Transfer = lazy(() => import('./pages/store/Transfer').then((m) => ({ default: m.Transfer })))
@@ -196,6 +197,7 @@ export default function App() {
           {can('admin_users') && <Route path="/admin/users" element={<Users />} />}
           {can('admin_company') && <Route path="/admin/company" element={<CompanyProfile />} />}
           {can('admin_settings') && <Route path="/admin/settings" element={<Settings />} />}
+          {profile.is_platform_admin && <Route path="/platform" element={<PlatformConsole />} />}
           {profile.is_platform_admin && <Route path="/provision" element={<ProvisionClient />} />}
           <Route path="*" element={<ComingSoon />} />
         </Route>

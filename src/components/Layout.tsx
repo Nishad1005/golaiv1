@@ -43,9 +43,9 @@ export function Layout() {
   // DBBS platform admins get the cross-tenant "Provision Client" destination.
   if (profile?.is_platform_admin) {
     nav.push({
-      key: 'provision',
-      label: 'Provision Client',
-      to: '/provision',
+      key: 'platform',
+      label: 'Platform Console',
+      to: '/platform',
       icon: Rocket,
       defaultRoles: [],
       alwaysOn: true,

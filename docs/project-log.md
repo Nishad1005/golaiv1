@@ -82,6 +82,17 @@ Adjust · Capture · SO Movement · ERP Export (CSV, quantities only).
   admin-only**, because nobody should be able to promote themselves on paper.
 - **Company Profile** — client's name and logo across their app.
 
+### Platform (DBBS only)
+- **Platform Console** (0025) — every client with usage at a glance (users,
+  products, locations, setup progress, last active), **module licences** granted
+  or revoked per company, and suspend / reactivate.
+- **`tenant_modules`** — the company-level licence layer above per-user access.
+  A client **cannot grant itself** a licence; only DBBS can. This is what lets a
+  module be proven on the demo tenant while being unreachable for a live client.
+- Cross-tenant reads go through **security-definer RPCs that check
+  `is_platform_admin()` first**. No existing RLS policy was widened — the
+  isolation rule from the costing plan applied here too.
+
 ### Setup and onboarding
 - **First-run checklist** — seven steps on the admin home, each ticking itself
   off from real data, vanishing when done.
@@ -285,7 +296,6 @@ Buyer "DF 24", version 1, dated 30-Jan-2024):
 
 | Finding | Effect |
 |---|---|
-| **CNF computed (₹1,071) but never added to the total** — the summary points at an empty cell | Chair under-costed ~6 % |
 | **"katapati" ₹100 computed, orphaned** — not referenced by the summary | Under-costed |
 | **VLOOKUP ranges not absolute** and inconsistent per row (`BQ27:BR38`, `BQ28:BR39`, …) | One row silently cannot find the smallest foam size; a landmine |
 | **Foam total `SUM(BW12:BW15)`** while its lines are `BW3:BW8` | Correct only by accident |
@@ -298,9 +308,15 @@ migrations are **additive only** — no existing table, RPC or policy is altered
 so no code path U&M touches can behave differently after it ships. `has_module()`
 is deliberately left alone in phase 1 because it guards every write path.
 
-**Open, pending answers:** is CNF deliberately excluded for domestic orders ·
-are the two manual final prices (WITH / WITHOUT FABRIC) always hand-rounded ·
-who may see rates (expected: manager/admin only).
+**Answered 2026-07-24:** CNF is **deliberately excluded** for now — not a bug;
+it comes back when that part is built. **Costing is bundled for U&M**, priced as
+an add-on for everyone after them.
+
+**Still open:** are the two manual final prices (WITH / WITHOUT FABRIC) always
+hand-rounded · who may see rates (expected: manager/admin only).
+
+> The CNF line was originally recorded here as a defect. It is not — corrected
+> after checking with the client. The other five findings stand.
 
 ### 6c. ERP integration
 *Discussed. Deferred until after the stock card was in place — it now is.*
@@ -316,6 +332,9 @@ quantity**, or they drift and every month-end becomes an argument.
 Tally is the likely target and is the hard case: desktop, on a LAN, version-
 sensitive XML — needs a small on-site connector. Zoho/SAP are cloud APIs and far
 easier.
+
+### 6c-2. Platform console — **built** 2026-07-24
+Moved to §3. See `tenant_modules` and the platform RPCs (0025).
 
 ### 6d. Smaller things raised and agreed, not scheduled
 - Manager stock overview → **built**.
