@@ -31,6 +31,8 @@ const Parties = lazy(() => import('./pages/admin/Parties').then((m) => ({ defaul
 const Users = lazy(() => import('./pages/admin/Users').then((m) => ({ default: m.Users })))
 const CompanyProfile = lazy(() => import('./pages/admin/CompanyProfile').then((m) => ({ default: m.CompanyProfile })))
 const Settings = lazy(() => import('./pages/admin/Settings').then((m) => ({ default: m.Settings })))
+const CostingSheets = lazy(() => import('./pages/costing/CostingSheets').then((m) => ({ default: m.CostingSheets })))
+const SheetEditor = lazy(() => import('./pages/costing/SheetEditor').then((m) => ({ default: m.SheetEditor })))
 const PlatformConsole = lazy(() => import('./pages/PlatformConsole').then((m) => ({ default: m.PlatformConsole })))
 const ProvisionClient = lazy(() => import('./pages/ProvisionClient').then((m) => ({ default: m.ProvisionClient })))
 const Capture = lazy(() => import('./pages/store/Capture').then((m) => ({ default: m.Capture })))
@@ -193,6 +195,8 @@ export default function App() {
           )}
           {can('so_movement') && <Route path="/so-movement" element={<SoMovement />} />}
           {can('export') && <Route path="/export" element={<Export />} />}
+          {can('costing') && <Route path="/costing" element={<CostingSheets />} />}
+          {can('costing') && <Route path="/costing/:id" element={<SheetEditor />} />}
           {can('admin_zones') && <Route path="/admin/zones" element={<ZonesShelves />} />}
           {can('admin_items') && <Route path="/admin/items" element={<Items />} />}
           {can('admin_parties') && <Route path="/admin/parties" element={<Parties />} />}

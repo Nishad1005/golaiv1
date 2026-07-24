@@ -216,12 +216,34 @@ hand-written cell references. The orphaned-line defects become impossible.
 | ✅ Licence gate proven (company-level, DBBS-granted only) | 0025, 0026 |
 | ✅ Schema, licence-gated RLS, category template | 0027 |
 | ✅ Nine formula shapes + 16 tests against the real chair | `src/lib/costing/` |
-| ⬜ Sheet editor — header, category blocks, live summary | next |
-| ⬜ Rate table admin | |
+| ✅ Sheet editor — header, category blocks, live summary | `src/pages/costing/` |
+| ✅ Sheet list, new sheet, clone, first-run category seeding | |
+| ⬜ Rate table admin — currently seeded empty, so foam lookups find nothing | next |
 | ⬜ Snapshot on finalise + PDF export | |
 | ⬜ Import their existing sheets; map names → item master | phase 2 |
 | ⬜ Pre-fill a release request | phase 3 — first thing to touch existing workflow |
 | ⬜ Category editor (per-tenant) → makes it sellable to the next client | phase 4 |
+
+---
+
+### 7.1 How the editor is built
+
+**One `CategoryBlock` component renders all 31 categories.** Columns come from
+that category's `costing_category_fields` rows, so adding or reshaping a
+category is a data change, not a code change — and the next client can have
+completely different blocks with no new UI. This was the abstraction the
+estimate depended on, and it held.
+
+**The editor holds the sheet in memory and saves on demand**, like a
+spreadsheet, rather than committing per keystroke. Saving replaces the line set
+wholesale — simpler and safer than diffing, and a costing sheet is small.
+
+**Clone copies the structure and re-reads live rates.** It is the safe version
+of their copy-the-last-file habit: no inherited references, no stale lookups.
+
+**Licence-gated modules hide until proven granted.** `canAccess()` requires an
+explicit `true` for anything with `requiresLicense`, so Costing never flashes
+into the nav while the licence map loads.
 
 ---
 
@@ -242,6 +264,9 @@ Add as `carton_area` variants selected by box type, not as new shapes.
 **Rate lookup is not wired to the formula engine yet.** `sheet_yield` takes a
 rate as an argument; resolving it from `costing_rate_entries` by
 `lookup_key` + date happens in the editor.
+
+**Rate tables have no admin screen yet**, so `foam_sheet` exists but is empty
+and a foam line's size dropdown will be blank. Next task.
 
 **Wastage %** does not appear in their chair sheet, but is near-universal in
 costing. Ask before assuming it is not needed.

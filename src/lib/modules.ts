@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Search, MapPin, ScanBarcode, ArrowLeftRight, PencilRuler,
   PackageCheck, PackageOpen, Undo2, Send, ShieldAlert, ListChecks, FileBarChart,
-  Map, Boxes, Building2, Building, Users, Bell, Settings,
+  Map, Boxes, Building2, Building, Users, Bell, Settings, Calculator,
 } from 'lucide-react'
 import type { Profile, UserRole } from './types'
 
@@ -15,6 +15,11 @@ export interface AppModule {
   defaultRoles: UserRole[]
   /** Always available — not shown as a toggle (Home, Alerts). */
   alwaysOn?: boolean
+  /**
+   * Paid add-on: hidden unless the company has been granted it. Mirrors
+   * `modules.requires_license` in the database (migration 0026).
+   */
+  requiresLicense?: boolean
 }
 
 const ALL: UserRole[] = ['security', 'storekeeper', 'planner', 'manager', 'admin']
@@ -49,6 +54,7 @@ export const MODULES: AppModule[] = [
   { key: 'admin_users', label: 'Users & Roles', to: '/admin/users', icon: Users, defaultRoles: ['admin'] },
   { key: 'admin_company', label: 'Company Profile', to: '/admin/company', icon: Building, defaultRoles: ['admin'] },
   { key: 'admin_settings', label: 'Settings', to: '/admin/settings', icon: Settings, defaultRoles: ['admin'] },
+  { key: 'costing', label: 'Costing', to: '/costing', icon: Calculator, defaultRoles: ['manager', 'admin'], requiresLicense: true },
   { key: 'alerts', label: 'Alerts', to: '/alerts', icon: Bell, defaultRoles: ALL, alwaysOn: true },
 ]
 
@@ -81,6 +87,9 @@ export function canAccess(
   // company does not hold is gone for all of its people. Mirrors has_module()
   // in migration 0026 — if these two ever disagree, the database wins and the
   // user sees a screen that refuses to work.
+  // A paid add-on stays hidden until the company is proven to hold it — absence
+  // means "no", so it never flashes into the nav while the licence map loads.
+  if (module.requiresLicense) return company?.[key] === true
   if (company && company[key] === false) return false
   if (module.alwaysOn) return true
   const override = profile.module_access?.[key]
