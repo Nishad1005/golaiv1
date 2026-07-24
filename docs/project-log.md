@@ -259,9 +259,42 @@ lesson as the stock-card ledger.
 master exactly. Mapping costing lines to real item records is genuine migration
 work and should be scoped, not assumed.
 
-**Open, pending the file:** material-only or material + labour + overhead ·
-sub-assemblies or one flat list · wastage % · rate history · does it also
-produce a selling price · who may see rates (expected: manager/admin only).
+**Their sheet, analysed 2026-07-24** (`costing sheet.xlsx`, a real built chair,
+Buyer "DF 24", version 1, dated 30-Jan-2024):
+
+- **One sheet, laid out horizontally** — 142 columns. **31 material categories**
+  (Wood, Plywood, Metal, Spring, Belt, Foam, Fabric, Thread, Piping, Button,
+  Chain, Carton, Packing, Labour, Finishing, CNF, misc…), each occupying its own
+  column block with **its own parameter set**. Rows 3–15 are line items, row 16
+  is the per-category total, and `EG17:EI42` is a summary of category → amount →
+  **% of total**. Then GST %, **Overhead + Margin 40 %**, Total Price.
+- **The key structural insight: formulas are per-CATEGORY, not per-cell.** Every
+  Wood row uses `(L×W×T/144)×qty` for cft; every Foam row uses
+  `VLOOKUP(sheet size) / pieces-per-sheet × qty`. That is ~31 formula shapes to
+  model, not a formula engine. **This is what makes the module tractable.**
+- **Embedded rate tables** — foam price by supplier / FR / sheet size /
+  thickness, plywood by thickness, corrugated sheet price, container loading.
+  These are exactly the "rates must live once" case.
+- **Genuinely derived quantities exist** and must be supported: timber volume,
+  plywood yield, foam pieces-per-sheet, CBM from inches, carton board area
+  `(L+W+3)×2×(W+H+2)×60/1550`, packing and CNF allocated per container.
+- The "photo" is a **dimensioned design sketch**, not a product shot — and its
+  dimensions duplicate the sheet's own size fields.
+
+**Errors found in their live sheet — the business case for the module:**
+
+| Finding | Effect |
+|---|---|
+| **CNF computed (₹1,071) but never added to the total** — the summary points at an empty cell | Chair under-costed ~6 % |
+| **"katapati" ₹100 computed, orphaned** — not referenced by the summary | Under-costed |
+| **VLOOKUP ranges not absolute** and inconsistent per row (`BQ27:BR38`, `BQ28:BR39`, …) | One row silently cannot find the smallest foam size; a landmine |
+| **Foam total `SUM(BW12:BW15)`** while its lines are `BW3:BW8` | Correct only by accident |
+| **Rate entered with no quantity → silent ₹0** (Belt, Hassian, Piping, Button) | Cannot distinguish "not used" from "forgotten" |
+| **External link to `D:\…\Betsy Skirted Counter Stool.xlsx`** | Each product is made by copying the previous product's sheet — which is exactly how all of the above propagate |
+
+**Open, pending answers:** is CNF deliberately excluded for domestic orders ·
+are the two manual final prices (WITH / WITHOUT FABRIC) always hand-rounded ·
+who may see rates (expected: manager/admin only).
 
 ### 6c. ERP integration
 *Discussed. Deferred until after the stock card was in place — it now is.*
