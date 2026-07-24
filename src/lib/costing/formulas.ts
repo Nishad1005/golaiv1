@@ -102,10 +102,28 @@ export function computeLine(kind: FormulaKind, inputs: LineInputs, rate?: number
     }
 
     case 'carton_area': {
-      // (L+W+3) × 2 × (W+H+2) × gsm ÷ 1550 — corrugated board area
+      // Corrugated board area. Their sheet has three box styles and they are
+      // materially different — a sleeve+lid costs ~5% more than a regular box
+      // of the same size, a full flap ~48% more. `box_type` picks one.
       const l = num(inputs.length), w = num(inputs.width), h = num(inputs.height)
       const gsm = num(inputs.gsm) || 60
-      const amount = ((l + w + 3) * 2 * (w + h + 2) * gsm) / 1550
+      const lid = num(inputs.lid_depth)
+      const style = String(inputs.box_type ?? 'regular')
+
+      let amount: number
+      switch (style) {
+        case 'sleeve_lid':
+          // (L+W+3)×2×(H+2)×75/1550 + (W+2·lid+2)×(L+2·lid+3)×2×60/1550
+          amount = ((l + w + 3) * 2 * (h + 2) * 75) / 1550
+                 + ((w + lid + lid + 2) * (l + lid + lid + 3) * 2 * 60) / 1550
+          break
+        case 'full_flap':
+          // (L+W+3)×2×(W+H+W+2)×gsm/1550 — the extra W is the second flap pair
+          amount = ((l + w + 3) * 2 * (w + h + w + 2) * gsm) / 1550
+          break
+        default:
+          amount = ((l + w + 3) * 2 * (w + h + 2) * gsm) / 1550
+      }
       return { amount, derived: {} }
     }
 

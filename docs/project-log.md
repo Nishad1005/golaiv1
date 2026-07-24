@@ -45,7 +45,7 @@ shape of it, and each has been argued at least once:
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
 | **Regression pass** | Stages 0–3 **passed**. Stages 4–9 outstanding. |
 | **Platform console** | Live. Company-level module access enforced (0026). |
-| **Costing** | Phase 1: sheets, editor, rates working. PDF + 2 carton formulas left. |
+| **Costing** | **Phase 1 complete.** Phase 2 (import + item matching) next. |
 
 **U&M, what's left:** ~~import their master~~ (**done — 3,328 products**) →
 create locations → print and stick labels → the mapping walk → fill the two blanks in their guide (URL, support contact) → **remove the

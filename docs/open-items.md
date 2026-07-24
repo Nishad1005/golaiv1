@@ -102,10 +102,10 @@ RPC refuses.
 *Phase 1 is nearly complete. See `costing.md` for every formula and the full
 record; this is only what is left.*
 
-### B0a. Finish phase 1
-- **PDF export of a sheet** — what they hand a buyer.
-- **The other two carton formulas** — sleeve + lid (386.86) and full flap
-  (544.88). Only the regular box is built.
+### B0a. Phase 1 is complete
+Sheets, the 31 category blocks, live costing, rate tables with history, snapshot
+on finalise, PDF export and all three carton formulas. **Next: phase 2** —
+import their existing sheets and match component names to the item master.
 
 ### B0b. Foam rates are only half modelled ★
 The seeded grid prices a sheet correctly by size, but their workbook also has a

@@ -71,7 +71,7 @@ Their 31 categories reduce to nine. `src/lib/costing/formulas.ts`,
 | `area_yield` | `rate × area × qty ÷ per_sheet` | `=AB3*Z3*X3/AA3` | 1206 ✓ |
 | `sheet_yield` | `(sheet_rate ÷ per_sheet) × qty` | `VLOOKUP(...)` then `=(BV3/BT3)*BS3` | 1050 ✓ |
 | `cbm` | `0.0000163871 × L × W × H` | `=0.0000163871*(DM3*DN3*DO3)` | 0.606749 ✓ |
-| `carton_area` | `(L+W+3) × 2 × (W+H+2) × gsm ÷ 1550` | `=(DM33+DN33+3)*2*(DN33+DO33+2)*60/1550` | 368.59 ✓ |
+| `carton_area` | three box styles, selected by `box_type` — see 3.5 | `=(DM33+DN33+3)*2*…` | 368.59 · 386.86 · 544.88 ✓ |
 | `container_alloc` | `freight ÷ per_container + rate × cbm + handling` | `=((2000/DT3)+(150*DU3))+150` | 264.82 ✓ |
 
 ### 3.2 Category → shape
@@ -122,6 +122,20 @@ Excel: `EH44 = SUM(EH17:EH43)` · `EH45 = (EH44*EI45)/100` ·
 
 **Note margin is charged on subtotal + GST**, not subtotal alone. Reproduced as
 they have it.
+
+### 3.5 The three carton styles
+
+`carton_area` takes a `box_type` input. All three verified against their sheet:
+
+```
+regular      (L+W+3)×2×(W+H+2)×gsm/1550                        → 368.59
+sleeve_lid   (L+W+3)×2×(H+2)×75/1550
+             + (W+2·lid+2)×(L+2·lid+3)×2×60/1550               → 386.86
+full_flap    (L+W+3)×2×(W+H+W+2)×gsm/1550                      → 544.88
+```
+
+A sleeve+lid costs ~5 % more than a regular box of the same size; a full flap
+~48 % more. Worth getting right.
 
 ### 3.4 Rate tables
 
@@ -221,8 +235,8 @@ hand-written cell references. The orphaned-line defects become impossible.
 | ✅ Rate table admin, with history and supersede-by-date | `RateTables.tsx` |
 | ✅ Foam grid seeded from their own rule (0028) | 12 sizes |
 | ✅ Snapshot on finalise | frozen numbers **and** rates |
-| ⬜ PDF export of a sheet | next |
-| ⬜ The other two carton formulas (§8) | next |
+| ✅ PDF export — summary for a buyer, line detail for the costing manager | |
+| ✅ All three carton formulas | 368.59 · 386.86 · 544.88 |
 | ⬜ Import their existing sheets; map names → item master | phase 2 |
 | ⬜ Pre-fill a release request | phase 3 — first thing to touch existing workflow |
 | ⬜ Category editor (per-tenant) → makes it sellable to the next client | phase 4 |
@@ -283,17 +297,11 @@ into the nav while the licence map loads.
 
 ## 8. Known gaps
 
-**Only one carton formula is implemented.** Their sheet has three, and the other
-two are materially different:
-
-```
-Regular box   (L+W+3)×2×(W+H+2)×60/1550                          → 368.59  ✅ built
-Sleeve + lid  (L+W+3)×2×(H+2)×75/1550
-              + (W+2·lid+2)×(L+2·lid+3)×2×60/1550                → 386.86  ⬜
-Full flap     (L+W+3)×2×(W+H+W+2)×60/1550                        → 544.88  ⬜
-```
-
-Add as `carton_area` variants selected by box type, not as new shapes.
+**The carton category is `qty_rate`, not `carton_area`.** All three board
+formulas are built and tested, but the seeded category takes a typed box price —
+because that is how they actually fill the sheet, computing the price in a
+helper table and typing the result. Switch the category to `carton_area` if they
+would rather Golai worked it out.
 
 **Rate lookup is not wired to the formula engine yet.** `sheet_yield` takes a
 rate as an argument; resolving it from `costing_rate_entries` by

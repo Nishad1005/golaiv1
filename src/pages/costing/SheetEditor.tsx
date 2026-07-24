@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CheckCircle2, Loader2, Lock, Save, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, FileDown, Loader2, Lock, Save, TriangleAlert } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { summarise } from '../../lib/costing/formulas'
 import { useCostingCategories, useCostingRates, useCostingSheet } from '../../lib/costing/queries'
 import { DIMENSION_FIELDS, type DraftLine, type SheetSnapshot } from '../../lib/costing/types'
+import { generateCostingPdf } from '../../lib/costing/pdf'
+import { useTenant } from '../../lib/tenant'
 import { PageHeader } from '../../components/PageHeader'
 import { CategoryBlock } from './CategoryBlock'
 
@@ -21,6 +23,7 @@ export function SheetEditor() {
 
   const { data: categories } = useCostingCategories()
   const { data: rateData } = useCostingRates()
+  const { data: tenant } = useTenant()
   const { data, isLoading } = useCostingSheet(id)
 
   const [lines, setLines] = useState<DraftLine[] | null>(null)
@@ -58,6 +61,26 @@ export function SheetEditor() {
     }))
     return summarise(named, gstPct, marginPct)
   }, [workingLines, categories, gstPct, marginPct])
+
+  const exportPdf = useMutation({
+    mutationFn: async () => {
+      if (!sheet || !categories) return
+      // Group lines under their category so the detail page reads in sheet order.
+      const detail = categories
+        .map((c) => ({
+          category: c.name,
+          lines: workingLines
+            .filter((l) => l.category_id === c.id)
+            .map((l) => ({ label: l.label ?? '', amount: l.amount })),
+        }))
+        .filter((g) => g.lines.length > 0)
+
+      await generateCostingPdf({
+        sheet, totals, detail,
+        companyName: tenant?.name ?? 'Golai',
+      })
+    },
+  })
 
   const save = useMutation({
     mutationFn: async (finalise: boolean) => {
@@ -151,21 +174,29 @@ export function SheetEditor() {
         title={sheet.name}
         subtitle={`Version ${sheet.version}${sheet.buyer ? ` · ${sheet.buyer}` : ''} · ${new Date(sheet.sheet_date).toLocaleDateString()}`}
         actions={
-          readOnly ? (
-            <span className="badge bg-ink-100 text-ink-600">
-              <Lock className="h-3 w-3" aria-hidden /> Final
-            </span>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <button className="btn-secondary" disabled={save.isPending} onClick={() => save.mutate(false)}>
-                {save.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                Save
-              </button>
-              <button className="btn-primary" disabled={save.isPending} onClick={() => save.mutate(true)}>
-                <Lock className="h-5 w-5" aria-hidden /> Finalise
-              </button>
-            </div>
-          )
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn-secondary" disabled={exportPdf.isPending} onClick={() => exportPdf.mutate()}>
+              {exportPdf.isPending
+                ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                : <FileDown className="h-5 w-5" aria-hidden />}
+              PDF
+            </button>
+            {readOnly ? (
+              <span className="badge bg-ink-100 text-ink-600">
+                <Lock className="h-3 w-3" aria-hidden /> Final
+              </span>
+            ) : (
+              <>
+                <button className="btn-secondary" disabled={save.isPending} onClick={() => save.mutate(false)}>
+                  {save.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                  Save
+                </button>
+                <button className="btn-primary" disabled={save.isPending} onClick={() => save.mutate(true)}>
+                  <Lock className="h-5 w-5" aria-hidden /> Finalise
+                </button>
+              </>
+            )}
+          </div>
         }
       />
 

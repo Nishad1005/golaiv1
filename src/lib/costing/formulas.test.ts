@@ -42,6 +42,20 @@ describe('computeLine — against the real chair sheet', () => {
     expect(r.amount).toBeCloseTo(368.59, 2)
   })
 
+  it('carton sleeve + lid: 386.86', () => {
+    const r = computeLine('carton_area', {
+      length: 33, width: 33, height: 34, lid_depth: 4, gsm: 60, box_type: 'sleeve_lid',
+    })
+    expect(r.amount).toBeCloseTo(386.86, 2)
+  })
+
+  it('carton full flap: 544.88', () => {
+    const r = computeLine('carton_area', {
+      length: 33, width: 33, height: 34, gsm: 60, box_type: 'full_flap',
+    })
+    expect(r.amount).toBeCloseTo(544.88, 2)
+  })
+
   it('packing allocation: 2000/84 + 150×0.6067 + 150 = 264.82', () => {
     const r = computeLine('container_alloc', {
       freight: 2000, per_container: 84, cbm: 0.6067487646, handling: 150,
