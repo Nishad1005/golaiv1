@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { canAccess, MODULES, TOGGLEABLE_MODULES } from '../../lib/modules'
+import { useCompanyModules } from '../../lib/platform'
 import type { Profile, UserRole } from '../../lib/types'
 
 async function invokeError(error: { message: string; context?: unknown }): Promise<string> {
@@ -23,6 +24,7 @@ async function invokeError(error: { message: string; context?: unknown }): Promi
 const ROLES: UserRole[] = ['security', 'storekeeper', 'planner', 'manager', 'admin']
 
 export function Users() {
+  const companyModules = useCompanyModules()
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
@@ -530,7 +532,7 @@ export function Users() {
                   </p>
                   <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
                     {TOGGLEABLE_MODULES.map((m) => {
-                      const allowed = canAccess(u, m.key)
+                      const allowed = canAccess(u, m.key, companyModules)
                       const isDefault = m.defaultRoles.includes(u.role)
                       return (
                         <label

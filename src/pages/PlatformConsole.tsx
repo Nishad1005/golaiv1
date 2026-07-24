@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Activity, Building2, Check, ChevronDown, Loader2, Package, PauseCircle,
+  Activity, Building2, ChevronDown, Loader2, Package, PauseCircle,
   PlayCircle, Rocket, TriangleAlert, Users,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { logActivity } from '../lib/audit'
 import {
-  LICENSED_MODULES, onboardingProgress, usePlatformSummary, usePlatformTenants,
-  type PlatformTenant,
+  moduleLabel, onboardingProgress, usePlatformSummary, usePlatformTenants,
+  useTenantModuleGrid, type PlatformTenant,
 } from '../lib/platform'
 import { PageHeader } from '../components/PageHeader'
 
@@ -51,7 +51,23 @@ export function PlatformConsole() {
         after: { module: v.key, company: v.name },
       })
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['platform-tenants'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
+      void queryClient.invalidateQueries({ queryKey: ['platform-tenant-modules'] })
+    },
+  })
+
+  const resetModule = useMutation({
+    mutationFn: async (v: { tenantId: string; key: string }) => {
+      const { error } = await supabase.rpc('platform_reset_tenant_module', {
+        p_tenant_id: v.tenantId, p_module_key: v.key,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
+      void queryClient.invalidateQueries({ queryKey: ['platform-tenant-modules'] })
+    },
   })
 
   const setStatus = useMutation({
@@ -110,6 +126,7 @@ export function PlatformConsole() {
               onToggle={() => setOpenId(openId === t.id ? null : t.id)}
               onSetModule={(key, enabled) =>
                 setModule.mutate({ tenantId: t.id, key, enabled, name: t.name })}
+              onResetModule={(key) => resetModule.mutate({ tenantId: t.id, key })}
               onSetStatus={(status) => setStatus.mutate({ tenantId: t.id, status, name: t.name })}
               busy={setModule.isPending || setStatus.isPending}
             />
@@ -147,14 +164,16 @@ function Stat({ icon: Icon, label, value, hint }: {
   )
 }
 
-function TenantRow({ t, open, onToggle, onSetModule, onSetStatus, busy }: {
+function TenantRow({ t, open, onToggle, onSetModule, onResetModule, onSetStatus, busy }: {
   t: PlatformTenant
   open: boolean
   onToggle: () => void
   onSetModule: (key: string, enabled: boolean) => void
+  onResetModule: (key: string) => void
   onSetStatus: (status: 'active' | 'inactive') => void
   busy: boolean
 }) {
+  const { data: grid } = useTenantModuleGrid(open ? t.id : null)
   const progress = onboardingProgress(t)
   const live = progress.done === progress.total
   const suspended = t.status !== 'active'
@@ -209,34 +228,62 @@ function TenantRow({ t, open, onToggle, onSetModule, onSetStatus, busy }: {
           </dl>
 
           <div>
-            <p className="label-text">Licensed modules</p>
-            <div className="space-y-2">
-              {LICENSED_MODULES.map((m) => {
-                const on = t.module_keys.includes(m.key)
-                return (
-                  <label
-                    key={m.key}
-                    className="flex min-h-tap cursor-pointer items-center gap-3 rounded-xl border border-ink-200 px-3"
-                  >
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 accent-brand-500"
-                      checked={on}
-                      disabled={busy}
-                      onChange={(e) => onSetModule(m.key, e.target.checked)}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-ink-800">{m.label}</span>
-                      <span className="block text-xs text-ink-400">{m.blurb}</span>
-                    </span>
-                    {on && <Check className="h-4 w-4 shrink-0 text-brand-600" aria-hidden />}
-                  </label>
-                )
-              })}
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="label-text !mb-0">Modules this company has</p>
+              <p className="text-xs text-ink-400">
+                Turning one off removes it for <strong>everyone</strong> here
+              </p>
             </div>
-            <p className="mt-2 text-xs text-ink-400">
-              Everything else in Golai is part of the base product. Only modules listed here
-              need a licence.
+
+            {!grid ? (
+              <Loader2 className="mx-auto my-6 h-5 w-5 animate-spin text-brand-500" />
+            ) : (
+              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                {grid.map((m) => {
+                  const { label, blurb } = moduleLabel(m.module_key)
+                  return (
+                    <li key={m.module_key}>
+                      <div className="flex min-h-tap items-center gap-3 rounded-xl border border-ink-200 px-3">
+                        <input
+                          type="checkbox"
+                          id={`${t.id}-${m.module_key}`}
+                          className="h-5 w-5 shrink-0 accent-brand-500"
+                          checked={m.enabled}
+                          disabled={busy}
+                          onChange={(e) => onSetModule(m.module_key, e.target.checked)}
+                        />
+                        <label htmlFor={`${t.id}-${m.module_key}`} className="min-w-0 flex-1 cursor-pointer py-2">
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-semibold text-ink-800">{label}</span>
+                            {m.requires_license && (
+                              <span className="badge bg-amber-50 text-amber-700">add-on</span>
+                            )}
+                            {m.is_explicit && (
+                              <span className="badge bg-ink-100 text-ink-600">set</span>
+                            )}
+                          </span>
+                          {blurb && <span className="block text-xs text-ink-400">{blurb}</span>}
+                        </label>
+                        {m.is_explicit && (
+                          <button
+                            className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-ink-400 hover:bg-ink-50 hover:text-ink-700"
+                            disabled={busy}
+                            onClick={() => onResetModule(m.module_key)}
+                            title="Clear this decision and fall back to the default"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            <p className="mt-2 text-xs leading-relaxed text-ink-400">
+              Everything without an <strong>add-on</strong> tag is part of the base product and is on
+              by default. Their own admin still controls who inside the company may open each one.
             </p>
           </div>
 

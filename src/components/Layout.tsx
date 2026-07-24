@@ -7,6 +7,7 @@ import { useAuth } from '../stores/auth'
 import { useTenant, logoPublicUrl } from '../lib/tenant'
 import { avatarPublicUrl, initialsOf } from '../lib/avatar'
 import { navForProfile } from '../lib/modules'
+import { useCompanyModules } from '../lib/platform'
 import { OfflineBanner } from './OfflineBanner'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -39,7 +40,8 @@ export function Layout() {
     },
   })
 
-  const nav = profile ? [...navForProfile(profile)] : []
+  const companyModules = useCompanyModules()
+  const nav = profile ? [...navForProfile(profile, companyModules)] : []
   // DBBS platform admins get the cross-tenant "Provision Client" destination.
   if (profile?.is_platform_admin) {
     nav.push({

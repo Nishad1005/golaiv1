@@ -19,7 +19,7 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
 
 2. **Create a Supabase project** at [supabase.com](https://supabase.com) (free tier is fine).
 
-3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0025)**, or use the Supabase CLI:
+3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0026)**, or use the Supabase CLI:
 
    ```sh
    npx supabase link --project-ref YOUR_PROJECT_REF
@@ -124,4 +124,4 @@ npx cap open android                    # opens Android Studio to run/build
 
 Each role lands on its own home screen: **Security** (gate dashboard), **Storekeeper** (task list), **Production Planner** (department status), **Manager** (KPIs + approvals), **Admin** (masters + settings).
 
-On top of the role, an admin can switch individual modules on or off **per person** (Users & Roles → Access). `src/lib/modules.ts` and the `modules` table must stay in sync — the database enforces access independently of the UI (migration 0017), so a mismatch means the app offers something the server will refuse.
+Access has two layers: DBBS grants modules to a **company** (Platform Console), and the company's admin then switches them on or off **per person** (Users & Roles → Access). Both must pass. `src/lib/modules.ts` and the `modules` table must stay in sync — the database enforces access independently of the UI (migration 0017), so a mismatch means the app offers something the server will refuse.

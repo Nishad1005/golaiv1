@@ -13,6 +13,7 @@ import { logActivity } from '../lib/audit'
 import { useTenant, logoPublicUrl } from '../lib/tenant'
 import { avatarPublicUrl, initialsOf } from '../lib/avatar'
 import { canAccess, TOGGLEABLE_MODULES } from '../lib/modules'
+import { useCompanyModules } from '../lib/platform'
 import { MIN_PASSWORD_LENGTH, passwordStrength } from '../lib/password'
 import { PageHeader } from '../components/PageHeader'
 
@@ -87,7 +88,8 @@ export function Account() {
   const matches = confirm.length > 0 && password === confirm
   const canSubmit = longEnough && matches
 
-  const allowed = TOGGLEABLE_MODULES.filter((m) => canAccess(profile, m.key))
+  const companyModules = useCompanyModules()
+  const allowed = TOGGLEABLE_MODULES.filter((m) => canAccess(profile, m.key, companyModules))
   const photo = avatarPublicUrl(profile?.avatar_url)
   const companyLogo = logoPublicUrl(tenant?.logo_url ?? null)
 

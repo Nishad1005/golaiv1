@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from './stores/auth'
 import { canAccess } from './lib/modules'
+import { useCompanyModules } from './lib/platform'
 import { useOffline } from './lib/offline/queue'
 import { refreshMasterCache } from './lib/offline/masters'
 import { registerPush } from './lib/push'
@@ -75,6 +76,7 @@ function FullScreenSpinner() {
 
 export default function App() {
   const { session, profile, loading, initialize } = useAuth()
+  const companyModules = useCompanyModules()
 
   useEffect(() => {
     void initialize()
@@ -139,9 +141,9 @@ export default function App() {
   }
 
   const Home = HOME_BY_ROLE[profile.role]
-  // Routes follow the same effective access as the sidebar: role default,
-  // overridden per person by the admin's module checkboxes.
-  const can = (key: string) => canAccess(profile, key)
+  // Routes follow the same effective access as the sidebar: what the company
+  // holds, then the role default, then the admin's per-person checkboxes.
+  const can = (key: string) => canAccess(profile, key, companyModules)
 
   return (
     <BrowserRouter>

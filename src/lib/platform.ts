@@ -1,18 +1,32 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { useAuth } from '../stores/auth'
-import { TOGGLEABLE_MODULES } from './modules'
+import { MODULES } from './modules'
+import type { CompanyModules } from './modules'
 
 /**
- * Modules a company can be licensed for.
- *
- * Everything in the app today is included in the base product — no licence row
- * needed. Only modules listed here are gated at company level, so adding one is
- * a deliberate act. `costing` is the first.
+ * Friendly names for modules the console can grant. Most come from the nav
+ * registry; anything not yet in the nav (a module registered in the database
+ * before its screens exist) gets a label here.
  */
-export const LICENSED_MODULES: { key: string; label: string; blurb: string }[] = [
-  { key: 'costing', label: 'Costing', blurb: 'Product costing sheets, rate tables and quotations' },
-]
+const EXTRA_LABELS: Record<string, { label: string; blurb: string }> = {
+  costing: { label: 'Costing', blurb: 'Product costing sheets, rate tables and quotations' },
+}
+
+export function moduleLabel(key: string): { label: string; blurb: string } {
+  const nav = MODULES.find((m) => m.key === key)
+  if (nav) return { label: nav.label, blurb: '' }
+  return EXTRA_LABELS[key] ?? { label: key, blurb: '' }
+}
+
+/** One module as the console sees it for a given company. */
+export interface TenantModuleRow {
+  module_key: string
+  requires_license: boolean
+  enabled: boolean
+  /** True when DBBS has made an explicit decision, rather than the default. */
+  is_explicit: boolean
+}
 
 export interface PlatformTenant {
   id: string
@@ -64,27 +78,51 @@ export function usePlatformSummary() {
   })
 }
 
-/**
- * Which licensed modules the signed-in user's own company holds.
- *
- * Deliberately separate from `canAccess()` in lib/modules: that governs what a
- * *person* may open, this governs what the *company* has bought. Both must pass.
- */
-export function useTenantModules() {
-  const tenantId = useAuth((s) => s.profile?.tenant_id)
+/** Every module for one company, as the console shows them. */
+export function useTenantModuleGrid(tenantId: string | null) {
   return useQuery({
-    queryKey: ['tenant-modules', tenantId],
+    queryKey: ['platform-tenant-modules', tenantId],
     enabled: !!tenantId,
-    staleTime: 5 * 60_000,
-    queryFn: async (): Promise<string[]> => {
-      const { data, error } = await supabase
-        .from('tenant_modules')
-        .select('module_key')
-        .eq('enabled', true)
-      if (error) return []
-      return ((data ?? []) as { module_key: string }[]).map((r) => r.module_key)
+    queryFn: async (): Promise<TenantModuleRow[]> => {
+      const { data, error } = await supabase.rpc('platform_tenant_modules', {
+        p_tenant_id: tenantId,
+      })
+      if (error) throw new Error(error.message)
+      return (data ?? []) as TenantModuleRow[]
     },
   })
+}
+
+/**
+ * What the signed-in user's own COMPANY holds — `{ dispatch: false }`.
+ *
+ * Deliberately separate from `canAccess()`: that governs what a *person* may
+ * open, this governs what the *company* has. Both must pass, and the database
+ * enforces the same rule independently (migration 0026).
+ */
+export function useCompanyModules(): CompanyModules {
+  const tenantId = useAuth((s) => s.profile?.tenant_id)
+  const { data } = useQuery({
+    queryKey: ['company-modules', tenantId],
+    enabled: !!tenantId,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<Record<string, boolean>> => {
+      const [mods, grants] = await Promise.all([
+        supabase.from('modules').select('key, requires_license'),
+        supabase.from('tenant_modules').select('module_key, enabled'),
+      ])
+      const explicit = new Map(
+        ((grants.data ?? []) as { module_key: string; enabled: boolean }[])
+          .map((r) => [r.module_key, r.enabled]),
+      )
+      const out: Record<string, boolean> = {}
+      for (const m of (mods.data ?? []) as { key: string; requires_license: boolean }[]) {
+        out[m.key] = explicit.has(m.key) ? explicit.get(m.key)! : !m.requires_license
+      }
+      return out
+    },
+  })
+  return data
 }
 
 /** How far a company has got with setup — the same signals as the admin checklist. */
@@ -99,8 +137,4 @@ export function onboardingProgress(t: PlatformTenant): { done: number; total: nu
   return { done: steps.filter(Boolean).length, total: steps.length }
 }
 
-/** Sanity check for the console: keys that exist as licences but not as modules. */
-export function unknownLicenceKeys(keys: string[]): string[] {
-  const known = new Set([...TOGGLEABLE_MODULES.map((m) => m.key), ...LICENSED_MODULES.map((m) => m.key)])
-  return keys.filter((k) => !known.has(k))
-}
+

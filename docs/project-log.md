@@ -86,9 +86,15 @@ Adjust · Capture · SO Movement · ERP Export (CSV, quantities only).
 - **Platform Console** (0025) — every client with usage at a glance (users,
   products, locations, setup progress, last active), **module licences** granted
   or revoked per company, and suspend / reactivate.
-- **`tenant_modules`** — the company-level licence layer above per-user access.
+- **`tenant_modules`** — the company-level licence layer above per-user access,
+  covering **every** module, not just paid add-ons. Switch one off for a company
+  and it disappears for all of its users regardless of their personal access.
   A client **cannot grant itself** a licence; only DBBS can. This is what lets a
   module be proven on the demo tenant while being unreachable for a live client.
+- **`has_module()` now checks company then person** (0026). Chosen so that with
+  no explicit grants and no add-ons the result is *identical* to before: a base
+  module with no row is allowed (`not requires_license`), an add-on with no row
+  is denied. Existing companies were unaffected the moment it shipped.
 - Cross-tenant reads go through **security-definer RPCs that check
   `is_platform_admin()` first**. No existing RLS policy was widened — the
   isolation rule from the costing plan applied here too.
@@ -146,6 +152,11 @@ table **must stay in sync**.
 **The running balance is computed backwards from live stock.** Working forwards
 from zero would silently drift the moment any movement predated the ledger —
 and a silently wrong audit trail is worse than none.
+
+**Company access is a deny-list for the base product, an allow-list for
+add-ons.** One table, two readings: `modules.requires_license` decides which.
+That is what made it safe to rewrite `has_module()` — the function that guards
+every write path — without changing what any existing company could do.
 
 **Alert targeting via a trigger, not by editing the 8 RPCs that raise alerts.**
 Those live across four migrations and several were renamed by 0017; touching

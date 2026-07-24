@@ -58,14 +58,30 @@ export const TOGGLEABLE_MODULES = MODULES.filter((m) => !m.alwaysOn)
 type AccessProfile = Pick<Profile, 'role'> & { module_access?: Record<string, boolean> | null }
 
 /**
+ * What the signed-in user's COMPANY holds — `{ dispatch: false, costing: true }`.
+ * Undefined means "not loaded yet / no restrictions", which keeps every existing
+ * caller behaving as it did before company licensing existed.
+ */
+export type CompanyModules = Record<string, boolean> | undefined
+
+/**
  * Effective access: a per-user override wins; otherwise the role default.
  * Note this governs what the app offers — the database still enforces
  * role-level rules underneath.
  */
-export function canAccess(profile: AccessProfile | null | undefined, key: string): boolean {
+export function canAccess(
+  profile: AccessProfile | null | undefined,
+  key: string,
+  company?: CompanyModules,
+): boolean {
   if (!profile) return false
   const module = MODULES.find((m) => m.key === key)
   if (!module) return false
+  // The company layer comes first and overrides everything: a module the
+  // company does not hold is gone for all of its people. Mirrors has_module()
+  // in migration 0026 — if these two ever disagree, the database wins and the
+  // user sees a screen that refuses to work.
+  if (company && company[key] === false) return false
   if (module.alwaysOn) return true
   const override = profile.module_access?.[key]
   if (typeof override === 'boolean') return override
@@ -73,7 +89,10 @@ export function canAccess(profile: AccessProfile | null | undefined, key: string
 }
 
 /** Sidebar entries for this person, in MODULES order. */
-export function navForProfile(profile: AccessProfile | null | undefined): AppModule[] {
+export function navForProfile(
+  profile: AccessProfile | null | undefined,
+  company?: CompanyModules,
+): AppModule[] {
   if (!profile) return []
-  return MODULES.filter((m) => canAccess(profile, m.key))
+  return MODULES.filter((m) => canAccess(profile, m.key, company))
 }
