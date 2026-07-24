@@ -1,6 +1,10 @@
 # Golai — Costing Module: Build Plan
 
-*Drafted 2026-07-24. Not yet approved. No code written.*
+*Drafted 2026-07-24. Approved; phase 1 in progress.*
+
+> **This file is the agreed scope** — phasing, estimates and the isolation
+> guarantees. The living record (every formula, the schema as built, progress
+> and gaps) is **`costing.md`**.
 
 Replaces U&M's costing spreadsheet with a module inside Golai. Built and proven
 **on the demo tenant only**; U&M cannot see it, cannot switch it on, and nothing

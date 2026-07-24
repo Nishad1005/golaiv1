@@ -315,6 +315,11 @@ Buyer "DF 24", version 1, dated 30-Jan-2024):
 | **Rate entered with no quantity → silent ₹0** (Belt, Hassian, Piping, Button) | Cannot distinguish "not used" from "forgotten" |
 | **External link to `D:\…\Betsy Skirted Counter Stool.xlsx`** | Each product is made by copying the previous product's sheet — which is exactly how all of the above propagate |
 
+**Everything about this module now lives in `costing.md`** — every formula with
+its Excel original and a verified figure from the real chair, the schema as
+built, defects found, decisions, progress and known gaps. Keep that one current;
+this section stays a summary.
+
 **Progress:** migration 0027 ships the schema, RLS gated on the costing licence,
 and `seed_costing_template()` — U&M's 31 categories as a per-tenant template so
 the next client can diverge. `src/lib/costing/formulas.ts` implements the nine
