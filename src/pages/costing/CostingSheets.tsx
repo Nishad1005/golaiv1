@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calculator, Copy, Loader2, Lock, Plus, Sparkles, TriangleAlert } from 'lucide-react'
+import { Calculator, Copy, Loader2, Lock, Plus, Sparkles, Tags, TriangleAlert } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -89,9 +89,14 @@ export function CostingSheets() {
         subtitle="What each product costs to make, and what it should sell for."
         actions={
           !needsSeeding && (
-            <button className="btn-primary" onClick={() => setShowNew(true)}>
-              <Plus className="h-5 w-5" aria-hidden /> New sheet
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/costing/rates" className="btn-secondary">
+                <Tags className="h-5 w-5" aria-hidden /> Rate tables
+              </Link>
+              <button className="btn-primary" onClick={() => setShowNew(true)}>
+                <Plus className="h-5 w-5" aria-hidden /> New sheet
+              </button>
+            </div>
           )
         }
       />

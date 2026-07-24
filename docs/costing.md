@@ -218,15 +218,35 @@ hand-written cell references. The orphaned-line defects become impossible.
 | ✅ Nine formula shapes + 16 tests against the real chair | `src/lib/costing/` |
 | ✅ Sheet editor — header, category blocks, live summary | `src/pages/costing/` |
 | ✅ Sheet list, new sheet, clone, first-run category seeding | |
-| ⬜ Rate table admin — currently seeded empty, so foam lookups find nothing | next |
-| ⬜ Snapshot on finalise + PDF export | |
+| ✅ Rate table admin, with history and supersede-by-date | `RateTables.tsx` |
+| ✅ Foam grid seeded from their own rule (0028) | 12 sizes |
+| ✅ Snapshot on finalise | frozen numbers **and** rates |
+| ⬜ PDF export of a sheet | next |
+| ⬜ The other two carton formulas (§8) | next |
 | ⬜ Import their existing sheets; map names → item master | phase 2 |
 | ⬜ Pre-fill a release request | phase 3 — first thing to touch existing workflow |
 | ⬜ Category editor (per-tenant) → makes it sellable to the next client | phase 4 |
 
 ---
 
-### 7.1 How the editor is built
+### 7.1 How rates work
+
+A rate lives **once**. Adding a rate for a name that already exists
+**supersedes** it from that date rather than overwriting — the older entry stays,
+so a sheet costed before the change is still explicable. The live rate for any
+key is the newest entry whose `effective_from` has passed and whose
+`effective_to` has not.
+
+Sheets already **finalised keep the rate they were finalised with**, because the
+snapshot stores rates alongside amounts. Only draft sheets move when a price
+changes — which is exactly the behaviour you want.
+
+`seed_costing_foam_rates()` (0028) fills the grid from their own rule —
+`thickness_mm × 21` for 72×36, scaled `24/18` for 72×48 — giving all twelve
+sizes. It refuses to run on a table that already has entries, so a corrected
+rate is never overwritten.
+
+### 7.2 How the editor is built
 
 **One `CategoryBlock` component renders all 31 categories.** Columns come from
 that category's `costing_category_fields` rows, so adding or reshaping a
@@ -264,9 +284,6 @@ Add as `carton_area` variants selected by box type, not as new shapes.
 **Rate lookup is not wired to the formula engine yet.** `sheet_yield` takes a
 rate as an argument; resolving it from `costing_rate_entries` by
 `lookup_key` + date happens in the editor.
-
-**Rate tables have no admin screen yet**, so `foam_sheet` exists but is empty
-and a foam line's size dropdown will be blank. Next task.
 
 **Wastage %** does not appear in their chair sheet, but is near-universal in
 costing. Ask before assuming it is not needed.
