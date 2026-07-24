@@ -39,14 +39,16 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0024, all applied to production |
+| **Migrations** | 0001 → 0026, all applied to production |
 | **Tests** | 63 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
 | **Regression pass** | Stages 0–3 **passed**. Stages 4–9 outstanding. |
+| **Platform console** | Live. Company-level module access enforced (0026). |
+| **Costing** | Phase 1 started — schema + formula engine done (0027), UI next |
 
-**U&M, what's left:** create locations → print and stick labels → the mapping
-walk → fill the two blanks in their guide (URL, support contact) → **remove the
+**U&M, what's left:** ~~import their master~~ (**done — 3,328 products**) →
+create locations → print and stick labels → the mapping walk → fill the two blanks in their guide (URL, support contact) → **remove the
 admin password printed in section 1** before it leaves your hands.
 
 ---
@@ -313,6 +315,12 @@ Buyer "DF 24", version 1, dated 30-Jan-2024):
 | **Rate entered with no quantity → silent ₹0** (Belt, Hassian, Piping, Button) | Cannot distinguish "not used" from "forgotten" |
 | **External link to `D:\…\Betsy Skirted Counter Stool.xlsx`** | Each product is made by copying the previous product's sheet — which is exactly how all of the above propagate |
 
+**Progress:** migration 0027 ships the schema, RLS gated on the costing licence,
+and `seed_costing_template()` — U&M's 31 categories as a per-tenant template so
+the next client can diverge. `src/lib/costing/formulas.ts` implements the nine
+shapes with **16 tests written against the real chair sheet**, so we reproduce
+their numbers rather than something merely plausible. Next: the sheet editor.
+
 **Full build plan: `costing-module-plan.md`** (drafted, not approved). Built on
 the **demo tenant only** behind a new `tenant_modules` licence gate; the
 migrations are **additive only** — no existing table, RPC or policy is altered —
@@ -402,13 +410,20 @@ Full detail in `open-items.md`. Summary of *why* each is parked:
 | How does it all connect? | `product-lifecycle.md` |
 | What does the schema do? | `supabase/migrations/` — the source of truth |
 
+**Recent regression findings** (2026-07-24): the pass surfaced three real
+defects — dashboard tiles with no destination, alerts going to everyone
+regardless of role (0023), and item import failing on any un-coded row because
+0017 had revoked `next_sequence` (0024). All fixed. The last one is the reason
+Stage 1 now includes an un-coded CSV import.
+
 **Migrations at a glance:** 0001 identity/masters · 0002 stock/movements ·
 0003–0004 workflows, QC, counts, alerts, audit · 0005–0009 atomic RPCs ·
 0010 push tokens · 0011 flexible fixtures · 0012 assign placements · 0013 item
 type · 0014 auto-code flag · 0015 company branding · 0016 module access ·
 **0017 database-level enforcement** · 0018 staff ID card · **0019 movement
 ledger** · 0020 stock overview · 0021 settings + undo · 0022 sample data ·
-0023 targeted alerts · 0024 item-code allocation.
+0023 targeted alerts · 0024 item-code allocation · **0025 platform console +
+tenant_modules** · **0026 company-level module access**.
 
 ---
 
