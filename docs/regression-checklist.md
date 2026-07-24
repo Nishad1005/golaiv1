@@ -33,6 +33,8 @@ select
   to_regprocedure('public.clear_sample_data()')       is not null as f_sample_clear,
   to_regprocedure('public.alert_roles_for(text)')     is not null as f_alert_roles,
   to_regprocedure('public.set_my_profile(text,text)') is not null as f_set_my_profile,
+  to_regprocedure('public.next_item_code()')          is not null as f_item_code,
+  to_regprocedure('public.next_item_codes(integer)')  is not null as f_item_codes,
   -- columns
   exists(select 1 from information_schema.columns
           where table_name = 'entries'  and column_name = 'qty_delta')    as c_qty_delta,
@@ -101,8 +103,14 @@ each of these once as the role named.
 | 1.14 | manager | Approve the dispatch | Status moves on |
 | 1.15 | security | Gate-out → **scan a wrong carton first** | Refused; then the right one completes it |
 | 1.16 | admin | **Users & Roles** → create a user, reset their password, deactivate them | All three succeed |
+| 1.17 | admin | **Items → Import CSV** with a file where **some rows have no code** | Imports; un-coded rows get `ITM-` codes, coded rows keep theirs |
 
-> A permission error anywhere in 1.1–1.16 means 0017 did not fully apply.
+> A permission error anywhere in 1.1–1.17 means 0017 did not fully apply.
+>
+> **1.17 exists because this was missed once.** The demo tenant's products all
+> have codes, so nothing here exercised auto-allocation until a real client
+> master did — and it failed on `next_sequence`, which 0017 had revoked.
+> Whenever a stage passes, ask what the demo data is *not* exercising.
 
 ---
 

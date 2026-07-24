@@ -19,7 +19,7 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · TanStack Query · S
 
 2. **Create a Supabase project** at [supabase.com](https://supabase.com) (free tier is fine).
 
-3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0023)**, or use the Supabase CLI:
+3. **Apply the database migrations** — in the Supabase dashboard open *SQL Editor* and run the files in `supabase/migrations/` **in order (0001 → 0024)**, or use the Supabase CLI:
 
    ```sh
    npx supabase link --project-ref YOUR_PROJECT_REF
