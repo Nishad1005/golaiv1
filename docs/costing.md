@@ -248,6 +248,20 @@ rate is never overwritten.
 
 ### 7.2 How the editor is built
 
+**Each line is a card, not a table row.** The first build used a table, which
+needed horizontal scrolling with eight columns — unusable on a phone, and it
+*clipped the product-search dropdown*, because `overflow-x` cuts off absolutely
+positioned children. That made the search results invisible unless you scrolled
+sideways to find them. Cards wrap instead: product on its own full-width row,
+fields wrapping below, amount on the right.
+
+**An empty rate dropdown explains itself.** If a lookup field has no rates, it
+renders as a link to Rate tables saying so, rather than an empty select.
+
+**Rate table resolution is by `category.config.rate_table`**, falling back to a
+merge of every table. Hardcoding `foam_sheet` meant an empty dropdown the moment
+anyone renamed the table.
+
 **One `CategoryBlock` component renders all 31 categories.** Columns come from
 that category's `costing_category_fields` rows, so adding or reshaping a
 category is a data change, not a code change — and the next client can have

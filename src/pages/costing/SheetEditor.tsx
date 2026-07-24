@@ -36,7 +36,19 @@ export function SheetEditor() {
   const marginPct = header?.margin_pct ?? sheet?.margin_pct ?? 0
   const readOnly = sheet?.status !== 'draft'
 
-  const foamRates = rateData?.live?.foam_sheet ?? {}
+  /**
+   * Rates for a category's lookup field. A category may name its table in
+   * `config.rate_table`; otherwise we merge every table, so a rate is found
+   * whatever the client called the table. Hardcoding 'foam_sheet' meant an
+   * empty dropdown the moment anyone renamed it.
+   */
+  const ratesFor = (config: Record<string, unknown>): Record<string, number> => {
+    const live = rateData?.live ?? {}
+    const named = typeof config?.rate_table === 'string' ? config.rate_table : null
+    if (named && live[named]) return live[named]
+    return Object.assign({}, ...Object.values(live)) as Record<string, number>
+  }
+  const allRates = Object.assign({}, ...Object.values(rateData?.live ?? {})) as Record<string, number>
 
   const totals = useMemo(() => {
     const named = workingLines.map((l) => ({
@@ -94,7 +106,7 @@ export function SheetEditor() {
             category_key: categories?.find((c) => c.id === l.category_id)?.key ?? '',
             label: l.label ?? '', inputs: l.inputs, amount: l.amount,
           })),
-          rates: foamRates,
+          rates: allRates,
         }
         patch.computed = snapshot
         patch.status = 'final'
@@ -190,7 +202,7 @@ export function SheetEditor() {
               key={c.id}
               category={c}
               lines={linesFor(c.id)}
-              rates={c.formula_kind === 'sheet_yield' ? foamRates : {}}
+              rates={c.formula_kind === 'sheet_yield' ? ratesFor(c.config) : {}}
               readOnly={readOnly}
               onChange={(next) => replaceFor(c.id, next)}
             />

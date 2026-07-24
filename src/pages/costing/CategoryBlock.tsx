@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronDown, Link2, Plus, TriangleAlert, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, Link2, Plus, Search, Tags, TriangleAlert, X } from 'lucide-react'
 import { computeLine } from '../../lib/costing/formulas'
 import { useItemSearch } from '../../lib/costing/queries'
 import type { CostingCategory, CostingField, DraftLine } from '../../lib/costing/types'
@@ -7,19 +8,25 @@ import type { CostingCategory, CostingField, DraftLine } from '../../lib/costing
 interface Props {
   category: CostingCategory
   lines: DraftLine[]
-  /** Live rates for lookup fields: lookupKey → rate. */
+  /** Live rates for this category's lookup field: lookupKey → rate. */
   rates: Record<string, number>
   readOnly?: boolean
   onChange: (lines: DraftLine[]) => void
 }
 
+const money = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+
 /**
  * One block of the costing sheet — Wood, Foam, Fabric, and 28 others.
  *
- * There is deliberately only ONE of these components. Every category renders
+ * There is deliberately only ONE of these components: every category renders
  * from its own `costing_category_fields` rows, so adding or reshaping a category
- * is a data change, not a code change. That is what makes 31 blocks tractable,
- * and what will let the next client have completely different ones.
+ * is a data change, not a code change.
+ *
+ * Each line is a CARD, not a table row. A table with eight columns needs
+ * horizontal scrolling, which is unusable on the phones this app targets — and
+ * it clipped the product-search dropdown, because `overflow-x` cuts off
+ * absolutely positioned children. Cards wrap instead.
  */
 export function CategoryBlock({ category, lines, rates, readOnly, onChange }: Props) {
   const [open, setOpen] = useState(false)
@@ -79,88 +86,77 @@ export function CategoryBlock({ category, lines, rates, readOnly, onChange }: Pr
           </span>
         </span>
         <span className="shrink-0 font-semibold tabular-nums text-ink-800">
-          {total > 0 ? total.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}
+          {total > 0 ? money(total) : '—'}
         </span>
       </button>
 
       {open && (
-        <div className="border-t border-ink-200/70 px-4 py-3 animate-fade-in motion-reduce:animate-none">
-          {lines.length === 0 ? (
-            <p className="py-3 text-sm text-ink-400">Nothing costed here yet.</p>
-          ) : (
-            <div className="-mx-4 overflow-x-auto px-4">
-              <table className="w-full min-w-max text-sm">
-                <thead>
-                  <tr className="border-b border-ink-200 text-left text-xs uppercase tracking-wide text-ink-400">
-                    <th className="py-2 pr-3 font-medium">Product</th>
-                    {fields.map((f) => (
-                      <th key={f.id} className="py-2 pr-3 font-medium">
-                        {f.label}{f.unit ? ` (${f.unit})` : ''}
-                      </th>
-                    ))}
-                    <th className="py-2 pr-3 text-right font-medium">Amount</th>
-                    <th className="w-8" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-ink-200/70">
-                  {lines.map((line) => {
-                    const warn = lineWarning(category, line, rates)
-                    return (
-                      <tr key={line.id}>
-                        <td className="py-2 pr-3">
-                          <ItemPicker
-                            line={line}
-                            readOnly={readOnly}
-                            onPick={(item) => update(line.id, {
-                              item_id: item?.id ?? null,
-                              label: item?.name ?? line.label,
-                            })}
-                            onLabel={(v) => update(line.id, { label: v })}
-                          />
-                        </td>
-
-                        {fields.map((f) => (
-                          <td key={f.id} className="py-2 pr-3">
-                            <FieldInput
-                              field={f}
-                              value={line.inputs[f.key]}
-                              rates={rates}
-                              readOnly={readOnly}
-                              onChange={(v) => setInput(line.id, f.key, v)}
-                            />
-                          </td>
-                        ))}
-
-                        <td className="py-2 pr-3 text-right">
-                          <span className="font-semibold tabular-nums text-ink-800">
-                            {line.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                          </span>
-                          {warn && (
-                            <span className="block text-xs font-normal text-amber-600">{warn}</span>
-                          )}
-                        </td>
-
-                        <td className="py-2">
-                          {!readOnly && (
-                            <button
-                              className="rounded-lg p-1.5 text-ink-300 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => onChange(lines.filter((l) => l.id !== line.id))}
-                              aria-label="Remove line"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+        <div className="space-y-3 border-t border-ink-200/70 px-4 py-4 animate-fade-in motion-reduce:animate-none">
+          {lines.length === 0 && (
+            <p className="text-sm text-ink-400">Nothing costed here yet.</p>
           )}
 
+          {lines.map((line) => {
+            const warn = lineWarning(category, line, rates)
+            return (
+              <div key={line.id} className="rounded-xl border border-ink-200 bg-cream/40 p-3">
+                {/* Product — full width so the search results have room */}
+                <div className="flex items-start gap-2">
+                  <ItemPicker
+                    line={line}
+                    readOnly={readOnly}
+                    onPick={(item) => update(line.id, {
+                      item_id: item?.id ?? null,
+                      label: item?.name ?? line.label,
+                    })}
+                    onLabel={(v) => update(line.id, { label: v })}
+                  />
+                  {!readOnly && (
+                    <button
+                      className="shrink-0 rounded-lg p-2 text-ink-300 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => onChange(lines.filter((l) => l.id !== line.id))}
+                      aria-label="Remove line"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Fields wrap — no horizontal scrolling, works on a phone */}
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {fields.map((f) => (
+                    <div key={f.id}>
+                      <label className="mb-1 block text-xs font-medium text-ink-500" htmlFor={`${line.id}-${f.key}`}>
+                        {f.label}{f.unit ? ` (${f.unit})` : ''}
+                      </label>
+                      <FieldInput
+                        id={`${line.id}-${f.key}`}
+                        field={f}
+                        value={line.inputs[f.key]}
+                        rates={rates}
+                        readOnly={readOnly}
+                        onChange={(v) => setInput(line.id, f.key, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 border-t border-ink-200/70 pt-2">
+                  {warn ? (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700">
+                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden /> {warn}
+                    </span>
+                  ) : <span />}
+                  <span className="text-lg font-bold tabular-nums text-ink-900">
+                    {money(line.amount)}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+
           {!readOnly && (
-            <button className="btn-secondary mt-3" onClick={addLine}>
+            <button className="btn-secondary" onClick={addLine}>
               <Plus className="h-5 w-5" aria-hidden /> Add line
             </button>
           )}
@@ -194,12 +190,13 @@ function lineWarning(
   const lookupField = category.costing_category_fields.find((f) => f.data_type === 'rate_lookup')
   if (lookupField) {
     const key = String(line.inputs[lookupField.key] ?? '')
-    if (key && rates[key] === undefined) return `No rate for "${key}"`
+    if (key && rates[key] === undefined) return `No rate set for "${key}"`
   }
   return computeLine(category.formula_kind, line.inputs, lookupRate(category, line, rates)).warning
 }
 
-function FieldInput({ field, value, rates, readOnly, onChange }: {
+function FieldInput({ id, field, value, rates, readOnly, onChange }: {
+  id: string
   field: CostingField
   value: unknown
   rates: Record<string, number>
@@ -210,17 +207,30 @@ function FieldInput({ field, value, rates, readOnly, onChange }: {
 
   if (field.data_type === 'rate_lookup') {
     const options = Object.keys(rates).sort()
+    // An empty dropdown with no explanation is the worst outcome — say why and
+    // point at the fix.
+    if (options.length === 0) {
+      return (
+        <Link
+          to="/costing/rates"
+          className="flex h-11 w-48 items-center gap-1.5 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 text-xs font-medium text-amber-800"
+        >
+          <Tags className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          No rates yet — set them up
+        </Link>
+      )
+    }
     return (
       <select
-        className="h-10 w-40 rounded-lg border border-ink-200 bg-white px-2 text-sm"
+        id={id}
+        className="h-11 w-48 rounded-xl border border-ink-200 bg-white px-3 text-sm"
         value={shown}
         disabled={readOnly}
         onChange={(e) => onChange(e.target.value)}
-        aria-label={field.label}
       >
-        <option value="">—</option>
+        <option value="">Choose…</option>
         {options.map((o) => (
-          <option key={o} value={o}>{o} · {rates[o]}</option>
+          <option key={o} value={o}>{o} — {money(rates[o])}</option>
         ))}
       </select>
     )
@@ -228,14 +238,14 @@ function FieldInput({ field, value, rates, readOnly, onChange }: {
 
   return (
     <input
+      id={id}
       type={field.data_type === 'number' ? 'number' : 'text'}
       inputMode={field.data_type === 'number' ? 'decimal' : undefined}
       step="any"
-      className={`h-10 rounded-lg border border-ink-200 px-2 text-sm ${field.data_type === 'number' ? 'w-24 tabular-nums' : 'w-36'}`}
+      className={`h-11 rounded-xl border border-ink-200 px-3 text-sm ${field.data_type === 'number' ? 'w-28 tabular-nums' : 'w-40'}`}
       value={shown}
       disabled={readOnly}
       onChange={(e) => onChange(e.target.value)}
-      aria-label={field.label}
     />
   )
 }
@@ -252,51 +262,69 @@ function ItemPicker({ line, readOnly, onPick, onLabel }: {
   onLabel: (v: string) => void
 }) {
   const [term, setTerm] = useState('')
-  const { data: results } = useItemSearch(term)
+  const [focused, setFocused] = useState(false)
+  const { data: results, isFetching } = useItemSearch(term)
 
   if (line.item_id) {
     return (
-      <span className="flex items-center gap-1.5">
-        <Link2 className="h-3.5 w-3.5 shrink-0 text-brand-600" aria-hidden />
-        <span className="max-w-44 truncate font-medium">{line.label}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5">
+        <Link2 className="h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+        <span className="min-w-0 flex-1 truncate font-medium text-ink-800">{line.label}</span>
         {!readOnly && (
           <button
-            className="rounded px-1 text-xs text-ink-400 hover:text-red-600"
+            className="shrink-0 rounded px-1.5 text-xs font-medium text-ink-400 hover:text-red-600"
             onClick={() => onPick(null)}
             title="Unlink from the product master"
           >
-            ✕
+            Change
           </button>
         )}
       </span>
     )
   }
 
+  const showResults = focused && term.trim().length >= 2
+
   return (
-    <span className="relative block">
+    <div className="relative min-w-0 flex-1">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-300" aria-hidden />
       <input
-        className="h-10 w-44 rounded-lg border border-ink-200 px-2 text-sm"
-        placeholder="Search or type…"
+        className="h-11 w-full rounded-xl border border-ink-200 pl-9 pr-3 text-sm"
+        placeholder="Search your products, or just type a name…"
         value={term || line.label || ''}
         disabled={readOnly}
+        onFocus={() => setFocused(true)}
+        // Delay so a click on a result registers before the list closes.
+        onBlur={() => setTimeout(() => setFocused(false), 150)}
         onChange={(e) => { setTerm(e.target.value); onLabel(e.target.value) }}
         aria-label="Product"
       />
-      {term.length >= 2 && results && results.length > 0 && (
-        <ul className="absolute left-0 top-11 z-20 max-h-56 w-64 overflow-auto rounded-xl border border-ink-200 bg-white py-1 shadow-card-hover">
-          {results.map((it) => (
+
+      {showResults && (
+        <ul className="absolute left-0 right-0 top-12 z-30 max-h-60 overflow-auto rounded-xl border border-ink-200 bg-white py-1 shadow-card-hover">
+          {isFetching && (
+            <li className="px-3 py-2 text-sm text-ink-400">Searching…</li>
+          )}
+          {!isFetching && (results ?? []).length === 0 && (
+            <li className="px-3 py-2 text-sm text-ink-400">
+              Nothing in your product list matches — the typed name will be used.
+            </li>
+          )}
+          {(results ?? []).map((it) => (
             <li key={it.id}>
               <button
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-cream"
-                onClick={() => { onPick(it); setTerm('') }}
+                type="button"
+                className="block w-full px-3 py-2.5 text-left hover:bg-cream"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onPick(it); setTerm(''); setFocused(false) }}
               >
-                <span className="block truncate font-medium">{it.name}</span>
+                <span className="block truncate text-sm font-medium">{it.name}</span>
                 <span className="block text-xs text-ink-400">{it.code} · {it.uom}</span>
               </button>
             </li>
           ))}
         </ul>
       )}
-    </span>
+    </div>
   )
 }
