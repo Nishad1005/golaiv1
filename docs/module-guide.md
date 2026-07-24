@@ -33,6 +33,8 @@ every movement is recorded** — who, when, how much, with photos.
 | "Where is this product?" | **Find** |
 | "What came in and what went out of this product?" | **Stock Card** (click any product name) |
 | "How much stock do we have overall?" | **Manager home** — Stock right now |
+| "What does this product cost to make?" | **Costing** *(add-on)* |
+| A material price has changed | **Costing → Rate tables** |
 | "What's on this shelf?" | **Find** (scan the location sticker) |
 | A truck has arrived at the gate | **Receiving** (Gate Entry) |
 | Delivery needs checking against the invoice | **Receiving** (Verify) |
@@ -441,6 +443,41 @@ doing a batch afterwards. Either works — use whichever suits your team.
 
 ---
 
+## Costing *(paid add-on)*
+**Who:** manager, admin · *Only appears if your company has this module.*
+
+What a product costs to make, and what it should sell for. Replaces the costing
+spreadsheet.
+
+A **costing sheet** is one product: its components grouped into categories
+(wood, plywood, foam, fabric, labour, packing…), each with its own quantities
+and rates. The cost builds up as you type — category totals, each one's share of
+the whole, then GST and your overhead + margin, and the final price.
+
+**Rate tables** are the point of it. A price lives **once**: change foam, and
+every draft sheet reprices. No more editing twenty cells and missing three.
+
+> **Use case.** A new chair. The costing manager creates a sheet, works down the
+> categories entering timber sizes, foam pieces and fabric metres, and watches
+> the total build. Wood turns out to be 28 % of the cost. Two months later the
+> fabric supplier raises prices — one edit in Rate tables, and every draft sheet
+> shows the new cost. The chair they quoted in March still shows March's number,
+> because finalising froze it.
+
+**Good to know:**
+- **Finalising locks the sheet** and freezes both the numbers and the rates
+  behind them, so a quotation cannot silently re-price itself later.
+- **Clone** starts a new product from an existing one — it copies the structure
+  and re-reads today's rates, so nothing stale is carried over.
+- A line can be **linked to a real product** from your item list, which is what
+  lets Golai answer "which products use this fabric?".
+- If a rate is missing or a quantity is blank, the line **says so** instead of
+  quietly costing nothing.
+- Costing **never values your stock and never posts to accounts** — that stays
+  with your ERP. It works out what something costs; it does not do your books.
+
+---
+
 ## Suppliers, Customers & Departments
 **Who:** admin
 
@@ -520,11 +557,18 @@ a printed ID card.
 
 ---
 
-## Provision Client *(DBBS only)*
+## Platform Console *(DBBS only)*
 **Who:** DBBS platform admins — not visible to customers
 
-Creates a new customer company together with its first admin account, in one
-step. Each company's data is completely isolated from every other.
+Every client company on one screen: users, products, locations, setup progress
+and when they were last active. From here DBBS can **onboard a new client**
+(company and its first admin created together), **grant or revoke modules** for
+a company, and **suspend or reactivate** an account.
+
+> **Two layers of access.** DBBS decides what a *company* has; that company's own
+> admin then decides who *inside* it may open each part. Both must pass — so
+> turning a module off for a company removes it for all of their people, whatever
+> their personal settings say. A client cannot grant themselves a module.
 
 ---
 

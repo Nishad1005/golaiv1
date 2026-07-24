@@ -39,13 +39,13 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0026, all applied to production |
+| **Migrations** | 0001 → 0028, all applied to production |
 | **Tests** | 63 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
 | **Regression pass** | Stages 0–3 **passed**. Stages 4–9 outstanding. |
 | **Platform console** | Live. Company-level module access enforced (0026). |
-| **Costing** | Phase 1 nearly done — sheets, editor, rates all working; PDF left |
+| **Costing** | Phase 1: sheets, editor, rates working. PDF + 2 carton formulas left. |
 
 **U&M, what's left:** ~~import their master~~ (**done — 3,328 products**) →
 create locations → print and stick labels → the mapping walk → fill the two blanks in their guide (URL, support contact) → **remove the
@@ -428,7 +428,8 @@ type · 0014 auto-code flag · 0015 company branding · 0016 module access ·
 **0017 database-level enforcement** · 0018 staff ID card · **0019 movement
 ledger** · 0020 stock overview · 0021 settings + undo · 0022 sample data ·
 0023 targeted alerts · 0024 item-code allocation · **0025 platform console +
-tenant_modules** · **0026 company-level module access**.
+tenant_modules** · **0026 company-level module access** · **0027 costing schema** ·
+**0028 foam rate seed**.
 
 ---
 

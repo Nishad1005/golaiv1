@@ -299,6 +299,18 @@ Add as `carton_area` variants selected by box type, not as new shapes.
 rate as an argument; resolving it from `costing_rate_entries` by
 `lookup_key` + date happens in the editor.
 
+**Foam is only half modelled — revisit.** The seeded grid uses the simple rule
+their sheet computes from (`thickness_mm × 21` for 72×36, scaled for 72×48),
+which is enough to cost a sheet correctly. But their workbook also carries a
+richer grid at `BQ19:BX24` — **supplier** (Agarval / Shila) × **Non-FR / FR** ×
+**6′×3′ / 6′×4′** × six thicknesses — and none of those dimensions exist in the
+module yet. Today a rate is looked up by one flat key (`72x36x50`); properly it
+should be looked up by *attributes*. `costing_rate_entries.attributes` already
+holds the shape (`{sheet, thickness_mm}`), so the storage is ready and only the
+lookup and the picker need to change. **Agree with U&M which of those dimensions
+they actually buy on before building it** — FR vs non-FR is a real price
+difference, supplier may not be.
+
 **Wastage %** does not appear in their chair sheet, but is near-universal in
 costing. Ask before assuming it is not needed.
 

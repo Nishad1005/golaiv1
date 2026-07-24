@@ -130,7 +130,8 @@ The demo tells one story: **"A sofa order, from gate to gate."** Material arrive
 | "Can we control what each person sees?" | Beyond the five roles, the admin can tick individual sections on or off **per person**. Unticked sections disappear from that person's menu entirely — and the database refuses them too, not just the screen. |
 | "Half our floor staff have no email." | They log in with their **mobile number** and a password. No SMS, no OTP, no cost. |
 | "iPhone / Android app?" | It installs from the browser today (PWA); native Play Store / App Store builds are on the roadmap. |
-| "Costing, valuation, stock value reports?" | Out of scope by design — that's ERP territory. Golai shows units only. |
+| "Costing, valuation, stock value reports?" | **Stock valuation stays with your ERP** — Golai shows units. But there is a separate **Costing add-on** that replaces the costing spreadsheet: what a product costs to make, with rates held in one place so a price change updates every sheet. Ask us about it. |
+| "Can we get a module built for how *we* work?" | Often it's configuration, not code — you name your own locations, add your own fields. Where a genuinely different module is needed, it's built into the product and licensed to you, not forked into a private copy that never gets updates. |
 | "Can I see the history of one product?" | Yes — click any product name for its **stock card**: every receipt, issue, return and dispatch with the balance after each one. |
 | "How much hand-holding does setup need?" | The app has a **setup checklist** on the admin home that walks them through it and ticks itself off. Most clients can do it themselves. |
 

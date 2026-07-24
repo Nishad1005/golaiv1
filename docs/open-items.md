@@ -5,7 +5,7 @@ Updated 2026-07-22.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0024.
+0001 → 0028.
 
 **Shipped since the last revision:** the stock card, the manager stock
 dashboard, item labels at receiving, the first-run checklist, the stock-count
@@ -14,23 +14,21 @@ across every list, one-click sample data, and a first load cut from 1.66 MB to
 584 KB. Building these also fixed three silent data bugs — see the notes under
 A1.
 
-**Part B is down to three items, and all three are decisions rather than
-tickets** — WhatsApp needs a commercial call, Hindi needs a real i18n budget,
-and multi-warehouse needs a product answer.
+**Costing (Part B)** is in build — phase 1 nearly done. **Part C is three items
+and all three are decisions rather than tickets** — WhatsApp needs a commercial
+call, Hindi needs a real i18n budget, multi-warehouse needs a product answer.
 
 For the full record — everything built, every decision and why, what is parked
 and what has only been discussed — see **`project-log.md`**. This file is only
 what is *left*.
 
-This file is **two different roadmaps**, deliberately separated:
+**A — Finish U&M** · **B — Costing** · **C — Make it a product** ·
+**D — Hardening** · **E — Later**.
 
-- **Part A — Finish U&M.** What stands between "working" and "handed over to the
-  first paying client".
-- **Part B — Make it a product.** What stands between "one client" and "ten
-  clients without DBBS in the room for every setup".
-
-They compete for the same week. Mixing them is how a product becomes a
-one-client custom build, so they are kept apart on purpose.
+A and C compete for the same week and are kept apart on purpose: mixing them is
+how a product quietly becomes a one-client custom build. B is a paid module for
+one client that happens to be sellable to the rest — which is why it sits
+between them rather than inside either.
 
 Legend: **★** = also fixes a general product gap, not just a U&M request.
 
@@ -49,10 +47,13 @@ their own data — no code.
 > this without being asked?** If yes it belongs in the product; if no, it
 > belongs in settings, or nowhere.
 
-### A1. Verify migrations 0016 → 0024 in production
+### A1. Verify migrations 0016 → 0028 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
 movement ledger (0019), the stock overview (0020), settings + undo (0021) and
-sample data (0022) and targeted alerts (0023). 0017 rewrote every write path (guarded RPC wrappers, dropped direct-write policies, revoked internal
+sample data (0022), targeted alerts (0023), item-code allocation (0024), the
+platform console (0025), company-level module access (0026) and costing
+(0027–0028). 0017 rewrote every write path (guarded RPC wrappers, dropped
+direct-write policies, revoked internal
 helpers), so it needs a real regression pass: capture, assign location, GRN
 through putaway, release → issuance, dispatch, Users & Roles, and My Account
 (photo upload, employee ID, admin-set position).
@@ -80,6 +81,11 @@ right for 'add' captures and unknowable for old 'set' ones — so a stock card m
 show one wrong historical figure for any recount done before the migration. The
 current balance is always correct; only that one row's delta is suspect.
 
+**0026 rewrote `has_module()`**, which guards every write path. Confirm U&M
+still have full access, then untick one module for the demo tenant in the
+Platform Console and confirm it vanishes for every user in that company and the
+RPC refuses.
+
 ### A2. Complete the onboarding
 - Import their real item master into the **U&M tenant** (currently only loaded
   into the demo tenant for testing).
@@ -91,12 +97,39 @@ current balance is always correct; only that one row's delta is suspect.
 
 ---
 
-# Part B — Make it a product
+# Part B — Costing module (in progress)
+
+*Phase 1 is nearly complete. See `costing.md` for every formula and the full
+record; this is only what is left.*
+
+### B0a. Finish phase 1
+- **PDF export of a sheet** — what they hand a buyer.
+- **The other two carton formulas** — sleeve + lid (386.86) and full flap
+  (544.88). Only the regular box is built.
+
+### B0b. Foam rates are only half modelled ★
+The seeded grid prices a sheet correctly by size, but their workbook also has a
+**supplier × FR/non-FR × sheet-size** grid that the module ignores. Rates are
+looked up by one flat key today; they should be looked up by attributes —
+storage is already shaped for it (`costing_rate_entries.attributes`), only the
+lookup and picker need changing.
+
+**Ask U&M first** which of those dimensions they genuinely buy on. FR vs non-FR
+is a real price difference; supplier may not be worth modelling.
+
+### B0c. Ask before they enter real data
+- **Wastage %** — absent from the chair sheet but near-universal in costing.
+  Much cheaper to add now than after they have entered fifty products.
+- Are the final **WITH / WITHOUT FABRIC** prices always hand-rounded?
+
+---
+
+# Part C — Make it a product
 
 *None of this is required for U&M. All of it is required before selling to the
 tenth client without a DBBS person doing the setup.*
 
-### B1. WhatsApp alerts
+### C1. WhatsApp alerts
 The in-app bell assumes people open the app; WhatsApp assumes nothing. In this
 market it is the notification channel that actually gets read, and the feature
 most likely to be asked for in a sales meeting. Needs a WhatsApp Business API
@@ -104,29 +137,29 @@ account and template approval — modest code, real admin overhead. Formally
 deferred in the PRD; worth revisiting as a commercial decision, not a technical
 one.
 
-### B2. Hindi UI
+### C2. Hindi UI
 Halves training time for floor roles and is a visible differentiator against
 imported software. Honest cost: an i18n retrofit across every screen, not a
 toggle.
 
-### B3. Multi-warehouse — decide the answer before you're asked
+### C3. Multi-warehouse — decide the answer before you're asked
 Plenty of companies run two or three godowns. Deferred by design (one warehouse
 per tenant), but it **will** come up in a sales call. Decide now whether the
 answer is "roadmap", "one tenant per godown", or "we'll build it".
 
 ---
 
-# Part C — Operational hardening
+# Part D — Operational hardening
 
 *Needed once real clients depend on it daily, not before.*
 
-### C1. Offline coverage is incomplete
+### D1. Offline coverage is incomplete
 Only **Capture, Transfer and GRN gate entry** queue offline. The PRD names five
 critical screens: **issuance fulfillment** and **dispatch picking** are still
 online-only, and **Assign Location** has no offline support either — which
 matters because the mapping walk happens deep in the warehouse.
 
-### C2. Missing alerts
+### D2. Missing alerts
 Implemented: low stock, out of stock, GRN pending verification, RR pending
 approval, RR ready to fulfill, DC pending approval, DC ready for gate-out, count
 assigned, count review.
@@ -134,20 +167,20 @@ assigned, count review.
 Not implemented (PRD 4.10): GRN at gate > 24h, RR pending approval > 4h, DC
 pending approval > 4h, QC hold unresolved > 48h, cycle-count variance over
 threshold, failed logins > 5, after-hours gate entry, item not moved in 90 days.
-All time-based, so they need C3.
+All time-based, so they need D3.
 
-### C3. Scheduler
+### D3. Scheduler
 None of PRD 4.11 exists: recurring cycle-count plans, daily/weekly KPI email to
 the manager, monthly compliance pack export, recurring stock-aging report. Needs
 pg_cron or a scheduled Edge Function — which would also drive C2.
 
-### C4. Push notifications
+### D4. Push notifications
 Device tokens are collected (`profiles.push_token`, migration 0010) and the
 Capacitor plugin is wired, but **nothing sends a push**. Requires a Firebase
 project, `google-services.json`, the FCM key as a function secret, and an Edge
 Function triggered on `alerts` inserts. In-app bell works today.
 
-### C5. The last two dead settings
+### D5. The last two dead settings
 0021 gave `tenant_settings` a screen and made `edit_lock_hours` real. Two PRD
 behaviours are still written into the schema but not enforced, and are kept
 **off** the Settings screen until they are — a switch that does nothing is worse
@@ -160,14 +193,14 @@ than no switch:
 - **Manual-entry password gate** — typing a location code instead of scanning is
   audit-flagged but not password-gated (PRD 4.2).
 
-### C6. Field-verify the label and scan work
+### D6. Field-verify the label and scan work
 Confirm on the client's own hardware: item labels at 100 × 50 mm on the TSC
 TE244, scanning the printed Code128 with a USB scanner and the QR with a phone,
 and the Returns camera scan that originally failed.
 
 ---
 
-# Part D — Later
+# Part E — Later
 
 - **More reports** — stock aging, dead stock (no movement in 90 days), variance
   history, exportable activity report for a date range (PRD 8.4).
