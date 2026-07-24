@@ -208,7 +208,62 @@ Yes → core, for everyone. No → rungs 1–3 as configuration. Neither → cus
 code, and it should be **paid for**, one-off *plus* ongoing, because it carries
 maintenance forever.
 
-### 6b. ERP integration
+### 6b. Costing module (U&M request)
+*Discussed 2026-07-24. Awaiting their Excel file before design. No code written.*
+
+U&M cost each sofa in an Excel sheet — product photo, every component, and
+formulas scattered through it — and want it in Golai so the spreadsheet can be
+retired.
+
+**This moves a founding boundary, deliberately.** "Quantities only, never
+values" becomes **"Golai does not value stock and does not post accounting
+entries."** The distinction that makes it safe:
+
+| Allowed | Never |
+|---|---|
+| Costing as **calculation** — a recipe + rates → an estimated cost | Costing as **accounting** — stock valuation, COGS, WIP on the balance sheet |
+
+If Golai ever asserts what inventory is *worth*, two systems claim that number,
+they drift, and month-end becomes an argument — the same failure that rules out
+two-way ERP sync. Tally keeps valuation.
+
+**The BOM boundary survives** because what it protected against was
+*auto-consumption* — Golai deducting material against a recipe and becoming a
+production controller. A costing sheet is a reference document: it may
+**pre-fill** a release request for a human to confirm, but never auto-issues and
+never auto-deducts.
+
+**Placement: core module, licensed — not bespoke.** Every manufacturer costs
+products in a fragile Excel; this passes "would the next client want it without
+being asked?" So it belongs in the core behind `tenant_modules`, which makes it
+**the first paid add-on** and the commercial trigger to build that table.
+
+**Design decision: model the structure, do not rebuild Excel.** Free-text
+formulas would make the data opaque — you could never answer "which products use
+this fabric?" because it would be buried in a string. Nearly every "formula" in
+a costing sheet is one of a handful of universal shapes (line = qty × rate,
+wastage %, section subtotals, overhead as % of material, margin → price). Those
+become structure. Only dimension-driven quantities are genuinely arbitrary.
+
+**Where the value actually is: rates.** Their sheet is hard to maintain because a
+price change means editing it in twenty places. Recreating the same structure
+inherits the same problem. Rates must live **once on the item**, referenced
+everywhere, with effective dates — so one change reprices every sheet, and last
+March's cost is still visible.
+
+**Snapshot on use.** A produced quotation must store the computed numbers, not
+recompute from today's rates — otherwise history silently rewrites itself. Same
+lesson as the stock-card ledger.
+
+**Known risk:** their component names almost certainly do not match the item
+master exactly. Mapping costing lines to real item records is genuine migration
+work and should be scoped, not assumed.
+
+**Open, pending the file:** material-only or material + labour + overhead ·
+sub-assemblies or one flat list · wastage % · rate history · does it also
+produce a selling price · who may see rates (expected: manager/admin only).
+
+### 6c. ERP integration
 *Discussed. Deferred until after the stock card was in place — it now is.*
 
 Two one-way pipes, never a live two-way sync. **Only one system may own stock
@@ -223,7 +278,7 @@ Tally is the likely target and is the hard case: desktop, on a LAN, version-
 sensitive XML — needs a small on-site connector. Zoho/SAP are cloud APIs and far
 easier.
 
-### 6c. Smaller things raised and agreed, not scheduled
+### 6d. Smaller things raised and agreed, not scheduled
 - Manager stock overview → **built**.
 - Undo window → **built**.
 - Role one-pagers for floor staff (bilingual) — the four guides cover
