@@ -90,6 +90,7 @@ docs/demo-guide.md          Sales demo manual (accounts, 15-min script, FAQ, res
 docs/uandm-client-guide.md  Client self-service guide — setup, in order (U&M)
 docs/module-guide.md        Reference: every module, who uses it, and a use case
 docs/product-lifecycle.md   One product's journey from gate to finished sofa
+docs/project-log.md         Full record: built, decided, parked, discussed
 docs/open-items.md          Backlog before customer handover
 docs/regression-checklist.md  Post-migration test pass, stage by stage
 docs/superpowers/specs/     Design documents

@@ -18,6 +18,10 @@ A1.
 tickets** — WhatsApp needs a commercial call, Hindi needs a real i18n budget,
 and multi-warehouse needs a product answer.
 
+For the full record — everything built, every decision and why, what is parked
+and what has only been discussed — see **`project-log.md`**. This file is only
+what is *left*.
+
 This file is **two different roadmaps**, deliberately separated:
 
 - **Part A — Finish U&M.** What stands between "working" and "handed over to the
