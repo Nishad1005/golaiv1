@@ -292,6 +292,12 @@ Buyer "DF 24", version 1, dated 30-Jan-2024):
 | **Rate entered with no quantity → silent ₹0** (Belt, Hassian, Piping, Button) | Cannot distinguish "not used" from "forgotten" |
 | **External link to `D:\…\Betsy Skirted Counter Stool.xlsx`** | Each product is made by copying the previous product's sheet — which is exactly how all of the above propagate |
 
+**Full build plan: `costing-module-plan.md`** (drafted, not approved). Built on
+the **demo tenant only** behind a new `tenant_modules` licence gate; the
+migrations are **additive only** — no existing table, RPC or policy is altered —
+so no code path U&M touches can behave differently after it ships. `has_module()`
+is deliberately left alone in phase 1 because it guards every write path.
+
 **Open, pending answers:** is CNF deliberately excluded for domestic orders ·
 are the two manual final prices (WITH / WITHOUT FABRIC) always hand-rounded ·
 who may see rates (expected: manager/admin only).
