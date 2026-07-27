@@ -162,8 +162,11 @@ in the audit log.
 ## Adjust
 **Who:** storekeeper raises it, manager approves
 
-Corrects a wrong quantity. Scan the location and product, enter the correct
-number, choose a mandatory reason (miscount, damage, theft, system error…).
+Corrects a quantity when stock comes in or goes out outside the normal flows.
+Find the product **two ways — by location or by product** — then enter the
+correct number and a mandatory reason (miscount, damage, theft, system error…).
+**No barcode needed:** *By location* lists the products on a spot to tap, *By
+product* searches by name and shows where it sits.
 
 > **Use case.** The system says 50 foam blocks; there are 47. Rajesh submits the
 > correction with reason "miscount". Suhel sees it in his approvals, taps
@@ -171,7 +174,8 @@ number, choose a mandatory reason (miscount, damage, theft, system error…).
 > what and why.
 
 **Good to know:** a manager or admin making the correction themselves applies it
-immediately. Nothing is ever changed silently.
+immediately. Nothing is ever changed silently. A positive change is "stock in",
+a negative one "stock out" — the screen says which as you type.
 
 ---
 

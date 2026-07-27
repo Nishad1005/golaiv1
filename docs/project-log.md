@@ -189,6 +189,7 @@ Recorded because the *patterns* repeat.
 | **`assign_placements` wrote no audit row** — the mapping walk was invisible in history | Stock appearing from nowhere. |
 | **`profiles_self_update` allowed self-granting any role** | Found while writing 0017. Column-level UPDATE revoked. |
 | **Stale PWA cache** (recurred ~4×) | Fixed properly with `skipWaiting` + `clientsClaim` + `registerSW({immediate:true})`. |
+| **Adjustments was scan-only** — no name search, so unbarcoded products couldn't be found | The barcode assumption hides in one screen at a time. When a client hits it, check the *others* — Find, Assign, Counts and now Adjust all had to learn to search by name. |
 | **Phone login "invalid credentials"** | The passwords handed out were never the real ones. Built Reset Password. |
 | **Labels all on one sticker (TE244)** | An A4 grid sent to a label printer. Thermal presets print one label per page. |
 | **Item label duplicated the code** | The *product name itself* contained the code — `nameWithoutCode()`. |

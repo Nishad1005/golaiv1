@@ -260,6 +260,7 @@ order's entire journey with all the evidence.
 | "Offline" banner showing | Keep working — everything saves on the device and syncs when internet returns |
 | Just scanned the wrong shelf | Press **Undo this** on the green confirmation — available for as long as your undo window allows |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |
+| Can't find a product to adjust | You don't need a barcode. In **Adjust**, use **By location** (tap the product off the spot) or **By product** (search its name) |
 | Undo says the window has closed | That is deliberate. Use **Adjust Quantity** instead, which keeps a reason on record |
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
 | A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |
