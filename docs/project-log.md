@@ -39,7 +39,7 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0028, all applied to production |
+| **Migrations** | 0001 → 0029, all applied to production |
 | **Tests** | 63 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
@@ -136,6 +136,13 @@ this file.
 
 *The most valuable section. Each of these was a real choice with a live
 alternative.*
+
+**One unit per product, picked where you enter quantity.** Units (metre, roll,
+kg, sq.ft…) are set on the product, but the picker lives on the quantity screens
+too (Assign, Capture, Adjust, Counts) via a guarded `set_item_uom` RPC (0029), so
+a storekeeper can set it without admin rights. Kept to one unit per product on
+purpose — mixing units on one product makes its stock un-totalable without a
+conversion feature (1 roll = 50 m), which is deliberately out of scope for now.
 
 **Client-named locations.** The app never says "shelf". The client types
 `Ghoda`, `Rack`, `Machan` — whatever they call it — and the first letter becomes

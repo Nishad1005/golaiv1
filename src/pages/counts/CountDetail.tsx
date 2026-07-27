@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { ScanInput } from '../../components/ScanInput'
+import { UomPicker } from '../../components/UomPicker'
 import { COUNT_STATUS_STYLES } from './CountList'
 import type { Shelf } from '../../lib/types'
 
@@ -338,9 +339,17 @@ function ExecutePanel({ countId }: { countId: string }) {
                 <label className="label-text" htmlFor="physical-qty">
                   Physical quantity (system shows {systemQty} {item.uom})
                 </label>
-                <input id="physical-qty" type="number" inputMode="decimal" min="0" step="any"
-                  className="input-field text-2xl font-bold" value={physicalQty}
-                  onChange={(e) => setPhysicalQty(e.target.value)} required autoFocus />
+                <div className="flex items-center gap-2">
+                  <input id="physical-qty" type="number" inputMode="decimal" min="0" step="any"
+                    className="input-field flex-1 text-2xl font-bold" value={physicalQty}
+                    onChange={(e) => setPhysicalQty(e.target.value)} required autoFocus />
+                  <UomPicker
+                    itemId={item.id}
+                    value={item.uom}
+                    className="min-h-tap w-32 rounded-xl border border-ink-200 bg-white px-3 text-base"
+                    onChanged={(uom) => setItem({ ...item, uom })}
+                  />
+                </div>
                 <p className="mt-1 text-xs text-ink-400">
                   Nothing there? Enter <strong>0</strong> — that is a real count, not a skip.
                 </p>

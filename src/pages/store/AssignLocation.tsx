@@ -7,6 +7,7 @@ import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { ScanInput } from '../../components/ScanInput'
 import { PageHeader } from '../../components/PageHeader'
+import { UomPicker } from '../../components/UomPicker'
 import type { Item, Shelf, Zone } from '../../lib/types'
 
 type PlaceWithZone = Shelf & { zones: Pick<Zone, 'code' | 'name'> | null }
@@ -261,7 +262,14 @@ export function AssignLocation() {
                     setStaged(staged.map((x, idx) => (idx === i ? { ...x, qty: e.target.value } : x)))
                   }
                 />
-                <span className="w-8 text-sm text-ink-400">{s.item.uom}</span>
+                <UomPicker
+                  itemId={s.item.id}
+                  value={s.item.uom}
+                  className="h-11 w-28 rounded-xl border border-ink-200 bg-white px-2 text-sm"
+                  onChanged={(uom) =>
+                    setStaged(staged.map((x, idx) => (idx === i ? { ...x, item: { ...x.item, uom } } : x)))
+                  }
+                />
                 <button
                   className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-400 hover:bg-white"
                   onClick={() => setStaged(staged.filter((_, idx) => idx !== i))}

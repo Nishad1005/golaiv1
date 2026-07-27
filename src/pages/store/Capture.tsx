@@ -11,6 +11,8 @@ import { useSettings, DEFAULT_EDIT_LOCK_HOURS, undoWindowLabel } from '../../lib
 import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
+import { UomPicker } from '../../components/UomPicker'
+import { UOM_GROUPS, UOM_UNITS } from '../../lib/uom'
 import type { Item, Shelf, Zone } from '../../lib/types'
 
 type ShelfWithZone = Shelf & { zones: Pick<Zone, 'code' | 'name'> | null }
@@ -356,11 +358,19 @@ export function Capture() {
           </div>
           <div>
             <label className="label-text">Unit</label>
-            <input
-              className="input-field w-32"
+            <select
+              className="input-field w-40"
               value={newItem.uom}
               onChange={(e) => setNewItem({ ...newItem, uom: e.target.value })}
-            />
+            >
+              {UOM_GROUPS.map((g) => (
+                <optgroup key={g} label={g}>
+                  {UOM_UNITS.filter((u) => u.group === g).map((u) => (
+                    <option key={u.value} value={u.value}>{u.label} ({u.value})</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <div className="flex gap-2">
             <button type="submit" className="btn-primary" disabled={createNewItem.isPending}>
@@ -389,16 +399,24 @@ export function Capture() {
 
           <div>
             <label className="label-text">Quantity on this shelf</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0.01"
-              step="any"
-              className="input-field text-2xl font-bold"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0.01"
+                step="any"
+                className="input-field flex-1 text-2xl font-bold"
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
+                autoFocus
+              />
+              <UomPicker
+                itemId={item.id}
+                value={item.uom}
+                className="min-h-tap w-32 rounded-xl border border-ink-200 bg-white px-3 text-base"
+                onChanged={(uom) => setItem({ ...item, uom })}
+              />
+            </div>
           </div>
 
           <PhotoInput files={photos} onChange={setPhotos} label="Shelf photo" />

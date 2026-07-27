@@ -133,7 +133,9 @@ recognised, it offers to create the product on the spot.
 
 **Good to know:** if the product is already recorded on that shelf, you choose
 **add on top** or **replace the count** — so re-counting never doubles a figure
-by accident.
+by accident. There's a **unit dropdown** beside the quantity — pick metre, roll,
+kg, whatever this product is measured in; it's remembered for the product
+everywhere. (A product keeps one unit so its stock still totals up.)
 
 **Made a mistake?** The confirmation carries an **Undo this** button with the
 time remaining. Scanning the wrong shelf is the commonest slip on the floor, and
@@ -441,6 +443,11 @@ The product master, plus **product barcode labels**.
   products with no code get an automatic `ITM-` code, flagged "auto" so you can
   replace it with a real one later.
 - **Type** groups products broadly (Thread, Foam, Fabric) and is searchable.
+- **Unit** — every product has one: pieces, packet, roll, sheet, metre, yard,
+  litre, kg, gram, sq.ft, sq.mt, inch, feet and more. Set it from the dropdown
+  when adding a product, change it inline in the list, or pick it right on the
+  quantity screen (below). Imported units like "Metre" or "KG" are matched
+  automatically.
 - Select products → **Print labels** → pick the label size and copies per item.
 
 > **Use case.** One shelf holds five kinds of screws. The admin selects those

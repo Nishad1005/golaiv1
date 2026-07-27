@@ -8,6 +8,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { ScanInput } from '../../components/ScanInput'
+import { UomPicker } from '../../components/UomPicker'
 import { PageHeader } from '../../components/PageHeader'
 import type { Item, Shelf } from '../../lib/types'
 
@@ -375,6 +376,8 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
   const [newQty, setNewQty] = useState('')
   const [reason, setReason] = useState<string>('miscount')
   const [note, setNote] = useState('')
+  // Local so the label reflects a unit changed via the picker without a refetch.
+  const [unit, setUnit] = useState(target.item.uom)
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -427,20 +430,28 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
         <p className="font-semibold">{target.item.name}</p>
         <p className="text-sm text-ink-400">
           {target.item.code} on <span className="font-mono">{target.shelf.code}</span> — system shows{' '}
-          <b>{target.currentQty} {target.item.uom}</b>
+          <b>{target.currentQty} {unit}</b>
         </p>
       </div>
 
       <div>
         <label className="label-text" htmlFor="adj-qty">Correct quantity</label>
-        <input
-          id="adj-qty" type="number" inputMode="decimal" min="0" step="any"
-          className="input-field text-2xl font-bold" value={newQty}
-          onChange={(e) => setNewQty(e.target.value)} required autoFocus
-        />
+        <div className="flex items-center gap-2">
+          <input
+            id="adj-qty" type="number" inputMode="decimal" min="0" step="any"
+            className="input-field flex-1 text-2xl font-bold" value={newQty}
+            onChange={(e) => setNewQty(e.target.value)} required autoFocus
+          />
+          <UomPicker
+            itemId={target.item.id}
+            value={unit}
+            className="min-h-tap w-32 rounded-xl border border-ink-200 bg-white px-3 text-base"
+            onChanged={setUnit}
+          />
+        </div>
         {newQty !== '' && change !== 0 && (
           <p className={`mt-1 text-sm font-medium ${change > 0 ? 'text-green-700' : 'text-red-700'}`}>
-            {change > 0 ? `+${change}` : change} {target.item.uom} ({change > 0 ? 'stock in' : 'stock out'})
+            {change > 0 ? `+${change}` : change} {unit} ({change > 0 ? 'stock in' : 'stock out'})
           </p>
         )}
       </div>

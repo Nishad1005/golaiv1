@@ -140,8 +140,11 @@ exact sheet to fill).
    - **Item Name** — required
    - **Type** — the broad product group (Thread, Foam, Fabric…). Searching the
      type shows every product in it. (Your "Definition" column maps here.)
-   - **Category / Sub Category / UOM** — UOM is the unit you count in
-     (pcs, m, kg, set…)
+   - **Category / Sub Category / UOM** — UOM is the unit you count in. Type it
+     however you like (Metre, KG, sq ft, Rolls…) and Golai matches it to the
+     right unit. Leave it blank and it defaults to pieces; you can change any
+     product's unit later, either in the Items list or right where you enter a
+     quantity.
 3. Save as CSV → **Items → Import CSV** → pick the file
 4. Golai shows a preview ("X items, Y keeping your codes, Z getting new
    codes") → confirm
@@ -261,6 +264,7 @@ order's entire journey with all the evidence.
 | Just scanned the wrong shelf | Press **Undo this** on the green confirmation — available for as long as your undo window allows |
 | Wrong quantity somewhere | **Adjust Quantity** with a reason — Manager approves it |
 | Can't find a product to adjust | You don't need a barcode. In **Adjust**, use **By location** (tap the product off the spot) or **By product** (search its name) |
+| Wrong unit next to a quantity (says "pcs" but it's metres) | Use the **unit dropdown** beside the quantity — pick the right one; it sticks to that product everywhere. Or change it in **Items** |
 | Undo says the window has closed | That is deliberate. Use **Adjust Quantity** instead, which keeps a reason on record |
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
 | A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |

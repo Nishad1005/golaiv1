@@ -8,6 +8,8 @@ import { logActivity } from '../../lib/audit'
 import { resolveItemCode, allocateItemCodes } from '../../lib/itemCode'
 import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
 import { ItemLabelDialog } from '../../components/ItemLabelDialog'
+import { UomPicker } from '../../components/UomPicker'
+import { UOM_GROUPS, UOM_UNITS, normalizeUom } from '../../lib/uom'
 import type { Item } from '../../lib/types'
 
 interface CsvPreview {
@@ -157,7 +159,7 @@ export function Items() {
         item_type: typeCol !== -1 && r[typeCol]?.trim() ? r[typeCol].trim() : null,
         category: catCol !== -1 && r[catCol]?.trim() ? r[catCol].trim() : null,
         sub_category: subCatCol !== -1 && r[subCatCol]?.trim() ? r[subCatCol].trim() : null,
-        uom: uomCol !== -1 && r[uomCol]?.trim() ? r[uomCol].trim() : 'pcs',
+        uom: normalizeUom(uomCol !== -1 ? r[uomCol] : null),
       }))
       .filter((r) => r.name)
 
@@ -328,11 +330,19 @@ export function Items() {
           </div>
           <div>
             <label className="label-text">Unit (qty only, never value)</label>
-            <input
+            <select
               className="input-field"
               value={form.uom}
               onChange={(e) => setForm({ ...form, uom: e.target.value })}
-            />
+            >
+              {UOM_GROUPS.map((g) => (
+                <optgroup key={g} label={g}>
+                  {UOM_UNITS.filter((u) => u.group === g).map((u) => (
+                    <option key={u.value} value={u.value}>{u.label} ({u.value})</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <div className="flex gap-2 sm:col-span-2">
             <button type="submit" className="btn-primary" disabled={createItem.isPending}>
@@ -480,7 +490,9 @@ export function Items() {
                   </td>
                   <td className="px-4 py-3 text-ink-400">{item.item_type ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
-                  <td className="px-4 py-3">{item.uom}</td>
+                  <td className="px-4 py-3">
+                    <UomPicker itemId={item.id} value={item.uom} />
+                  </td>
                 </tr>
               ))}
               {(items ?? []).length === 0 && (
