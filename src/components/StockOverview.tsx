@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Boxes, Clock, Loader2, PackageX, TrendingDown } from 'lucide-react'
+import { Boxes, ChevronRight, Clock, Loader2, PackageX, TrendingDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { MOVEMENT_LABELS } from '../lib/movements'
 
@@ -93,6 +93,24 @@ export function StockOverview() {
           hint="Dead stock" to="/admin/items"
         />
       </div>
+
+      {/* Drill-in to the counted stock, grouped by zone → shelf → product */}
+      <Link
+        to="/stock"
+        className="card mt-3 flex items-center gap-3 transition-all duration-200 hover:border-brand-200 hover:shadow-card-hover"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <Boxes className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-ink-900">Total stock</span>
+          <span className="block text-sm text-ink-400 tabular-nums">
+            See counted stock by zone &amp; shelf
+            {o ? ` · ${o.locations_used} location${o.locations_used === 1 ? '' : 's'} with stock` : ''}
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-ink-300" aria-hidden />
+      </Link>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {/* Mapping progress — the number that matters during onboarding */}

@@ -33,6 +33,7 @@ every movement is recorded** — who, when, how much, with photos.
 | "Where is this product?" | **Find** |
 | "What came in and what went out of this product?" | **Stock Card** (click any product name) |
 | "How much stock do we have overall?" | **Manager home** — Stock right now |
+| "What is in each zone and on each shelf?" | **Total stock** (tile on the manager home) |
 | "What does this product cost to make?" | **Costing** *(add-on)* |
 | A material price has changed | **Costing → Rate tables** |
 | "What's on this shelf?" | **Find** (scan the location sticker) |
@@ -321,6 +322,11 @@ movements in the warehouse.
 > reorder point and eleven have not moved in three months. He taps the low-stock
 > tile, sees exactly which, and forwards the list to purchasing before the
 > factory notices.
+
+**Total stock** (the tile below) is the way in to *where* it all sits: tap it to
+see every zone that holds stock, tap a zone to see its shelves with the products
+and quantities on each, and tap a product to open its **stock card**. Same
+figures as the ERP "stock by shelf" export.
 
 ---
 

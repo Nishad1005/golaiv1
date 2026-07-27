@@ -65,7 +65,8 @@ admin password printed in section 1** before it leaves your hands.
   transferred, issued, returned, dispatched, adjusted, with the balance after
   each move.
 - **Stock dashboard** (0020) — in stock, low stock, nothing-on-shelf, dead stock,
-  mapping progress, live movement feed.
+  mapping progress, live movement feed, and a **Total stock** drill-down (zone →
+  shelf → product → stock card), same source as the ERP stock-by-shelf export.
 
 ### Workflows
 Receiving (gate → verify → putaway) · Release Requests → Issuance · Returns ·

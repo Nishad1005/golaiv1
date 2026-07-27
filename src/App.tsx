@@ -42,6 +42,8 @@ const Adjustments = lazy(() => import('./pages/store/Adjustments').then((m) => (
 const AssignLocation = lazy(() => import('./pages/store/AssignLocation').then((m) => ({ default: m.AssignLocation })))
 const FindItem = lazy(() => import('./pages/FindItem').then((m) => ({ default: m.FindItem })))
 const ItemMovement = lazy(() => import('./pages/ItemMovement').then((m) => ({ default: m.ItemMovement })))
+const StockByZone = lazy(() => import('./pages/stock/StockByZone').then((m) => ({ default: m.StockByZone })))
+const ZoneStock = lazy(() => import('./pages/stock/ZoneStock').then((m) => ({ default: m.ZoneStock })))
 const GrnList = lazy(() => import('./pages/grn/GrnList').then((m) => ({ default: m.GrnList })))
 const GateEntry = lazy(() => import('./pages/grn/GateEntry').then((m) => ({ default: m.GateEntry })))
 const GrnDetail = lazy(() => import('./pages/grn/GrnDetail').then((m) => ({ default: m.GrnDetail })))
@@ -159,6 +161,8 @@ export default function App() {
           {can('assign') && <Route path="/assign" element={<AssignLocation />} />}
           {can('find') && <Route path="/find" element={<FindItem />} />}
           {can('find') && <Route path="/item/:id" element={<ItemMovement />} />}
+          {can('find') && <Route path="/stock" element={<StockByZone />} />}
+          {can('find') && <Route path="/stock/:zoneId" element={<ZoneStock />} />}
           {can('grn') && (
             <>
               <Route path="/grn" element={<GrnList />} />
