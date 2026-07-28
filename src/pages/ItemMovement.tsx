@@ -223,7 +223,9 @@ export function ItemMovement() {
                       {shelf ? `${shelf.zones?.code ?? ''} · ${locationLabel(shelf)}` : 'Location not recorded'}
                       {person && ` · ${person}`}
                     </p>
-                    {m.note && <p className="mt-0.5 truncate text-xs text-ink-400">{m.note}</p>}
+                    {m.note && (
+                      <p className="mt-1 rounded-lg bg-ink-50 px-2 py-1 text-sm text-ink-600">{m.note}</p>
+                    )}
                     <p className="mt-0.5 text-xs text-ink-400">{new Date(m.moved_at).toLocaleString()}</p>
                   </div>
 
