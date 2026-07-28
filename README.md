@@ -105,7 +105,9 @@ The app is a PWA: the shell loads with no connectivity, and the floor screens
 validated against a locally cached shelf/item master, transactions and photos
 queue in IndexedDB, and everything syncs automatically (in order, server-side
 re-validated) when the connection returns. A banner shows offline state,
-pending count, and any sync rejections.
+pending count, and any sync rejections. A new deploy shows a gentle
+**"Update ready — Reload"** prompt rather than force-reloading, so nobody loses
+in-progress input mid-count.
 
 ## Mobile builds (Capacitor)
 

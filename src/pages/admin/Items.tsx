@@ -35,6 +35,18 @@ export function Items() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<CsvPreview | null>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
+  const [importResult, setImportResult] = useState<{ read: number; added: number; existed: number } | null>(null)
+
+  // Total products in the master — the list itself is capped at 100 rows, so
+  // this is the only way to see the master's real size (and that a re-upload grew it).
+  const { data: itemsCount } = useQuery({
+    queryKey: ['items-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('items').select('id', { count: 'exact', head: true }).is('deleted_at', null)
+      return count ?? 0
+    },
+  })
 
   // --- Label printing --------------------------------------------------------
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -195,27 +207,36 @@ export function Items() {
       let inserted = 0
       for (let i = 0; i < prepared.length; i += chunkSize) {
         const chunk = prepared.slice(i, i + chunkSize)
+        // ignoreDuplicates → existing codes are skipped, so `count` is the
+        // number of genuinely NEW rows added by this chunk.
         const { error, count } = await supabase
           .from('items')
           .upsert(chunk, { onConflict: 'tenant_id,code', ignoreDuplicates: true, count: 'exact' })
         if (error) throw error
-        inserted += count ?? chunk.length
+        inserted += count ?? 0
         setImportStatus(`Importing… ${Math.min(i + chunkSize, prepared.length)} / ${prepared.length}`)
       }
+      const read = prepared.length
+      const existed = Math.max(0, read - inserted)
       await logActivity({
         tenantId: profile!.tenant_id,
         userId: profile!.id,
         userRole: profile!.role,
         action: 'import.items_csv',
         entityType: 'item',
-        after: { total: preview.total, kept_client_codes: preview.withCode, auto_assigned: preview.needCode },
+        after: {
+          total: read, kept_client_codes: preview.withCode, auto_assigned: preview.needCode,
+          added: inserted, already_existed: existed,
+        },
       })
-      return inserted
+      return { read, added: inserted, existed }
     },
-    onSuccess: (inserted) => {
-      setImportStatus(`Import complete: ${inserted} items added (duplicates by code skipped).`)
+    onSuccess: (summary) => {
+      setImportStatus(null)
+      setImportResult(summary)
       setPreview(null)
       void queryClient.invalidateQueries({ queryKey: ['items'] })
+      void queryClient.invalidateQueries({ queryKey: ['items-count'] })
     },
     onError: (e) => setImportStatus(`Import failed: ${(e as Error).message}`),
   })
@@ -223,7 +244,14 @@ export function Items() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">Items</h1>
+        <h1 className="flex items-baseline gap-2 text-xl font-bold">
+          Items
+          {itemsCount !== undefined && (
+            <span className="rounded-full bg-ink-100 px-2.5 py-0.5 text-sm font-semibold text-ink-600 tabular-nums">
+              {itemsCount.toLocaleString('en-IN')} product{itemsCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </h1>
         <div className="flex gap-2">
           <button
             className="btn-secondary"
@@ -274,6 +302,43 @@ export function Items() {
         </div>
       )}
       {importStatus && <p className="text-sm text-ink-500">{importStatus}</p>}
+
+      {importResult && (
+        <div className="card border-brand-200 bg-brand-50/50">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 font-semibold text-ink-900">
+                <Check className="h-5 w-5 text-brand-600" /> Import complete
+              </p>
+              <p className="mt-1 text-sm text-ink-600">
+                From this file:{' '}
+                <b className="tabular-nums">{importResult.read.toLocaleString('en-IN')}</b> product
+                {importResult.read === 1 ? '' : 's'} read ·{' '}
+                <b className="tabular-nums text-brand-700">{importResult.added.toLocaleString('en-IN')} new added</b>
+                {importResult.existed > 0 && (
+                  <>
+                    {' '}· <span className="tabular-nums">{importResult.existed.toLocaleString('en-IN')}</span>{' '}
+                    already existed (kept as they were)
+                  </>
+                )}.
+              </p>
+              {importResult.added === 0 && importResult.existed > 0 && (
+                <p className="mt-1 text-xs text-ink-400">
+                  Every product in this file was already in your master, so nothing new was added.
+                  Existing products are never overwritten by an import.
+                </p>
+              )}
+            </div>
+            <button
+              className="shrink-0 rounded-lg p-1.5 text-ink-400 hover:bg-white hover:text-ink-700"
+              onClick={() => setImportResult(null)}
+              aria-label="Dismiss"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <form

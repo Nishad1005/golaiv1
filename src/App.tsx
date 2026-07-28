@@ -9,6 +9,7 @@ import { useOffline } from './lib/offline/queue'
 import { refreshMasterCache } from './lib/offline/masters'
 import { registerPush } from './lib/push'
 import { Layout } from './components/Layout'
+import { UpdatePrompt } from './components/UpdatePrompt'
 import { Login } from './pages/Login'
 import type { UserRole } from './lib/types'
 
@@ -102,6 +103,7 @@ export default function App() {
   if (!session) {
     return (
       <BrowserRouter>
+        <UpdatePrompt />
         <Routes>
           <Route path="*" element={<Login />} />
         </Routes>
@@ -152,6 +154,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <UpdatePrompt />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />

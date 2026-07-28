@@ -147,7 +147,13 @@ exact sheet to fill).
      quantity.
 3. Save as CSV → **Items → Import CSV** → pick the file
 4. Golai shows a preview ("X items, Y keeping your codes, Z getting new
-   codes") → confirm
+   codes") → confirm. **After import** it tells you exactly what came in —
+   *read · new added · already existed* — and the product count by the title
+   shows your master's new size.
+
+> **Re-uploading is safe.** Importing the master again only **adds new**
+> products; anything already there is left exactly as it is (a unit or name you
+> corrected in Golai is never overwritten by the file).
 
 No location column is needed — you record where things are in the next step.
 
@@ -266,6 +272,7 @@ order's entire journey with all the evidence.
 | Can't find a product to adjust | You don't need a barcode. In **Adjust**, use **By location** (tap the product off the spot) or **By product** (search its name) |
 | Wrong unit next to a quantity (says "pcs" but it's metres) | Use the **unit dropdown** beside the quantity — pick the right one; it sticks to that product everywhere. Or change it in **Items** |
 | Undo says the window has closed | That is deliberate. Use **Adjust Quantity** instead, which keeps a reason on record |
+| "A new version of Golai is ready" appears | An update has been released. Finish what you're typing, then tap **Reload** — it won't reload on its own or lose your work |
 | Screen looks outdated / odd | Refresh the page (pull down on phone, Ctrl+Shift+R on computer) |
 | A section is missing from someone's menu | Their **Access** may have it switched off — Admin → Users & Roles → **Access** next to their name |
 | Label prints tiny / all on one sticker | In the print dialog set **Actual size / 100%** (not "Fit to page"), and pick the label size that matches your roll |

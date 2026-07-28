@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' so a new deploy waits for the user to click Reload (see
+      // src/main.tsx + UpdatePrompt) instead of yanking the page mid-entry.
+      registerType: 'prompt',
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Golai — Warehouse Control',
@@ -23,10 +25,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // A new deploy must take over immediately — otherwise the old bundle
-        // keeps being served until every tab is closed, and users see stale UI.
+        // The new SW waits until the user accepts the update (Reload), so no
+        // deploy interrupts someone mid-count. It claims the page on activation.
         clientsClaim: true,
-        skipWaiting: true,
+        skipWaiting: false,
         cleanupOutdatedCaches: true,
         // App shell + assets cached so the app opens with no connectivity;
         // Supabase API calls are NOT cached (data must be live or queued).

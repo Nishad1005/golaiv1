@@ -122,6 +122,8 @@ TSC TE244, plus A4 sheets. Every label carries **Code128** (USB scanners) *and*
 - **Empty states** everywhere — explain the workflow and offer the next step.
 - **First load 1.66 MB → 584 KB** — route-level code splitting; PDF and camera
   libraries load on demand.
+- **Gentle deploys** — a new version shows an "Update ready — Reload" prompt
+  instead of force-reloading, so a deploy never interrupts someone mid-count.
 - Offline: Capture, Transfer, GRN gate entry queue in IndexedDB and sync.
 
 ### Documentation
@@ -180,6 +182,12 @@ twice.
 **Sample data refuses to load into a non-empty warehouse**, and clears strictly
 by tag (`SAMPLE-` codes, `ZS` zones, `(sample)` names). Real stock can never be
 caught by it.
+
+**Deploys never force-reload.** The PWA uses the prompt flow (`registerType:
+'prompt'`, `skipWaiting: false`): a new build waits behind an "Update ready"
+banner until the user reloads. Chosen because U&M went live mid-stock-take and
+an auto-reload would drop unsaved in-progress input (staged-but-unsaved
+placements, half-typed counts).
 
 **Provision company + admin together.** Two separate steps once put a client's
 data in the wrong tenant. The two-step is gone.
