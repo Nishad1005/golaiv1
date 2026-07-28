@@ -69,7 +69,8 @@ admin password printed in section 1** before it leaves your hands.
   shelf → product → stock card), same source as the ERP stock-by-shelf export.
 
 ### Workflows
-Receiving (gate → verify → putaway) · Release Requests → Issuance · Returns ·
+Receiving (gate → verify → putaway) · Release Requests → Issuance (formal) ·
+**Issuance (direct/counter, 0031)** · Returns ·
 Dispatch (pick → approve → gate-out) · QC Hold · Stock Counts · Transfer ·
 Adjust · Capture · SO Movement · ERP Export (CSV, quantities only).
 
@@ -138,6 +139,18 @@ this file.
 
 *The most valuable section. Each of these was a real choice with a live
 alternative.*
+
+**Custom roles are named module presets, not a new enum (0031).** `user_role`
+is a Postgres enum baked into 32 RLS policies; a real new role type would be a
+large, risky refactor of a live app. Instead a `tenant_roles` row is a name + a
+module-access map; applying it sets a user's module_access + designation. The
+enum and every policy are untouched — access is governed by `has_module`, which
+already honours per-user overrides. Chosen deliberately over the deeper refactor.
+
+**Direct Issuance reuses `move_stock` and joins `item_movements`.** The new
+counter-issue (0031) decrements stock through the same atomic function as every
+other movement and appears on the stock card / dashboard via the ledger view —
+never its own parallel stock path.
 
 **One unit per product, picked where you enter quantity.** Units (metre, roll,
 kg, sq.ft…) are set on the product, but the picker lives on the quantity screens

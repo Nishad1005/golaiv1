@@ -45,7 +45,8 @@ every movement is recorded** — who, when, how much, with photos.
 | Moving stock from one shelf to another | **Transfer** |
 | Just scanned the wrong shelf | **Undo** on the confirmation — for a short window |
 | The count is wrong and needs correcting | **Adjust** |
-| Production needs material | **Release Requests** |
+| Production needs material (formal, approved) | **Release Requests** |
+| Quick issue over the counter (10 screws to Furniture) | **Issuance** |
 | Production is returning unused material | **Returns** |
 | Goods are going to a customer | **Dispatch** |
 | Something is waiting for quality inspection | **QC Hold** |
@@ -217,6 +218,30 @@ Golai shows a warning — catching "fabric" trucks carrying foam.
 ---
 
 # Material going out
+
+## Issuance
+**Who:** whoever holds the Issuance module (a storekeeper, or a dedicated
+"issuance clerk" role) · **The quick counter issue.**
+
+Issue stock straight out against a work order — no request, no approval. Enter
+the **work order number**, **department**, **who it's going to**, then pick the
+**product** (by name) and the **location** it comes from, and the **quantity**.
+On **Issue**, the stock drops immediately and the movement lands on the product's
+stock card.
+
+> **Use case.** Someone from Furniture comes to the store for 10 screws. The
+> issuance clerk types work order `WO-1234`, picks Furniture, enters the person's
+> name, searches "screw", picks the shelf it's on, enters 10, and issues. Ten
+> screws leave stock there and then — the count is right without anyone raising a
+> formal request.
+
+**Good to know:**
+- You can't issue more than is on the chosen location — Golai refuses.
+- Several products can go on one issue (one work order, many lines).
+- This is the *quick* path. For planned production draws that need a manager's
+  sign-off, use **Release Requests** below.
+
+---
 
 ## Release Requests → Issuance
 **Who:** planner → manager → storekeeper · **The core production flow.**
@@ -521,6 +546,10 @@ Create staff logins, set roles, control access.
 - **ID card** sets someone's **employee ID** and **position** (job title). Staff
   can add their own photo and employee number, but **only an admin can set the
   position** — nobody can give themselves a title.
+- **Custom roles** — beyond the five built-in roles, the admin can define a role
+  with any name (e.g. *Issuance Clerk*) and tick which sections it may use.
+  Assigning it to a person restricts them to exactly those sections and shows the
+  role name as their title. Handy for a login that should only do one job.
 
 > **Use case.** A new storekeeper joins but shouldn't handle dispatches yet. The
 > admin creates him as a storekeeper, opens **Access**, and unticks Dispatch —

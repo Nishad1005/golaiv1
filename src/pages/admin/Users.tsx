@@ -6,6 +6,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { canAccess, MODULES, TOGGLEABLE_MODULES } from '../../lib/modules'
 import { useCompanyModules } from '../../lib/platform'
+import { RolesManager, type TenantRole } from '../../components/RolesManager'
 import type { Profile, UserRole } from '../../lib/types'
 
 async function invokeError(error: { message: string; context?: unknown }): Promise<string> {
@@ -40,6 +41,39 @@ export function Users() {
       const { data, error } = await supabase.from('profiles').select('*').order('full_name')
       if (error) throw error
       return data as Profile[]
+    },
+  })
+
+  const { data: customRoles } = useQuery({
+    queryKey: ['tenant-roles'],
+    queryFn: async (): Promise<TenantRole[]> => {
+      const { data } = await supabase
+        .from('tenant_roles').select('id, name, module_access, base_role').order('name')
+      return (data ?? []) as TenantRole[]
+    },
+  })
+
+  // Applying a custom role = set the user's module access to the preset, set
+  // their base role (for RLS) and show the role name as their title. One action,
+  // three existing guarded RPCs.
+  const applyRole = useMutation({
+    mutationFn: async ({ user, role }: { user: Profile; role: TenantRole }) => {
+      const err1 = (await supabase.rpc('admin_set_module_access', { p_user_id: user.id, p_access: role.module_access })).error
+      if (err1) throw new Error(err1.message)
+      const err2 = (await supabase.rpc('admin_set_user_role', { p_user_id: user.id, p_role: role.base_role })).error
+      if (err2) throw new Error(err2.message)
+      const err3 = (await supabase.rpc('admin_set_user_details', {
+        p_user_id: user.id, p_employee_id: user.employee_id, p_designation: role.name,
+      })).error
+      if (err3) throw new Error(err3.message)
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'apply.role', entityType: 'profile', entityId: user.id, after: { role: role.name },
+      })
+    },
+    onSuccess: (_d, { role }) => {
+      setNotice(`Applied the "${role.name}" role.`)
+      void queryClient.invalidateQueries({ queryKey: ['profiles'] })
     },
   })
 
@@ -252,9 +286,15 @@ export function Users() {
         </button>
       </div>
       <p className="text-sm text-ink-400">
-        Five roles only. Each role gets its own home screen and permissions. Add staff here — they
-        receive an email to set their own password and appear in the list below.
+        Five built-in roles, plus any custom roles you define below. Add staff here — you hand them
+        a temporary password, and they appear in the list.
       </p>
+
+      <RolesManager />
+
+      {(customRoles?.length ?? 0) > 0 && applyRole.isError && (
+        <p className="text-sm text-red-600">{(applyRole.error as Error).message}</p>
+      )}
 
       {notice && (
         <div className="flex items-start gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -401,6 +441,21 @@ export function Users() {
                     </option>
                   ))}
                 </select>
+                {!isSelf && (customRoles?.length ?? 0) > 0 && (
+                  <select
+                    className="input-field w-auto"
+                    value=""
+                    disabled={inactive || applyRole.isPending}
+                    title="Apply a custom role — sets what this person can use"
+                    onChange={(e) => {
+                      const role = customRoles!.find((r) => r.id === e.target.value)
+                      if (role) applyRole.mutate({ user: u, role })
+                    }}
+                  >
+                    <option value="">Apply role…</option>
+                    {customRoles!.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  </select>
+                )}
                 <div className="flex flex-wrap items-center gap-1">
                   <button
                     className={

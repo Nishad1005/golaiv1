@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, Search, MapPin, ScanBarcode, ArrowLeftRight, PencilRuler,
   PackageCheck, PackageOpen, Undo2, Send, ShieldAlert, ListChecks, FileBarChart,
-  Map, Boxes, Building2, Building, Users, Bell, Settings, Calculator,
+  Map, Boxes, Building2, Building, Users, Bell, Settings, Calculator, HandCoins,
 } from 'lucide-react'
 import type { Profile, UserRole } from './types'
 
@@ -41,6 +41,7 @@ export const MODULES: AppModule[] = [
   { key: 'transfer', label: 'Transfer', to: '/transfer', icon: ArrowLeftRight, defaultRoles: ['storekeeper', 'manager', 'admin'] },
   { key: 'adjust', label: 'Adjust', to: '/adjust', icon: PencilRuler, defaultRoles: ['storekeeper', 'manager', 'admin'] },
   { key: 'grn', label: 'Receiving', to: '/grn', icon: PackageCheck, defaultRoles: ['security', 'storekeeper', 'manager', 'admin'] },
+  { key: 'issuance', label: 'Issuance', to: '/issuance', icon: HandCoins, defaultRoles: ['storekeeper', 'manager', 'admin'] },
   { key: 'release', label: 'Release Requests', to: '/release', icon: PackageOpen, defaultRoles: ['planner', 'storekeeper', 'manager', 'admin'] },
   { key: 'returns', label: 'Returns', to: '/returns', icon: Undo2, defaultRoles: ['storekeeper', 'planner', 'manager', 'admin'] },
   { key: 'dispatch', label: 'Dispatch', to: '/dispatch', icon: Send, defaultRoles: ['security', 'storekeeper', 'manager', 'admin'] },

@@ -41,6 +41,7 @@ const Capture = lazy(() => import('./pages/store/Capture').then((m) => ({ defaul
 const Transfer = lazy(() => import('./pages/store/Transfer').then((m) => ({ default: m.Transfer })))
 const Adjustments = lazy(() => import('./pages/store/Adjustments').then((m) => ({ default: m.Adjustments })))
 const AssignLocation = lazy(() => import('./pages/store/AssignLocation').then((m) => ({ default: m.AssignLocation })))
+const Issuance = lazy(() => import('./pages/store/Issuance').then((m) => ({ default: m.Issuance })))
 const FindItem = lazy(() => import('./pages/FindItem').then((m) => ({ default: m.FindItem })))
 const ItemMovement = lazy(() => import('./pages/ItemMovement').then((m) => ({ default: m.ItemMovement })))
 const StockByZone = lazy(() => import('./pages/stock/StockByZone').then((m) => ({ default: m.StockByZone })))
@@ -161,6 +162,7 @@ export default function App() {
           {can('capture') && <Route path="/capture" element={<Capture />} />}
           {can('transfer') && <Route path="/transfer" element={<Transfer />} />}
           {can('adjust') && <Route path="/adjust" element={<Adjustments />} />}
+          {can('issuance') && <Route path="/issuance" element={<Issuance />} />}
           {can('assign') && <Route path="/assign" element={<AssignLocation />} />}
           {can('find') && <Route path="/find" element={<FindItem />} />}
           {can('find') && <Route path="/item/:id" element={<ItemMovement />} />}
