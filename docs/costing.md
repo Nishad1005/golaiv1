@@ -78,14 +78,14 @@ Their 31 categories reduce to nine. `src/lib/costing/formulas.ts`,
 
 | Category | Shape | Inputs | Worked example from the chair |
 |---|---|---|---|
-| Wood | `volume_rate` | L, W, T, qty, price/cft | `(2.75×3×2.5÷144)×5 = 0.7161 cft × 2200 = 1575.52` |
+| Wood | `volume_rate` | L **(ft)**, W, T (in), qty, price/cft | `(2.75×3×2.5÷144)×5 = 0.7161 cft × 2200 = 1575.52` — cft shown read-only on the line |
 | Plywood | `area_yield` | cutting size, thickness, qty, sq ft, pcs/sheet, price/sqft | `67 × 24 × 3 ÷ 4 = 1206` |
 | Metal | `qty_rate` | weight, price/kg | not used on this chair (0) |
 | Spring | `length_rate` | length, qty, price/ft | `2.5 × 5 × 10 = 125` |
 | Belt | `qty_rate` | length, price/m | `7 × 15 = 105` |
 | Spring clips | `qty_rate` | qty, price | `10 × 5 = 50` |
 | Tie paper wire | `qty_rate` | length, price | `50` |
-| Hessian / jute | `qty_rate` | m, price/m | 0 — rate set, no qty ⚠ |
+| Hassain / jute | `qty_rate` | m, price/m | 0 — rate set, no qty ⚠ |
 | Satin / dacking | `qty_rate` | m, price/m | `0.5×50 + 3.5×61 = 238.50` |
 | Non woven | `qty_rate` | colour, gsm, consumption, price/m | `0.5 × 26 = 13` |
 | **Foam** | `sheet_yield` | colour, L, W, qty, pcs/sheet, **sheet size (lookup)** | `2100 ÷ 2 × 1 = 1050` (total 2700.83) |
@@ -211,6 +211,12 @@ everyone after. `modules.requires_license = true` for `costing`, so it is
 opt-in per company and invisible to anyone not granted it.
 
 **Margin applies to subtotal + GST**, matching their sheet.
+
+**Wood Length is in feet** (0030), width & thickness in inches — the ÷144 cft
+maths always assumed this; the seeded label wrongly said inches and was fixed.
+The **cft** value (`L×W×T×qty÷144`) is shown read-only on each wood line.
+
+**"Hessian" is spelled "Hassain"** per the client (0030).
 
 **Finalising snapshots the numbers** into `costing_sheets.computed`. Re-open a
 March sheet in December and it still says what it said. Same principle as the

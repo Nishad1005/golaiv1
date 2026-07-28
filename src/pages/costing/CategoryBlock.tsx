@@ -16,6 +16,9 @@ interface Props {
 
 const money = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
+/** Friendly captions for the values a formula derives (e.g. wood's cft). */
+const DERIVED_LABELS: Record<string, string> = { cft: 'CFT', cbm: 'CBM' }
+
 /**
  * One block of the costing sheet — Wood, Foam, Fabric, and 28 others.
  *
@@ -98,6 +101,9 @@ export function CategoryBlock({ category, lines, rates, readOnly, onChange }: Pr
 
           {lines.map((line) => {
             const warn = lineWarning(category, line, rates)
+            // Values the formula works out for itself, e.g. wood's cft — shown
+            // read-only so the user sees the L×W×T×qty÷144 result.
+            const derived = computeLine(category.formula_kind, line.inputs, lookupRate(category, line, rates)).derived
             return (
               <div key={line.id} className="rounded-xl border border-ink-200 bg-cream/40 p-3">
                 {/* Product — full width so the search results have room */}
@@ -123,7 +129,7 @@ export function CategoryBlock({ category, lines, rates, readOnly, onChange }: Pr
                 </div>
 
                 {/* Fields wrap — no horizontal scrolling, works on a phone */}
-                <div className="mt-3 flex flex-wrap gap-3">
+                <div className="mt-3 flex flex-wrap items-end gap-3">
                   {fields.map((f) => (
                     <div key={f.id}>
                       <label className="mb-1 block text-xs font-medium text-ink-500" htmlFor={`${line.id}-${f.key}`}>
@@ -137,6 +143,18 @@ export function CategoryBlock({ category, lines, rates, readOnly, onChange }: Pr
                         readOnly={readOnly}
                         onChange={(v) => setInput(line.id, f.key, v)}
                       />
+                    </div>
+                  ))}
+
+                  {/* Formula-derived values, read-only (e.g. wood CFT) */}
+                  {Object.entries(derived).map(([key, val]) => (
+                    <div key={key}>
+                      <span className="mb-1 block text-xs font-medium text-ink-500">
+                        {DERIVED_LABELS[key] ?? key}
+                      </span>
+                      <span className="flex h-11 min-w-24 items-center rounded-xl border border-dashed border-ink-200 bg-cream px-3 text-sm font-semibold tabular-nums text-ink-700">
+                        {val.toLocaleString('en-IN', { maximumFractionDigits: 4 })}
+                      </span>
                     </div>
                   ))}
                 </div>

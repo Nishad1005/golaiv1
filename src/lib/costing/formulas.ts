@@ -27,8 +27,9 @@ export interface LineInputs {
   [key: string]: number | string | null | undefined
 }
 
-/** Inches³ → cubic feet. 12³ = 1728, but the trade divides by 144 and counts
- *  thickness in inches — matching their sheet exactly rather than "correcting" it. */
+/** Timber cubic-feet divisor. The trade measures LENGTH in feet and width &
+ *  thickness in inches, so length(ft) × width(in) × thickness(in) ÷ 144 = cft
+ *  (144 = 12×12 converts the two inch dimensions to feet). */
 const CFT_DIVISOR = 144
 
 /** Cubic metres per cubic inch — their constant, kept verbatim. */
