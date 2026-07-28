@@ -149,8 +149,9 @@ whose stock has already been issued.
 ## Transfer
 **Who:** storekeeper
 
-Moves stock between locations: scan the source, scan the product, enter the
-quantity, scan the destination.
+Moves stock between locations: pick the source, **pick the product off that
+shelf** (tap it, or search its name — no barcode needed), enter the quantity,
+pick the destination.
 
 > **Use case.** Zone 2 is overflowing, so 8 rolls of fabric move to a spare ghoda
 > in Zone 3. Both shelves update instantly, and anyone searching that fabric now

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDown, CheckCircle2, Loader2, MapPin, RotateCcw } from 'lucide-react'
+import { ArrowDown, CheckCircle2, Loader2, MapPin, RotateCcw, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -22,6 +22,7 @@ export function Transfer() {
 
   const [source, setSource] = useState<ShelfWithZone | null>(null)
   const [item, setItem] = useState<Item | null>(null)
+  const [itemSearch, setItemSearch] = useState('')
   const [qty, setQty] = useState('')
   const [destination, setDestination] = useState<ShelfWithZone | null>(null)
   const [usedManual, setUsedManual] = useState(false)
@@ -156,6 +157,7 @@ export function Transfer() {
   const reset = () => {
     setSource(null)
     setItem(null)
+    setItemSearch('')
     setQty('')
     setDestination(null)
     setUsedManual(false)
@@ -201,11 +203,61 @@ export function Transfer() {
 
       {source && !item && (
         <div className="card space-y-3">
-          <p className="font-semibold">Step 2 — Scan the item to move</p>
-          <ScanInput placeholder="item barcode" onScan={(v) => void findItem(v)} />
-          {sourceStock && sourceStock.length === 0 && (
+          <p className="font-semibold">Step 2 — Pick the item to move</p>
+
+          {/* Tap the product off the shelf — no barcode needed. */}
+          {sourceStock === undefined ? (
+            <Loader2 className="mx-auto my-3 h-5 w-5 animate-spin text-brand-500" />
+          ) : sourceStock.length === 0 ? (
             <p className="text-sm text-amber-700">This shelf has no stock recorded.</p>
+          ) : (
+            <>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-300" />
+                <input
+                  className="input-field pl-12"
+                  placeholder="Search products on this shelf by name or code…"
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                />
+              </div>
+
+              {(() => {
+                const q = itemSearch.trim().toLowerCase()
+                const matches = sourceStock.filter((r) =>
+                  !q || r.items.name.toLowerCase().includes(q) || r.items.code.toLowerCase().includes(q))
+                if (matches.length === 0) {
+                  return <p className="text-sm text-ink-400">No product on this shelf matches "{itemSearch.trim()}".</p>
+                }
+                return (
+                  <ul className="divide-y divide-ink-200/70 rounded-xl border border-ink-200">
+                    {matches.map((r) => (
+                      <li key={r.items.id}>
+                        <button
+                          className="flex min-h-tap w-full items-center gap-3 px-4 text-left hover:bg-cream"
+                          onClick={() => { setItem(r.items); setItemSearch('') }}
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">{r.items.name}</span>
+                            <span className="block text-xs text-ink-400">{r.items.code}</span>
+                          </span>
+                          <span className="shrink-0 text-sm tabular-nums text-ink-500">
+                            {r.qty_on_hand} {r.items.uom}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              })()}
+            </>
           )}
+
+          {/* Scanner / offline fallback — resolves against the shelf's stock or the cached master. */}
+          <div>
+            <p className="mb-1 text-xs font-medium text-ink-400">Or scan the item's barcode</p>
+            <ScanInput placeholder="item barcode" onScan={(v) => void findItem(v)} autoFocus={false} />
+          </div>
         </div>
       )}
 
