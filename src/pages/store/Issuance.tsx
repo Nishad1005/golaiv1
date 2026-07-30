@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, CheckCircle2, Loader2, MapPin, Plus, Search, Trash2,
+  ArrowLeft, CheckCircle2, ClipboardList, Loader2, MapPin, Plus, Search, Trash2,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
@@ -30,6 +30,7 @@ export function Issuance() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
 
+  const [tab, setTab] = useState<'issue' | 'history'>('issue')
   const [workOrder, setWorkOrder] = useState('')
   const [departmentId, setDepartmentId] = useState('')
   const [issuedTo, setIssuedTo] = useState('')
@@ -70,6 +71,7 @@ export function Issuance() {
       void queryClient.invalidateQueries({ queryKey: ['item-locator'] })
       void queryClient.invalidateQueries({ queryKey: ['stock-overview'] })
       void queryClient.invalidateQueries({ queryKey: ['stock-by-zone'] })
+      void queryClient.invalidateQueries({ queryKey: ['issuance-history'] })
     },
   })
 
@@ -80,6 +82,26 @@ export function Issuance() {
     <div className="space-y-4">
       <PageHeader title="Issuance" subtitle="Issue stock out against a work order — the count drops straight away." />
 
+      {/* Issue a fresh one, or look back at what's already gone out. */}
+      <div className="inline-flex rounded-xl bg-ink-100 p-1 text-sm font-semibold">
+        <button
+          className={`min-h-tap rounded-lg px-4 ${tab === 'issue' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+          onClick={() => setTab('issue')}
+        >
+          Issue
+        </button>
+        <button
+          className={`min-h-tap rounded-lg px-4 ${tab === 'history' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+          onClick={() => setTab('history')}
+        >
+          History
+        </button>
+      </div>
+
+      {tab === 'history' ? (
+        <IssuanceHistory />
+      ) : (
+      <>
       {done && (
         <div className="flex items-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">
           <CheckCircle2 className="h-5 w-5 shrink-0" /> Issued — <b>{done}</b>. Stock updated.
@@ -179,6 +201,117 @@ export function Issuance() {
             {submit.isError && <p className="text-sm text-red-600">{(submit.error as Error).message}</p>}
           </div>
         </>
+      )}
+      </>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// History — issues already made, searchable by work order (or issue no. /
+// recipient). Read-only; the issuance RLS already scopes rows to the tenant.
+// ---------------------------------------------------------------------------
+interface IssueHistoryRow {
+  id: string
+  issue_number: string
+  work_order_no: string | null
+  issued_to: string | null
+  created_at: string
+  departments: { name: string } | null
+  issued_by_profile: { full_name: string } | null
+  stock_issue_lines: {
+    qty: number
+    items: Pick<Item, 'code' | 'name' | 'uom'> | null
+    shelves: Pick<Shelf, 'code'> | null
+  }[]
+}
+
+function IssuanceHistory() {
+  const [search, setSearch] = useState('')
+  const q = search.trim()
+
+  const { data: issues, isFetching } = useQuery({
+    queryKey: ['issuance-history', q],
+    queryFn: async (): Promise<IssueHistoryRow[]> => {
+      let query = supabase
+        .from('stock_issues')
+        .select(
+          'id, issue_number, work_order_no, issued_to, created_at, ' +
+          'departments(name), ' +
+          'issued_by_profile:profiles!stock_issues_issued_by_fkey(full_name), ' +
+          'stock_issue_lines(qty, items(code, name, uom), shelves(code))',
+        )
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (q.length >= 1) {
+        query = query.or(
+          `work_order_no.ilike.%${q}%,issue_number.ilike.%${q}%,issued_to.ilike.%${q}%`,
+        )
+      }
+      const { data, error } = await query
+      if (error) throw error
+      return (data ?? []) as unknown as IssueHistoryRow[]
+    },
+  })
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-300" />
+        <input
+          className="input-field pl-12"
+          placeholder="Search by work order, issue no. or person…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {isFetching && <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-brand-500" />}
+      </div>
+
+      {issues == null ? (
+        <Loader2 className="mx-auto my-6 h-6 w-6 animate-spin text-brand-500" />
+      ) : issues.length === 0 ? (
+        <p className="rounded-xl bg-ink-50 px-4 py-6 text-center text-sm text-ink-400">
+          {q ? `No issues match “${q}”.` : 'No issues yet.'}
+        </p>
+      ) : (
+        issues.map((iss) => (
+          <div key={iss.id} className="card space-y-3">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-ink-900">
+                <ClipboardList className="h-4 w-4 text-brand-500" aria-hidden />
+                {iss.work_order_no || 'No work order'}
+              </span>
+              <span className="font-mono text-xs text-ink-500">{iss.issue_number}</span>
+              <span className="ml-auto text-xs text-ink-400">
+                {new Date(iss.created_at).toLocaleString()}
+              </span>
+            </div>
+
+            <p className="text-sm text-ink-400">
+              {iss.departments?.name ? `${iss.departments.name} · ` : ''}
+              {iss.issued_to ? `to ${iss.issued_to}` : 'recipient not recorded'}
+              {iss.issued_by_profile?.full_name ? ` · by ${iss.issued_by_profile.full_name}` : ''}
+            </p>
+
+            <ul className="divide-y divide-ink-200/70 rounded-xl border border-ink-200">
+              {iss.stock_issue_lines.map((l, i) => (
+                <li key={i} className="flex items-center gap-3 px-4 py-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{l.items?.name ?? 'Unknown item'}</span>
+                    <span className="block text-xs text-ink-400">
+                      {l.items?.code}
+                      {l.shelves?.code ? <> · <span className="font-mono">{l.shelves.code}</span></> : ''}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-sm tabular-nums text-ink-700">
+                    {l.qty} {l.items?.uom}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
       )}
     </div>
   )
