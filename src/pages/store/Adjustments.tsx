@@ -365,6 +365,20 @@ function ByProduct({ onPick }: { onPick: (t: Target) => void }) {
 // ---------------------------------------------------------------------------
 // Shared correction form — same for both entry points
 // ---------------------------------------------------------------------------
+type AdjustMode = 'add' | 'remove' | 'set'
+
+const MODE_LABELS: Record<AdjustMode, string> = {
+  add: 'Quantity to add',
+  remove: 'Quantity to remove',
+  set: 'New total quantity',
+}
+
+/** Turn what the user typed into the signed delta the DB stores + the total it lands on. */
+function deriveChange(mode: AdjustMode, amount: number, currentQty: number) {
+  const newTotal = mode === 'add' ? currentQty + amount : mode === 'remove' ? currentQty - amount : amount
+  return { qtyChange: newTotal - currentQty, newTotal }
+}
+
 function CorrectionForm({ target, isApprover, onDone, onCancel }: {
   target: Target
   isApprover: boolean
@@ -373,16 +387,25 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
 }) {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const [newQty, setNewQty] = useState('')
+  const [mode, setMode] = useState<AdjustMode>('add')
+  const [amount, setAmount] = useState('')
   const [reason, setReason] = useState<string>('miscount')
   const [note, setNote] = useState('')
   // Local so the label reflects a unit changed via the picker without a refetch.
   const [unit, setUnit] = useState(target.item.uom)
 
+  const amt = amount === '' ? null : Number(amount)
+  const { qtyChange, newTotal } = deriveChange(mode, amt ?? 0, target.currentQty)
+  // Same guard move_stock enforces server-side — catch it here so nobody submits
+  // an adjustment that can only fail at approval.
+  const wouldGoNegative = amt !== null && newTotal < 0
+
   const submit = useMutation({
     mutationFn: async () => {
-      const qtyChange = Number(newQty) - target.currentQty
-      if (qtyChange === 0) throw new Error('New quantity equals current quantity — nothing to adjust.')
+      if (amt === null || Number.isNaN(amt)) throw new Error('Enter a quantity.')
+      if (mode !== 'set' && amt <= 0) throw new Error('Enter a quantity greater than zero.')
+      if (newTotal < 0) throw new Error(`You can only remove up to ${target.currentQty} ${unit} on hand.`)
+      if (qtyChange === 0) throw new Error('Nothing to adjust — the quantity is unchanged.')
       const { data, error } = await supabase
         .from('adjustments')
         .insert({
@@ -418,8 +441,6 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
     },
   })
 
-  const change = newQty !== '' ? Number(newQty) - target.currentQty : 0
-
   return (
     <form className="card space-y-3" onSubmit={(e) => { e.preventDefault(); submit.mutate() }}>
       <button type="button" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:text-brand-600" onClick={onCancel}>
@@ -434,13 +455,26 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
         </p>
       </div>
 
+      {/* How to change it: add to / remove from what's there, or set an exact total. */}
+      <div className="inline-flex rounded-xl bg-ink-100 p-1 text-sm font-semibold">
+        {(['add', 'remove', 'set'] as const).map((m) => (
+          <button
+            key={m} type="button"
+            className={`min-h-tap rounded-lg px-4 capitalize ${mode === m ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+            onClick={() => setMode(m)}
+          >
+            {m === 'set' ? 'Set total' : m}
+          </button>
+        ))}
+      </div>
+
       <div>
-        <label className="label-text" htmlFor="adj-qty">Correct quantity</label>
+        <label className="label-text" htmlFor="adj-qty">{MODE_LABELS[mode]}</label>
         <div className="flex items-center gap-2">
           <input
             id="adj-qty" type="number" inputMode="decimal" min="0" step="any"
-            className="input-field flex-1 text-2xl font-bold" value={newQty}
-            onChange={(e) => setNewQty(e.target.value)} required autoFocus
+            className="input-field flex-1 text-2xl font-bold" value={amount}
+            onChange={(e) => setAmount(e.target.value)} required autoFocus
           />
           <UomPicker
             itemId={target.item.id}
@@ -449,10 +483,19 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
             onChanged={setUnit}
           />
         </div>
-        {newQty !== '' && change !== 0 && (
-          <p className={`mt-1 text-sm font-medium ${change > 0 ? 'text-green-700' : 'text-red-700'}`}>
-            {change > 0 ? `+${change}` : change} {unit} ({change > 0 ? 'stock in' : 'stock out'})
-          </p>
+        {amt !== null && !Number.isNaN(amt) && (
+          wouldGoNegative ? (
+            <p className="mt-1 text-sm font-medium text-red-600">
+              You can only remove up to {target.currentQty} {unit} on hand.
+            </p>
+          ) : qtyChange !== 0 && (
+            <p className="mt-1 text-sm font-medium text-ink-500">
+              {target.currentQty} → <b className="text-ink-800">{newTotal} {unit}</b>{' '}
+              <span className={qtyChange > 0 ? 'text-green-700' : 'text-red-700'}>
+                ({qtyChange > 0 ? `+${qtyChange}` : qtyChange} {unit}, {qtyChange > 0 ? 'stock in' : 'stock out'})
+              </span>
+            </p>
+          )
         )}
       </div>
 
@@ -469,7 +512,10 @@ function CorrectionForm({ target, isApprover, onDone, onCancel }: {
       </div>
 
       <div className="flex gap-2">
-        <button type="submit" className="btn-primary" disabled={submit.isPending}>
+        <button
+          type="submit" className="btn-primary"
+          disabled={submit.isPending || amt === null || Number.isNaN(amt) || qtyChange === 0 || wouldGoNegative}
+        >
           {submit.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
           {isApprover ? 'Apply adjustment' : 'Submit for approval'}
         </button>
