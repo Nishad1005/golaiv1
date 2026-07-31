@@ -1,18 +1,21 @@
 # Golai — What's Left
 
-Updated 2026-07-22.
+Updated 2026-07-31.
 
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0028.
+0001 → 0032.
 
-**Shipped since the last revision:** the stock card, the manager stock
-dashboard, item labels at receiving, the first-run checklist, the stock-count
-blind-spot fix, the Settings screen with a working undo window, empty states
-across every list, one-click sample data, and a first load cut from 1.66 MB to
-584 KB. Building these also fixed three silent data bugs — see the notes under
-A1.
+**Shipped since the last revision:** per-product units picked on the quantity
+screens (0029), the direct **Issuance** module + custom named roles (0031) and
+its **History tab**, **Adjust by amount** (add / remove / set total), and each
+movement's **note now shown in full on the stock card** (0032). Before that: the
+stock card, the manager stock dashboard with the Total-stock drill-down, item
+labels at receiving, the first-run checklist, the stock-count blind-spot fix,
+the Settings screen with a working undo window, empty states across every list,
+one-click sample data, and a first load cut from 1.66 MB to 584 KB. Building
+these also fixed three silent data bugs — see the notes under A1.
 
 **Costing (Part B)** is in build — phase 1 nearly done. **Part C is three items
 and all three are decisions rather than tickets** — WhatsApp needs a commercial
@@ -47,16 +50,23 @@ their own data — no code.
 > this without being asked?** If yes it belongs in the product; if no, it
 > belongs in settings, or nowhere.
 
-### A1. Verify migrations 0016 → 0028 in production
+### A1. Verify migrations 0016 → 0032 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
 movement ledger (0019), the stock overview (0020), settings + undo (0021) and
 sample data (0022), targeted alerts (0023), item-code allocation (0024), the
-platform console (0025), company-level module access (0026) and costing
-(0027–0028). 0017 rewrote every write path (guarded RPC wrappers, dropped
-direct-write policies, revoked internal
+platform console (0025), company-level module access (0026), costing
+(0027–0028), per-product units (0029), costing template fixes (0030), direct
+Issuance + custom roles (0031) and movement notes (0032). 0017 rewrote every
+write path (guarded RPC wrappers, dropped direct-write policies, revoked internal
 helpers), so it needs a real regression pass: capture, assign location, GRN
 through putaway, release → issuance, dispatch, Users & Roles, and My Account
 (photo upload, employee ID, admin-set position).
+
+**0031 adds `issue_stock` + the Issuance History tab.** Issue several products
+under one work order, confirm stock drops on each source shelf and the movements
+land on the stock card, then open **Issuance → History**, search the work order,
+and confirm every line shows. **0032 rebuilds `item_movements`** — do an Adjust
+with a reason and a note and confirm both show, in full, on the stock card.
 
 **0019 changed two write paths** and both deserve a specific check:
 
@@ -87,8 +97,9 @@ Platform Console and confirm it vanishes for every user in that company and the
 RPC refuses.
 
 ### A2. Complete the onboarding
-- Import their real item master into the **U&M tenant** (currently only loaded
-  into the demo tenant for testing).
+- ~~Import their real item master into the U&M tenant~~ **done — 3,328 products
+  imported** (the re-import now shows a read / added / existed summary, so a
+  refreshed master only adds the new rows).
 - Create their locations, print and stick the barcode stickers.
 - Do the scan-walk so products get locations.
 - Fill the two blanks in `docs/uandm-client-guide.md` (Netlify URL, support
@@ -209,7 +220,7 @@ and the Returns camera scan that originally failed.
 - **Role user manuals** (PRD 10.3) — bilingual one-pagers per floor role. The
   four guides in `docs/` cover admin, sales, reference and lifecycle; the
   five-minute laminated sheet for a gate guard is missing.
-- **Integration tests** — only pure logic is unit-tested (57 tests). Worth adding
+- **Integration tests** — only pure logic is unit-tested (89 tests). Worth adding
   tests against a real database for RLS isolation and the module-access
   enforcement from 0017.
 - **ERP integration** — one-way CSV export exists today. If a client pushes for
@@ -239,7 +250,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0024**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0032**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.

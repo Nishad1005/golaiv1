@@ -1,7 +1,7 @@
 # Golai — Project Log
 
 *Everything built, every decision and why, what's parked, and what's only been
-discussed. Updated 2026-07-24.*
+discussed. Updated 2026-07-31.*
 
 This is the memory of the project. `open-items.md` is the live backlog — what to
 do next. **This file is the record — how we got here and why**, so that a
@@ -39,8 +39,8 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0029, all applied to production |
-| **Tests** | 63 unit tests, typecheck clean, build green |
+| **Migrations** | 0001 → 0032, all applied to production |
+| **Tests** | 89 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
 | **Regression pass** | Stages 0–3 **passed**. Stages 4–9 outstanding. |
@@ -63,16 +63,20 @@ admin password printed in section 1** before it leaves your hands.
   client with an unbarcoded warehouse can start on day one.
 - **Stock card** (0019) — one product's whole life: received, counted,
   transferred, issued, returned, dispatched, adjusted, with the balance after
-  each move.
+  each move. **Each movement now carries its own human note** (0032) — the
+  Adjust reason *and* free-text note, a GRN's variance reason, an issue's work
+  order and recipient — shown in full, not truncated.
 - **Stock dashboard** (0020) — in stock, low stock, nothing-on-shelf, dead stock,
   mapping progress, live movement feed, and a **Total stock** drill-down (zone →
   shelf → product → stock card), same source as the ERP stock-by-shelf export.
 
 ### Workflows
 Receiving (gate → verify → putaway) · Release Requests → Issuance (formal) ·
-**Issuance (direct/counter, 0031)** · Returns ·
+**Issuance (direct/counter, 0031) — with a History tab** to look up products
+issued under a work order · Returns ·
 Dispatch (pick → approve → gate-out) · QC Hold · Stock Counts · Transfer ·
-Adjust · Capture · SO Movement · ERP Export (CSV, quantities only).
+**Adjust (add / remove / set total)** · Capture · SO Movement ·
+ERP Export (CSV, quantities only).
 
 ### Identity, access, tenancy
 - Multi-tenant: shared tables + `tenant_id` + RLS. **Not** separate databases.
@@ -150,7 +154,26 @@ already honours per-user overrides. Chosen deliberately over the deeper refactor
 **Direct Issuance reuses `move_stock` and joins `item_movements`.** The new
 counter-issue (0031) decrements stock through the same atomic function as every
 other movement and appears on the stock card / dashboard via the ledger view —
-never its own parallel stock path.
+never its own parallel stock path. Its **History tab** (2026-07-30) is pure
+front-end read over the same `stock_issues` rows behind their existing RLS — no
+new table or RPC — so "look up a work order" cost nothing on the write side.
+
+**Adjust takes a delta, entered as add / remove / set — not a re-typed total.**
+U&M hit the friction directly: to add 10 m of fabric onto 10 m on hand they had
+to compute and type `20`. The DB already stored `adjustments.qty_change` as a
+signed delta (`decide_adjustment → move_stock`), so the fix (2026-07-30) was
+front-end only: an *Add / Remove / Set total* toggle (default Add) that derives
+the same signed number. "Set total" keeps the old recount workflow. The UI
+mirrors `move_stock`'s no-negative guard so a doomed adjustment can't be
+submitted. Lesson repeated: **the entry model is a UI choice; the ledger already
+spoke deltas.**
+
+**Every movement carries its own note on the stock card (0032).** The ledger
+view fed the coded `reason_code` into its `note`, so the free-text note a user
+typed on an Adjust never showed. 0032 rebuilds `item_movements` so each union
+surfaces its human note (adjust reason + note, GRN variance/notes, issue work
+order + recipient, dispatch SO + customer note), and the card renders it in full
+instead of truncated. Read-only view rebuild — no data change.
 
 **One unit per product, picked where you enter quantity.** Units (metre, roll,
 kg, sq.ft…) are set on the product, but the picker lives on the quantity screens
@@ -459,7 +482,14 @@ type · 0014 auto-code flag · 0015 company branding · 0016 module access ·
 ledger** · 0020 stock overview · 0021 settings + undo · 0022 sample data ·
 0023 targeted alerts · 0024 item-code allocation · **0025 platform console +
 tenant_modules** · **0026 company-level module access** · **0027 costing schema** ·
-**0028 foam rate seed**.
+**0028 foam rate seed** · 0029 per-product unit + `set_item_uom` · 0030 costing
+template fixes (Hassain rename, wood length in feet, cft) · **0031 direct
+Issuance + custom roles** · **0032 movement notes on the stock card**.
+
+**Front-end changes since (no migration):** Adjust now takes a delta via an
+add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to
+look up products issued under a work order (2026-07-30); login has a show/hide
+password toggle; the item re-import shows a read/added/existed summary.
 
 ---
 

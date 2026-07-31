@@ -44,9 +44,10 @@ every movement is recorded** — who, when, how much, with photos.
 | Found stock nobody had recorded | **Capture** |
 | Moving stock from one shelf to another | **Transfer** |
 | Just scanned the wrong shelf | **Undo** on the confirmation — for a short window |
-| The count is wrong and needs correcting | **Adjust** |
+| Stock came in or out, or the count is wrong | **Adjust** (add / remove / set total) |
 | Production needs material (formal, approved) | **Release Requests** |
 | Quick issue over the counter (10 screws to Furniture) | **Issuance** |
+| "What was issued under work order WO-1234?" | **Issuance → History** |
 | Production is returning unused material | **Returns** |
 | Goods are going to a customer | **Dispatch** |
 | Something is waiting for quality inspection | **QC Hold** |
@@ -91,7 +92,9 @@ anywhere — Find, the Items list, or a location's contents.*
 One product's whole life: how much is in stock, where it sits, and a dated
 ledger of every movement — received, counted, transferred, issued, returned,
 dispatched, adjusted, released from QC, located — with who did it, against which
-document, and **what was left after each move**.
+document, **the note or reason behind it** (the Adjust reason and note, a GRN's
+variance, an issue's work order and recipient), and **what was left after each
+move**.
 
 > **Use case.** The manager is sure 50 foam blocks were bought but only 38 are on
 > the shelf. He opens the stock card: *received 50 on 12 July · issued 8 to
@@ -168,19 +171,29 @@ in the audit log.
 **Who:** storekeeper raises it, manager approves
 
 Corrects a quantity when stock comes in or goes out outside the normal flows.
-Find the product **two ways — by location or by product** — then enter the
-correct number and a mandatory reason (miscount, damage, theft, system error…).
+Find the product **two ways — by location or by product** — then say how it
+changes and give a mandatory reason (miscount, damage, theft, system error…).
 **No barcode needed:** *By location* lists the products on a spot to tap, *By
 product* searches by name and shows where it sits.
 
-> **Use case.** The system says 50 foam blocks; there are 47. Rajesh submits the
-> correction with reason "miscount". Suhel sees it in his approvals, taps
-> approve, and the stock is corrected — with a permanent record of who changed
-> what and why.
+**Three ways to change it — you don't do the maths:**
+- **Add** — type what came in (10 m of fabric); Golai adds it to what's there.
+- **Remove** — type what left (3 damaged); Golai subtracts it.
+- **Set total** — type the exact new count after a recount.
+
+It shows the result live as you type — *10 → 20 m (+10 stock in)* — and won't let
+you remove more than is on the shelf.
+
+> **Use case.** 10 m of fabric arrives outside a formal GRN. Rajesh opens Adjust,
+> picks the shelf, chooses **Add**, types 10, reason "stock in" — and the shelf
+> reads 20 m, no mental arithmetic. Later a recount finds 47 foam blocks against
+> the system's 50: he chooses **Remove 3** (or **Set total 47**), reason
+> "miscount". Suhel sees it in his approvals, taps approve, and it's corrected —
+> with a permanent record of who changed what and why.
 
 **Good to know:** a manager or admin making the correction themselves applies it
-immediately. Nothing is ever changed silently. A positive change is "stock in",
-a negative one "stock out" — the screen says which as you type.
+immediately. Nothing is ever changed silently. Your reason **and** any note you
+add both show on the product's **stock card**, so the history explains itself.
 
 ---
 
@@ -235,9 +248,21 @@ stock card.
 > screws leave stock there and then — the count is right without anyone raising a
 > formal request.
 
+**History tab.** Alongside **Issue** sits a **History** tab: past issues, newest
+first, searchable by **work order number** (or issue number, or the person it
+went to). Each entry shows the work order, the issue number, when, the
+department, who received it and who issued it — then the products, with their
+quantity and the location each came off.
+
+> **Use case.** A foreman asks what his team has already drawn against `WO-1234`.
+> The clerk opens **History**, types `WO-1234`, and sees every issue under it —
+> 10 screws, 2 m fabric, 4 foam blocks — without opening each product's card.
+
 **Good to know:**
 - You can't issue more than is on the chosen location — Golai refuses.
 - Several products can go on one issue (one work order, many lines).
+- A work order issued over several visits shows as several dated entries in
+  History, each listing its own products.
 - This is the *quick* path. For planned production draws that need a manager's
   sign-off, use **Release Requests** below.
 
