@@ -12,6 +12,11 @@ export function prefixFor(locationType: string): string {
   return (match?.[1] ?? 'S').toUpperCase()
 }
 
+/** Coordinate label for a pallet-grid position: "Row 2 · Col 3". */
+export function palletLabel(row: number, col: number): string {
+  return `Row ${row} · Col ${col}`
+}
+
 /**
  * Human label for a location, in the client's own words.
  * Prefers an explicit description; otherwise derives "Ghoda 1" from the type

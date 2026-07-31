@@ -6,6 +6,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { ScanInput } from '../../components/ScanInput'
+import { LocationPicker } from '../../components/LocationPicker'
 import { PageHeader } from '../../components/PageHeader'
 import { UomPicker } from '../../components/UomPicker'
 import type { Item, Shelf, Zone } from '../../lib/types'
@@ -31,9 +32,18 @@ export function AssignLocation() {
 
   const [place, setPlace] = useState<PlaceWithZone | null>(null)
   const [placeError, setPlaceError] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
   const [search, setSearch] = useState('')
   const [staged, setStaged] = useState<StagedItem[]>([])
   const [saved, setSaved] = useState<string | null>(null)
+
+  const choosePlace = (p: PlaceWithZone) => {
+    setPlace(p)
+    setPicking(false)
+    setPlaceError(null)
+    setStaged([])
+    setSaved(null)
+  }
 
   // Progress across the whole warehouse — a multi-day job needs visible momentum
   const { data: progress } = useQuery({
@@ -148,11 +158,18 @@ export function AssignLocation() {
       )}
 
       {!place ? (
-        <div className="card space-y-3">
-          <p className="font-semibold">Scan the location sticker</p>
-          <ScanInput placeholder="location code (e.g. Z03-G001)" onScan={(v) => void findPlace(v)} />
-          {placeError && <p className="text-sm text-red-600">{placeError}</p>}
-        </div>
+        picking ? (
+          <LocationPicker onPick={choosePlace} onCancel={() => setPicking(false)} />
+        ) : (
+          <div className="card space-y-3">
+            <p className="font-semibold">Scan the location sticker</p>
+            <ScanInput placeholder="location code (e.g. Z03-G001)" onScan={(v) => void findPlace(v)} />
+            {placeError && <p className="text-sm text-red-600">{placeError}</p>}
+            <button className="btn-secondary" onClick={() => { setPlaceError(null); setPicking(true) }}>
+              <MapPin className="h-5 w-5" /> Can't scan? Pick location
+            </button>
+          </div>
+        )
       ) : (
         <>
           <div className="card flex items-center gap-3 border-brand-200 bg-brand-50">

@@ -10,6 +10,7 @@ import { useOffline } from '../../lib/offline/queue'
 import { useSettings, DEFAULT_EDIT_LOCK_HOURS, undoWindowLabel } from '../../lib/settings'
 import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
+import { LocationPicker } from '../../components/LocationPicker'
 import { PhotoInput } from '../../components/PhotoInput'
 import { UomPicker } from '../../components/UomPicker'
 import { UOM_GROUPS, UOM_UNITS } from '../../lib/uom'
@@ -29,6 +30,7 @@ export function Capture() {
 
   const [shelf, setShelf] = useState<ShelfWithZone | null>(null)
   const [shelfError, setShelfError] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
   const [item, setItem] = useState<Item | null>(null)
   const [unknownScan, setUnknownScan] = useState<string | null>(null)
   const [newItem, setNewItem] = useState({ code: '', name: '', uom: 'pcs' })
@@ -266,11 +268,21 @@ export function Capture() {
 
       {/* Step 1 — shelf */}
       {!shelf ? (
-        <div className="card space-y-3">
-          <p className="font-semibold">Step 1 — Scan the shelf label</p>
-          <ScanInput placeholder="shelf code (e.g. Z02-S012)" onScan={(v, m) => void findShelf(v, m)} />
-          {shelfError && <p className="text-sm text-red-600">{shelfError}</p>}
-        </div>
+        picking ? (
+          <LocationPicker
+            onPick={(p) => { setShelf(p); setShelfError(null); setPicking(false) }}
+            onCancel={() => setPicking(false)}
+          />
+        ) : (
+          <div className="card space-y-3">
+            <p className="font-semibold">Step 1 — Scan the shelf label</p>
+            <ScanInput placeholder="shelf code (e.g. Z02-S012)" onScan={(v, m) => void findShelf(v, m)} />
+            {shelfError && <p className="text-sm text-red-600">{shelfError}</p>}
+            <button className="btn-secondary" onClick={() => { setShelfError(null); setPicking(true) }}>
+              <MapPin className="h-5 w-5" /> Can't scan? Pick location
+            </button>
+          </div>
+        )
       ) : (
         <div className="card flex items-center gap-3 border-tan bg-cream">
           <MapPin className="h-6 w-6 text-brand-500" />

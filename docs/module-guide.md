@@ -120,7 +120,10 @@ name and tap to add them. Quantity is optional.
 > tomorrow.
 
 **Good to know:** products **don't need barcodes** for this — you find them by
-name. That's what makes it possible before any product labels are printed.
+name. That's what makes it possible before any product labels are printed. If the
+*location* can't be scanned either — a pallet with no reachable sticker — tap
+**Can't scan? Pick location**, choose the zone, and tap the pallet on its
+car-park map. The same option is on Capture and on Adjust's *By location*.
 
 ---
 
@@ -379,7 +382,9 @@ movements in the warehouse.
 **Total stock** (the tile below) is the way in to *where* it all sits: tap it to
 see every zone that holds stock, tap a zone to see its shelves with the products
 and quantities on each, and tap a product to open its **stock card**. Same
-figures as the ERP "stock by shelf" export.
+figures as the ERP "stock by shelf" export. A zone laid out as a **pallet area**
+opens as a **Map** — the car-park grid with a stock count on each pallet; tap a
+pallet to see what's on it (switch to **List** for the plain view).
 
 ---
 
@@ -479,6 +484,19 @@ shelves, ghodas, racks, whatever your team calls them. Golai builds codes like
 > **Use case.** A new rack arrives for Zone 4. The admin adds locations named
 > "Rack" numbered 1–10, prints the labels on the thermal printer, and someone
 > sticks them on. They're immediately scannable.
+
+**Pallet areas (car-park layout).** Some stock — long wood on pallets — overhangs
+the pallet, so a barcode can't be stuck where anyone could scan it. For these,
+**Add locations → Pallet area** lays out a grid instead of a numbered run: you add
+**bays** (rows of pallets off an aisle) and set **each bay's depth** — how many
+pallets deep it goes — so bays can differ (2, 3, 2…). Golai generates a pallet per
+cell, addressed by coordinate **Row 2 · Col 3**, and draws a live preview of the
+grid. No stickers to scan: the floor finds a pallet by its coordinate on the map.
+
+> **Use case.** A wood store has three bays off two aisles — 2, 3 and 2 pallets
+> deep. The admin opens Pallet area, sets Row 1 = 2, Row 2 = 3, Row 3 = 2, sees
+> the car-park preview, and creates seven pallets. Wood searched by name now reads
+> "Zone 5 · Row 2 · Col 3", and the storekeeper walks straight to it.
 
 **Good to know:** many zones at once can be imported from a CSV (a template is
 provided), and any zone can be renamed later.

@@ -53,6 +53,9 @@ export interface Shelf {
   code: string
   fixture_type: FixtureType
   description: string | null
+  /** Car-park layout only: the bay (row) and depth position of a pallet. */
+  pallet_row?: number | null
+  pallet_col?: number | null
 }
 
 export interface Item {
@@ -94,4 +97,5 @@ export interface ItemLocation {
 
 // Shelf code format: Z<zone>-<fixture prefix><number>, e.g. Z02-S012, Z03-G001.
 // The prefix is derived from the client's own fixture name (any letters).
-export const SHELF_CODE_REGEX = /^Z(\d+)-([A-Z]+)(\d+)$/i
+// Pallet-grid locations use a Row/Col coordinate instead: Z05-R02C03.
+export const SHELF_CODE_REGEX = /^Z(\d+)-(?:([A-Z]+)(\d+)|R(\d+)C(\d+))$/i

@@ -8,6 +8,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { ScanInput } from '../../components/ScanInput'
+import { LocationPicker } from '../../components/LocationPicker'
 import { UomPicker } from '../../components/UomPicker'
 import { PageHeader } from '../../components/PageHeader'
 import type { Item, Shelf } from '../../lib/types'
@@ -170,6 +171,7 @@ export function Adjustments() {
 function ByLocation({ onPick }: { onPick: (t: Target) => void }) {
   const [shelf, setShelf] = useState<Pick<Shelf, 'id' | 'code'> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
   const [search, setSearch] = useState('')
 
   const findShelf = async (code: string) => {
@@ -199,11 +201,22 @@ function ByLocation({ onPick }: { onPick: (t: Target) => void }) {
   const { data: matches, isFetching } = useItemSearch(search)
 
   if (!shelf) {
+    if (picking) {
+      return (
+        <LocationPicker
+          onPick={(p) => { setShelf(p); setError(null); setPicking(false) }}
+          onCancel={() => setPicking(false)}
+        />
+      )
+    }
     return (
       <div className="space-y-2">
         <p className="font-semibold">Scan or type the location</p>
         <ScanInput placeholder="location code (e.g. Z04-R003)" onScan={(v) => void findShelf(v)} />
         {error && <p className="text-sm text-red-600">{error}</p>}
+        <button className="btn-secondary" onClick={() => { setError(null); setPicking(true) }}>
+          <MapPin className="h-5 w-5" /> Can't scan? Pick location
+        </button>
       </div>
     )
   }

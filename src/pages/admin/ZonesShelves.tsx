@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Upload } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Trash2, Upload } from 'lucide-react'
 import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { generateShelfLabelsPdf, SHELF_LABEL_SIZES, type ShelfLabelSize } from '../../lib/labels'
 import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
-import { locationLabel, prefixFor } from '../../lib/places'
+import { locationLabel, palletLabel, prefixFor } from '../../lib/places'
 import { PageHeader } from '../../components/PageHeader'
+import { PalletMap } from '../../components/PalletMap'
 import type { Shelf, Zone } from '../../lib/types'
 
 const LOCATION_TYPE_SUGGESTIONS = ['Shelf', 'Ghoda', 'Rack', 'Pallet', 'Bin', 'Floor Area']
@@ -142,10 +143,19 @@ export function ZonesShelves() {
 
   // --- Bulk create storage places ---------------------------------------------
   const [bulkZoneId, setBulkZoneId] = useState<string | null>(null)
+  const [bulkMode, setBulkMode] = useState<'run' | 'pallet'>('run')
   const [fixtureName, setFixtureName] = useState('Shelf')
   const [prefix, setPrefix] = useState('S')
   const [fromNum, setFromNum] = useState(1)
   const [toNum, setToNum] = useState(6)
+  // Pallet area: one entry per bay (row), its value = that bay's depth.
+  const [bays, setBays] = useState<number[]>([2, 2])
+
+  const openBulk = (zoneId: string) => {
+    setBulkZoneId(zoneId)
+    setBulkMode('run')
+    setBays([2, 2])
+  }
 
   const createShelves = useMutation({
     mutationFn: async () => {
@@ -169,6 +179,44 @@ export function ZonesShelves() {
         tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
         action: 'create.shelves_bulk', entityType: 'shelf',
         after: { zone: zone.code, fixture: fixtureName, prefix: cleanPrefix, from: fromNum, to: toNum },
+      })
+    },
+    onSuccess: () => {
+      setBulkZoneId(null)
+      void queryClient.invalidateQueries({ queryKey: ['shelves'] })
+    },
+  })
+
+  // Pallet area — a car-park grid. Each bay is a row; its depth is how many
+  // pallets deep. Positions are addressed by coordinate (Row 2 · Col 3), never
+  // scanned, because long stock on a pallet hides any barcode.
+  const createPalletGrid = useMutation({
+    mutationFn: async () => {
+      const zone = zones!.find((z) => z.id === bulkZoneId)!
+      const rows: Record<string, unknown>[] = []
+      bays.forEach((depth, ri) => {
+        const r = ri + 1
+        for (let c = 1; c <= depth; c++) {
+          rows.push({
+            tenant_id: profile!.tenant_id,
+            zone_id: zone.id,
+            code: `${zone.code}-R${pad2(r)}C${pad2(c)}`,
+            fixture_type: 'Pallet',
+            description: palletLabel(r, c),
+            pallet_row: r,
+            pallet_col: c,
+          })
+        }
+      })
+      if (rows.length === 0) throw new Error('Add at least one bay with a depth of 1 or more.')
+      const { error } = await supabase
+        .from('shelves')
+        .upsert(rows, { onConflict: 'tenant_id,code', ignoreDuplicates: true })
+      if (error) throw error
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'create.pallets_bulk', entityType: 'shelf',
+        after: { zone: zone.code, bays, total: rows.length },
       })
     },
     onSuccess: () => {
@@ -389,48 +437,119 @@ export function ZonesShelves() {
                 </div>
 
                 {bulkZoneId === zone.id ? (
-                  <form className="flex flex-wrap items-end gap-3"
-                    onSubmit={(e) => { e.preventDefault(); createShelves.mutate() }}>
-                    <div className="min-w-40">
-                      <label className="label-text">What do you call this location type?</label>
-                      <input className="input-field" list="fixture-suggestions" value={fixtureName}
-                        placeholder="Shelf / Ghoda / Rack…"
-                        onChange={(e) => {
-                          setFixtureName(e.target.value)
-                          setPrefix(prefixFor(e.target.value))
-                        }} required />
-                      <datalist id="fixture-suggestions">
-                        {LOCATION_TYPE_SUGGESTIONS.map((f) => <option key={f} value={f} />)}
-                      </datalist>
+                  <div className="space-y-3">
+                    <div className="inline-flex rounded-xl bg-ink-100 p-1 text-sm font-semibold">
+                      <button type="button"
+                        className={`min-h-tap rounded-lg px-4 ${bulkMode === 'run' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+                        onClick={() => setBulkMode('run')}>
+                        Shelves / racks
+                      </button>
+                      <button type="button"
+                        className={`min-h-tap rounded-lg px-4 ${bulkMode === 'pallet' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+                        onClick={() => setBulkMode('pallet')}>
+                        Pallet area
+                      </button>
                     </div>
-                    <div className="w-24">
-                      <label className="label-text">Code prefix</label>
-                      <input className="input-field font-mono uppercase" value={prefix} maxLength={3}
-                        onChange={(e) => setPrefix(e.target.value.toUpperCase())} required />
-                    </div>
-                    <div className="w-24">
-                      <label className="label-text">From #</label>
-                      <input type="number" min={1} className="input-field" value={fromNum}
-                        onChange={(e) => setFromNum(Number(e.target.value))} />
-                    </div>
-                    <div className="w-24">
-                      <label className="label-text">To #</label>
-                      <input type="number" min={fromNum} className="input-field" value={toNum}
-                        onChange={(e) => setToNum(Number(e.target.value))} />
-                    </div>
-                    <p className="w-full text-xs text-ink-400 sm:w-auto">
-                      → codes {zone.code}-{(prefix || 'S')}{pad3(fromNum)} … {zone.code}-{(prefix || 'S')}{pad3(toNum)}
-                    </p>
-                    <button type="submit" className="btn-primary" disabled={createShelves.isPending}>
-                      Add {Math.max(0, toNum - fromNum + 1)} location{toNum - fromNum === 0 ? '' : 's'}
-                    </button>
-                    <button type="button" className="btn-secondary" onClick={() => setBulkZoneId(null)}>Cancel</button>
-                    {createShelves.isError && (
-                      <p className="w-full text-sm text-red-600">{(createShelves.error as Error).message}</p>
+
+                    {bulkMode === 'run' ? (
+                    <form className="flex flex-wrap items-end gap-3"
+                      onSubmit={(e) => { e.preventDefault(); createShelves.mutate() }}>
+                      <div className="min-w-40">
+                        <label className="label-text">What do you call this location type?</label>
+                        <input className="input-field" list="fixture-suggestions" value={fixtureName}
+                          placeholder="Shelf / Ghoda / Rack…"
+                          onChange={(e) => {
+                            setFixtureName(e.target.value)
+                            setPrefix(prefixFor(e.target.value))
+                          }} required />
+                        <datalist id="fixture-suggestions">
+                          {LOCATION_TYPE_SUGGESTIONS.map((f) => <option key={f} value={f} />)}
+                        </datalist>
+                      </div>
+                      <div className="w-24">
+                        <label className="label-text">Code prefix</label>
+                        <input className="input-field font-mono uppercase" value={prefix} maxLength={3}
+                          onChange={(e) => setPrefix(e.target.value.toUpperCase())} required />
+                      </div>
+                      <div className="w-24">
+                        <label className="label-text">From #</label>
+                        <input type="number" min={1} className="input-field" value={fromNum}
+                          onChange={(e) => setFromNum(Number(e.target.value))} />
+                      </div>
+                      <div className="w-24">
+                        <label className="label-text">To #</label>
+                        <input type="number" min={fromNum} className="input-field" value={toNum}
+                          onChange={(e) => setToNum(Number(e.target.value))} />
+                      </div>
+                      <p className="w-full text-xs text-ink-400 sm:w-auto">
+                        → codes {zone.code}-{(prefix || 'S')}{pad3(fromNum)} … {zone.code}-{(prefix || 'S')}{pad3(toNum)}
+                      </p>
+                      <button type="submit" className="btn-primary" disabled={createShelves.isPending}>
+                        Add {Math.max(0, toNum - fromNum + 1)} location{toNum - fromNum === 0 ? '' : 's'}
+                      </button>
+                      <button type="button" className="btn-secondary" onClick={() => setBulkZoneId(null)}>Cancel</button>
+                      {createShelves.isError && (
+                        <p className="w-full text-sm text-red-600">{(createShelves.error as Error).message}</p>
+                      )}
+                    </form>
+                    ) : (
+                    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); createPalletGrid.mutate() }}>
+                      <p className="text-xs text-ink-400">
+                        Bays are rows of pallets off an aisle. Set each bay's <b>depth</b> — how many
+                        pallets deep it goes. No barcodes needed: they're found by coordinate
+                        (Row 2 · Col 3).
+                      </p>
+                      <div className="space-y-2">
+                        {bays.map((depth, i) => (
+                          <div key={i} className="flex items-end gap-2">
+                            <span className="flex h-11 w-16 items-center justify-center rounded-lg bg-ink-100 text-sm font-semibold text-ink-600">
+                              Row {i + 1}
+                            </span>
+                            <div className="w-28">
+                              <label className="label-text">Depth</label>
+                              <input type="number" min={1} className="input-field" value={depth}
+                                onChange={(e) => setBays(bays.map((d, idx) => idx === i ? Math.max(1, Number(e.target.value)) : d))} />
+                            </div>
+                            {bays.length > 1 && (
+                              <button type="button" aria-label={`Remove Row ${i + 1}`}
+                                className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-400 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => setBays(bays.filter((_, idx) => idx !== i))}>
+                                <Trash2 className="h-5 w-5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="btn-secondary" onClick={() => setBays([...bays, 2])}>
+                        <Plus className="h-5 w-5" /> Add bay
+                      </button>
+
+                      <div>
+                        <p className="label-text">Preview — {bays.reduce((a, b) => a + b, 0)} pallets</p>
+                        <PalletMap pallets={bays.flatMap((depth, ri) =>
+                          Array.from({ length: depth }, (_, ci) => ({
+                            id: `r${ri + 1}c${ci + 1}`,
+                            code: `${zone.code}-R${pad2(ri + 1)}C${pad2(ci + 1)}`,
+                            pallet_row: ri + 1, pallet_col: ci + 1,
+                          })),
+                        )} />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button type="submit" className="btn-primary" disabled={createPalletGrid.isPending}>
+                          {createPalletGrid.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
+                          Create {bays.reduce((a, b) => a + b, 0)} pallets
+                        </button>
+                        <button type="button" className="btn-secondary" onClick={() => setBulkZoneId(null)}>Cancel</button>
+                      </div>
+                      {createPalletGrid.isError && (
+                        <p className="text-sm text-red-600">{(createPalletGrid.error as Error).message}</p>
+                      )}
+                    </form>
                     )}
-                  </form>
+                  </div>
                 ) : (
-                  <button className="btn-secondary" onClick={() => setBulkZoneId(zone.id)}>
+                  <button className="btn-secondary" onClick={() => openBulk(zone.id)}>
                     <Plus className="h-5 w-5" /> Add locations
                   </button>
                 )}

@@ -4,7 +4,10 @@ import { SHELF_CODE_REGEX } from './types'
 // Shelf codes: Z<zone>-<fixture prefix><number>; prefix letters come from the
 // client's own fixture name (Shelf/Ghoda/anything), so any letters are valid.
 describe('SHELF_CODE_REGEX', () => {
-  it.each(['Z02-S012', 'Z1-G3', 'Z11-P100', 'Z07-R001', 'z02-s012', 'Z02-X012', 'Z13-GH005'])(
+  it.each([
+    'Z02-S012', 'Z1-G3', 'Z11-P100', 'Z07-R001', 'z02-s012', 'Z02-X012', 'Z13-GH005',
+    'Z05-R02C03', 'Z1-R1C1', // pallet-grid Row/Col coordinates
+  ])(
     'accepts %s',
     (code) => {
       expect(SHELF_CODE_REGEX.test(code)).toBe(true)
