@@ -53,9 +53,11 @@ export interface Shelf {
   code: string
   fixture_type: FixtureType
   description: string | null
-  /** Car-park layout only: the bay (row) and depth position of a pallet. */
+  /** Car-park layout only: the pallet's Row and Column in the zone's grid. */
   pallet_row?: number | null
   pallet_col?: number | null
+  /** Car-park layout only: true if an aisle runs after this pallet's row. */
+  aisle_after?: boolean | null
 }
 
 export interface Item {

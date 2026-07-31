@@ -5,15 +5,15 @@ Updated 2026-07-31.
 **Where we are:** all seven build phases are complete and verified end-to-end
 against a live database. U&M Designs is provisioned (13 zones, admin
 `merchant@uandm.co.in`), the app is deployed on Netlify, and migrations run
-0001 → 0033.
+0001 → 0034.
 
 **Shipped since the last revision:** per-product units picked on the quantity
 screens (0029), the direct **Issuance** module + custom named roles (0031) and
 its **History tab**, **Adjust by amount** (add / remove / set total), each
 movement's **note now shown in full on the stock card** (0032), and **pallet
-areas** — a car-park grid with per-bay depth, coordinate addressing (Row · Col),
-a tappable map, and a "Can't scan? Pick location" path for un-scannable pallets
-(0033). Before that: the
+areas** — a car-park **2-D grid** (Row · Col, ragged rows, aisles marked between
+chosen rows), a tappable map, and a "Can't scan? Pick location" path for
+un-scannable pallets (0033–0034). Before that: the
 stock card, the manager stock dashboard with the Total-stock drill-down, item
 labels at receiving, the first-run checklist, the stock-count blind-spot fix,
 the Settings screen with a working undo window, empty states across every list,
@@ -53,7 +53,7 @@ their own data — no code.
 > this without being asked?** If yes it belongs in the product; if no, it
 > belongs in settings, or nowhere.
 
-### A1. Verify migrations 0016 → 0033 in production
+### A1. Verify migrations 0016 → 0034 in production
 Module access (0016), its enforcement (0017), the staff ID card (0018), the
 movement ledger (0019), the stock overview (0020), settings + undo (0021) and
 sample data (0022), targeted alerts (0023), item-code allocation (0024), the
@@ -70,9 +70,11 @@ under one work order, confirm stock drops on each source shelf and the movements
 land on the stock card, then open **Issuance → History**, search the work order,
 and confirm every line shows. **0032 rebuilds `item_movements`** — do an Adjust
 with a reason and a note and confirm both show, in full, on the stock card. **0033 adds two nullable
-columns to `shelves`** (`pallet_row`/`pallet_col`) — generate a pallet area in a
-zone, place wood via **Can't scan? Pick location**, then find it by name and
-confirm the coordinate (Row · Col) shows; check ordinary shelves are unchanged.
+columns to `shelves`** (`pallet_row`/`pallet_col`), **0034 adds `aisle_after`** —
+generate a pallet area as a 2-D grid (set width, add rows, mark an aisle, make a
+row shorter), place wood via **Can't scan? Pick location**, then find it by name
+and confirm the coordinate (Row · Col) shows on an aligned map; check ordinary
+shelves are unchanged.
 
 **0019 changed two write paths** and both deserve a specific check:
 
@@ -256,7 +258,7 @@ any of these without Product Owner sign-off.
 - **`src/lib/modules.ts` and the `modules` table must stay in sync.** The
   database is authoritative for access; a mismatch means the UI offers something
   the server refuses.
-- **Migrations run in order 0001 → 0033**, all idempotent. 0017's function
+- **Migrations run in order 0001 → 0034**, all idempotent. 0017's function
   renames are guarded so a re-run cannot wrap a wrapper.
 - **Edge Functions to deploy** on any new environment: `create-user`,
   `delete-user`, `reset-password`, `provision-tenant`.

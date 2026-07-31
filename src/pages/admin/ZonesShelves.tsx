@@ -148,14 +148,30 @@ export function ZonesShelves() {
   const [prefix, setPrefix] = useState('S')
   const [fromNum, setFromNum] = useState(1)
   const [toNum, setToNum] = useState(6)
-  // Pallet area: one entry per bay (row), its value = that bay's depth.
-  const [bays, setBays] = useState<number[]>([2, 2])
+  // Pallet area: one 2-D grid. gridCols is the default width; each row carries
+  // its own column count (ragged rows allowed) and whether an aisle follows it.
+  const [gridCols, setGridCols] = useState(4)
+  const [palletRows, setPalletRows] = useState<{ cols: number; aisleAfter: boolean }[]>([
+    { cols: 4, aisleAfter: false },
+    { cols: 4, aisleAfter: false },
+  ])
 
   const openBulk = (zoneId: string) => {
     setBulkZoneId(zoneId)
     setBulkMode('run')
-    setBays([2, 2])
+    setGridCols(4)
+    setPalletRows([{ cols: 4, aisleAfter: false }, { cols: 4, aisleAfter: false }])
   }
+
+  // Changing the width re-uniforms every row (the common rectangular case);
+  // per-row inputs then allow a ragged edge afterward.
+  const setColumns = (n: number) => {
+    const cols = Math.max(1, n)
+    setGridCols(cols)
+    setPalletRows((rows) => rows.map((r) => ({ ...r, cols })))
+  }
+
+  const palletTotal = palletRows.reduce((a, r) => a + r.cols, 0)
 
   const createShelves = useMutation({
     mutationFn: async () => {
@@ -194,9 +210,9 @@ export function ZonesShelves() {
     mutationFn: async () => {
       const zone = zones!.find((z) => z.id === bulkZoneId)!
       const rows: Record<string, unknown>[] = []
-      bays.forEach((depth, ri) => {
+      palletRows.forEach((row, ri) => {
         const r = ri + 1
-        for (let c = 1; c <= depth; c++) {
+        for (let c = 1; c <= row.cols; c++) {
           rows.push({
             tenant_id: profile!.tenant_id,
             zone_id: zone.id,
@@ -205,10 +221,11 @@ export function ZonesShelves() {
             description: palletLabel(r, c),
             pallet_row: r,
             pallet_col: c,
+            aisle_after: row.aisleAfter ? true : null,
           })
         }
       })
-      if (rows.length === 0) throw new Error('Add at least one bay with a depth of 1 or more.')
+      if (rows.length === 0) throw new Error('Add at least one row with a width of 1 or more.')
       const { error } = await supabase
         .from('shelves')
         .upsert(rows, { onConflict: 'tenant_id,code', ignoreDuplicates: true })
@@ -216,7 +233,7 @@ export function ZonesShelves() {
       await logActivity({
         tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
         action: 'create.pallets_bulk', entityType: 'shelf',
-        after: { zone: zone.code, bays, total: rows.length },
+        after: { zone: zone.code, rows: palletRows, total: rows.length },
       })
     },
     onSuccess: () => {
@@ -495,42 +512,55 @@ export function ZonesShelves() {
                     ) : (
                     <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); createPalletGrid.mutate() }}>
                       <p className="text-xs text-ink-400">
-                        Bays are rows of pallets off an aisle. Set each bay's <b>depth</b> — how many
-                        pallets deep it goes. No barcodes needed: they're found by coordinate
-                        (Row 2 · Col 3).
+                        A pallet area is one grid — pallets across (columns) and back (rows). Set the
+                        width, add rows, and mark where an <b>aisle</b> runs. Rows can differ in
+                        length. No barcodes needed: they're found by coordinate (Row 2 · Col 3).
                       </p>
+
+                      <div className="w-40">
+                        <label className="label-text">Columns (across)</label>
+                        <input type="number" min={1} className="input-field" value={gridCols}
+                          onChange={(e) => setColumns(Number(e.target.value))} />
+                      </div>
+
                       <div className="space-y-2">
-                        {bays.map((depth, i) => (
-                          <div key={i} className="flex items-end gap-2">
+                        {palletRows.map((row, i) => (
+                          <div key={i} className="flex flex-wrap items-end gap-2">
                             <span className="flex h-11 w-16 items-center justify-center rounded-lg bg-ink-100 text-sm font-semibold text-ink-600">
                               Row {i + 1}
                             </span>
-                            <div className="w-28">
-                              <label className="label-text">Depth</label>
-                              <input type="number" min={1} className="input-field" value={depth}
-                                onChange={(e) => setBays(bays.map((d, idx) => idx === i ? Math.max(1, Number(e.target.value)) : d))} />
+                            <div className="w-24">
+                              <label className="label-text">Width</label>
+                              <input type="number" min={1} className="input-field" value={row.cols}
+                                onChange={(e) => setPalletRows(palletRows.map((r, idx) => idx === i ? { ...r, cols: Math.max(1, Number(e.target.value)) } : r))} />
                             </div>
-                            {bays.length > 1 && (
+                            <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-lg px-2 text-sm">
+                              <input type="checkbox" className="h-5 w-5" checked={row.aisleAfter}
+                                onChange={(e) => setPalletRows(palletRows.map((r, idx) => idx === i ? { ...r, aisleAfter: e.target.checked } : r))} />
+                              Aisle after
+                            </label>
+                            {palletRows.length > 1 && (
                               <button type="button" aria-label={`Remove Row ${i + 1}`}
                                 className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-400 hover:bg-red-50 hover:text-red-600"
-                                onClick={() => setBays(bays.filter((_, idx) => idx !== i))}>
+                                onClick={() => setPalletRows(palletRows.filter((_, idx) => idx !== i))}>
                                 <Trash2 className="h-5 w-5" />
                               </button>
                             )}
                           </div>
                         ))}
                       </div>
-                      <button type="button" className="btn-secondary" onClick={() => setBays([...bays, 2])}>
-                        <Plus className="h-5 w-5" /> Add bay
+                      <button type="button" className="btn-secondary"
+                        onClick={() => setPalletRows([...palletRows, { cols: gridCols, aisleAfter: false }])}>
+                        <Plus className="h-5 w-5" /> Add row
                       </button>
 
                       <div>
-                        <p className="label-text">Preview — {bays.reduce((a, b) => a + b, 0)} pallets</p>
-                        <PalletMap pallets={bays.flatMap((depth, ri) =>
-                          Array.from({ length: depth }, (_, ci) => ({
+                        <p className="label-text">Preview — {palletTotal} pallets</p>
+                        <PalletMap pallets={palletRows.flatMap((row, ri) =>
+                          Array.from({ length: row.cols }, (_, ci) => ({
                             id: `r${ri + 1}c${ci + 1}`,
                             code: `${zone.code}-R${pad2(ri + 1)}C${pad2(ci + 1)}`,
-                            pallet_row: ri + 1, pallet_col: ci + 1,
+                            pallet_row: ri + 1, pallet_col: ci + 1, aisle_after: row.aisleAfter,
                           })),
                         )} />
                       </div>
@@ -538,7 +568,7 @@ export function ZonesShelves() {
                       <div className="flex gap-2">
                         <button type="submit" className="btn-primary" disabled={createPalletGrid.isPending}>
                           {createPalletGrid.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
-                          Create {bays.reduce((a, b) => a + b, 0)} pallets
+                          Create {palletTotal} pallets
                         </button>
                         <button type="button" className="btn-secondary" onClick={() => setBulkZoneId(null)}>Cancel</button>
                       </div>

@@ -61,11 +61,11 @@ export function ZoneStock() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shelves')
-        .select('id, code, description, pallet_row, pallet_col, zones(code, name)')
+        .select('id, code, description, pallet_row, pallet_col, aisle_after, zones(code, name)')
         .eq('zone_id', zoneId!).is('deleted_at', null)
         .not('pallet_row', 'is', null)
       if (error) throw error
-      return (data ?? []) as unknown as (Pick<Shelf, 'id' | 'code' | 'description' | 'pallet_row' | 'pallet_col'> & { zones: Pick<Zone, 'code' | 'name'> | null })[]
+      return (data ?? []) as unknown as (Pick<Shelf, 'id' | 'code' | 'description' | 'pallet_row' | 'pallet_col' | 'aisle_after'> & { zones: Pick<Zone, 'code' | 'name'> | null })[]
     },
   })
 
