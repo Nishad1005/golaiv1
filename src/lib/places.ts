@@ -12,9 +12,14 @@ export function prefixFor(locationType: string): string {
   return (match?.[1] ?? 'S').toUpperCase()
 }
 
-/** Coordinate label for a pallet-grid position: "Row 2 · Col 3". */
-export function palletLabel(row: number, col: number): string {
-  return `Row ${row} · Col ${col}`
+/** Block number → letter: 1 → "A", 2 → "B"… ("#27" past Z). */
+export function blockLetter(block: number): string {
+  return block >= 1 && block <= 26 ? String.fromCharCode(64 + block) : `#${block}`
+}
+
+/** Coordinate label for a pallet in a block: "Block B · Row 2 · Col 3". */
+export function palletLabel(block: number, row: number, col: number): string {
+  return `Block ${blockLetter(block)} · Row ${row} · Col ${col}`
 }
 
 /**

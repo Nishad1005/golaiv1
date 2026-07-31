@@ -6,7 +6,7 @@ import { SHELF_CODE_REGEX } from './types'
 describe('SHELF_CODE_REGEX', () => {
   it.each([
     'Z02-S012', 'Z1-G3', 'Z11-P100', 'Z07-R001', 'z02-s012', 'Z02-X012', 'Z13-GH005',
-    'Z05-R02C03', 'Z1-R1C1', // pallet-grid Row/Col coordinates
+    'Z05-B02R03C02', 'Z1-B1R1C1', // pallet-block Block/Row/Col coordinates
   ])(
     'accepts %s',
     (code) => {

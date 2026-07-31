@@ -487,18 +487,17 @@ shelves, ghodas, racks, whatever your team calls them. Golai builds codes like
 
 **Pallet areas (car-park layout).** Some stock — long wood on pallets — overhangs
 the pallet, so a barcode can't be stuck where anyone could scan it. For these,
-**Add locations → Pallet area** lays out a **grid** instead of a numbered run:
-pallets run **across (columns)** and **back (rows)**. Set the **width** (columns),
-add **rows**, tick where an **aisle** runs, and — if a row is shorter — give it its
-own width. Golai generates a pallet per cell, addressed by coordinate
-**Row 2 · Col 3**, and draws a live map preview. No stickers to scan: the floor
-finds a pallet by its coordinate on the map.
+**Add locations → Pallet area** lays out **blocks** of pallets, like a car park:
+add a **block**, set its **rows × columns**, and add more blocks — Golai draws the
+**roads (aisles)** between them automatically. Each pallet is addressed by
+coordinate **Block B · Row 2 · Col 3**, with a live map preview. No stickers to
+scan: the floor finds a pallet by its coordinate on the map.
 
-> **Use case.** A wood store is a grid four pallets wide and four deep, with an
-> aisle after the second row. The admin opens Pallet area, sets Columns = 4, adds
-> four rows, ticks "aisle after" on row 2, sees the car-park preview, and creates
-> sixteen pallets. Wood searched by name now reads "Zone 5 · Row 3 · Col 2", and
-> the storekeeper walks straight to it.
+> **Use case.** A wood store has three blocks of pallets separated by roads — two
+> outer blocks 5×2 and a middle block 5×3. The admin opens Pallet area, adds the
+> three blocks with their rows and columns, sees the car-park preview with the
+> roads between them, and creates the pallets. Wood searched by name now reads
+> "Zone 5 · Block B · Row 3 · Col 2", and the storekeeper walks straight to it.
 
 **Good to know:** many zones at once can be imported from a CSV (a template is
 provided), and any zone can be renamed later.

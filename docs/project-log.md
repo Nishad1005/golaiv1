@@ -39,7 +39,7 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0034, all applied to production |
+| **Migrations** | 0001 → 0035, all applied to production |
 | **Tests** | 91 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
@@ -114,12 +114,12 @@ ERP Export (CSV, quantities only).
   product exists; removes only what it created.
 - CSV import for zones and items; **batched code allocation** (0024).
 
-### Pallet areas — car-park layout (0033–0034)
+### Pallet areas — car-park layout (0033–0035)
 Some locations are pallets holding overhanging stock (long wood), so a barcode
 can't be stuck where it can be scanned. **Add locations → Pallet area** lays out
-a **2-D grid** — pallets across (columns) and back (rows), width and per-row
-length both set by the user, with **aisles marked between chosen rows** (0034) —
-addressed by coordinate (**Row 2 · Col 3**), and a **car-park map** shows them. The scan-first
+**blocks** of pallets — each block a rows × columns grid — with **roads (aisles)
+drawn between the blocks automatically** (0035), addressed by coordinate
+(**Block B · Row 2 · Col 3**), and a **car-park map** shows them. The scan-first
 screens (Assign, Capture, Adjust *By location*) gain **"Can't scan? Pick
 location"** — pick the zone, tap the pallet on the map — and the Total-stock
 drill-down shows a pallet zone as a tappable map with a count per pallet.
@@ -203,19 +203,23 @@ all future customisation (see §6).
 puts the item somewhere. This is why no location column exists in the item
 import, and why the mapping walk is a separate activity.
 
-**Pallets reuse locations, not a parallel model (0033–0034).** A pallet is a
+**Pallets reuse locations, not a parallel model (0033–0035).** A pallet is a
 `shelves` row (`fixture_type='Pallet'`) with a coordinate; the only schema change
-is three nullable columns — `pallet_row`/`pallet_col` (0033) and `aisle_after`
-(0034) — so ordinary shelves are untouched. Storing the coordinate — rather than
-parsing it from the code — lets the map draw empty pallets (needed to place wood
-onto a bare pallet) and align a ragged grid without brittle string parsing.
-Addressing is **Row + Column** over **one 2-D grid per zone** (the user first
-described a single line, then clarified the area is a full grid — the two
-coordinate columns already covered it, so widening to 2-D cost only the generator
-and the map's rendering, no coordinate change). The picker/map are additive UI, so
-no existing scan flow changed. The barcode problem is solved by *not needing a
-barcode*: name-search already shows the coordinate, and the "Can't scan? Pick
-location" map covers the scan-first screens.
+is nullable columns — `pallet_row`/`pallet_col` (0033), `aisle_after` (0034, now
+unused), `pallet_block` (0035) — so ordinary shelves are untouched. Storing the
+coordinate — rather than parsing it from the code — lets the map draw empty
+pallets (needed to place wood onto a bare pallet) and group them by block without
+brittle string parsing. The model took three passes to land, driven by the
+client's own hand-drawn diagram: a 1-D line → one 2-D grid → **several blocks of
+pallets with roads drawn between them** (the right answer), addressed
+**Block + Row + Column**. **Lesson: for a spatial requirement, get the diagram
+first** — each earlier guess cost a rebuild of the generator and the map, though
+the coordinate columns kept absorbing it additively. Roads are *implicit* (always
+between blocks), so nothing about them is stored — the layout rebuilds from the
+pallets grouped by block. The picker/map are additive UI, so no existing scan flow
+changed. The barcode problem is solved by *not needing a barcode*: name-search
+already shows the coordinate, and the "Can't scan? Pick location" map covers the
+scan-first screens.
 
 **The database is authoritative for access, not the UI.** 0017 renamed 19 RPCs
 to `*_impl`, revoked them, and added guarded wrappers. A crafted API call is
@@ -510,7 +514,8 @@ tenant_modules** · **0026 company-level module access** · **0027 costing schem
 **0028 foam rate seed** · 0029 per-product unit + `set_item_uom` · 0030 costing
 template fixes (Hassain rename, wood length in feet, cft) · **0031 direct
 Issuance + custom roles** · **0032 movement notes on the stock card** ·
-**0033 pallet grid (car-park layout)** · **0034 pallet aisle markers**.
+**0033 pallet grid (car-park layout)** · **0034 pallet aisle markers (superseded)** ·
+**0035 pallet blocks**.
 
 **Front-end changes since (no migration):** Adjust now takes a delta via an
 add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to

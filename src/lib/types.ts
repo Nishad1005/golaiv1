@@ -53,10 +53,11 @@ export interface Shelf {
   code: string
   fixture_type: FixtureType
   description: string | null
-  /** Car-park layout only: the pallet's Row and Column in the zone's grid. */
+  /** Car-park layout only: the pallet's Block, and Row/Column within it. */
+  pallet_block?: number | null
   pallet_row?: number | null
   pallet_col?: number | null
-  /** Car-park layout only: true if an aisle runs after this pallet's row. */
+  /** Deprecated (0034): superseded by blocks; roads are drawn between blocks. */
   aisle_after?: boolean | null
 }
 
@@ -99,5 +100,5 @@ export interface ItemLocation {
 
 // Shelf code format: Z<zone>-<fixture prefix><number>, e.g. Z02-S012, Z03-G001.
 // The prefix is derived from the client's own fixture name (any letters).
-// Pallet-grid locations use a Row/Col coordinate instead: Z05-R02C03.
-export const SHELF_CODE_REGEX = /^Z(\d+)-(?:([A-Z]+)(\d+)|R(\d+)C(\d+))$/i
+// Pallet-block locations use a Block/Row/Col coordinate instead: Z05-B02R03C02.
+export const SHELF_CODE_REGEX = /^Z(\d+)-(?:([A-Z]+)(\d+)|B(\d+)R(\d+)C(\d+))$/i
