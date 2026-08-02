@@ -3,7 +3,7 @@ import { Download, FileBarChart, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
-import { sumQty } from '../../lib/qty'
+import { num, sumQty } from '../../lib/qty'
 
 /**
  * Page through every row — an ERP reconciliation file must be complete, and a
@@ -80,6 +80,44 @@ export function Export() {
     }
   }
 
+  // Only the items actually recorded in Golai (those with a stock balance),
+  // one row each — not the whole master. Sourced from stock_balances, so an item
+  // located but not yet counted still appears (total 0).
+  const exportCurrentStock = async () => {
+    setBusy('current')
+    setError(null)
+    try {
+      const data = await fetchAll<any>((from, to) =>
+        supabase
+          .from('stock_balances')
+          .select('item_id, qty_on_hand, qty_on_hold, items(code, name, category, uom, status, deleted_at)')
+          .order('item_id')
+          .range(from, to),
+      )
+      const byItem = new Map<string, { item: any; onHand: number; onHold: number; locations: number }>()
+      for (const b of data) {
+        // Skip a stray balance whose item is gone or no longer active.
+        if (!b.items || b.items.deleted_at || b.items.status !== 'active') continue
+        const g = byItem.get(b.item_id) ?? { item: b.items, onHand: 0, onHold: 0, locations: 0 }
+        g.onHand += num(b.qty_on_hand)
+        g.onHold += num(b.qty_on_hold)
+        g.locations += 1
+        byItem.set(b.item_id, g)
+      }
+      const rows: string[][] = [['item_code', 'item_name', 'category', 'uom', 'total_qty', 'qty_on_hold', 'locations']]
+      for (const g of [...byItem.values()].sort((a, b) => a.item.code.localeCompare(b.item.code))) {
+        rows.push([g.item.code, g.item.name, g.item.category ?? '', g.item.uom,
+          String(g.onHand), String(g.onHold), String(g.locations)])
+      }
+      downloadCsv(rows, `golai-current-stock-${new Date().toISOString().slice(0, 10)}.csv`)
+      await log('export.current_stock_csv')
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const exportItemTotals = async () => {
     setBusy('totals')
     setError(null)
@@ -132,8 +170,19 @@ export function Export() {
 
       <div className="card flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
+          <p className="font-semibold">Current stock</p>
+          <p className="text-sm text-ink-400">One row per item recorded in Golai (placed somewhere), with its total — excludes untouched master items.</p>
+        </div>
+        <button className="btn-primary" onClick={() => void exportCurrentStock()} disabled={busy !== null}>
+          {busy === 'current' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+          Download CSV
+        </button>
+      </div>
+
+      <div className="card flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
           <p className="font-semibold">Item totals</p>
-          <p className="text-sm text-ink-400">One row per item with warehouse-wide totals — the ERP reconciliation file.</p>
+          <p className="text-sm text-ink-400">One row per item across the whole master — the ERP reconciliation file.</p>
         </div>
         <button className="btn-primary" onClick={() => void exportItemTotals()} disabled={busy !== null}>
           {busy === 'totals' ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}

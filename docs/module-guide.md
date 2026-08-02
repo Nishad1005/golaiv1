@@ -437,8 +437,14 @@ returns, and the dispatch — each opening to its photos and signatures.
 ## ERP Export
 **Who:** manager, admin
 
-Two CSV downloads — **stock by location** and **item totals**. Quantities only,
-never values.
+Three CSV downloads, quantities only, never values:
+- **Stock by shelf** — every item on every location with on-hand and hold qty.
+- **Current stock** — one row per item *recorded in Golai* (placed somewhere),
+  with its total and how many locations it sits on. Excludes the untouched master,
+  so it's the "what's actually in the warehouse" file; an item located but not yet
+  counted shows with a total of 0.
+- **Item totals** — one row per item across the *whole* master (the full
+  reconciliation file, including items with no stock).
 
 > **Use case.** Month-end. The accountant needs stock figures to reconcile
 > against Tally. Suhel downloads item totals and hands over the file. Golai never
