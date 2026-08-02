@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
+import { num, sumQty } from '../../lib/qty'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
 import { PhotoGallery } from '../../components/PhotoGallery'
@@ -417,7 +418,7 @@ function LinesView({ grn }: { grn: GrnDetailData }) {
         />
       )}
       {grn.grn_lines.map((line) => {
-        const placed = line.grn_putaways.reduce((s, p) => s + p.qty, 0)
+        const placed = sumQty(line.grn_putaways, (p) => p.qty)
         return (
           <div key={line.id} className="rounded-xl border border-tan/20 px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center gap-2">
@@ -474,8 +475,8 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
   const [error, setError] = useState<string | null>(null)
 
   const pendingLines = grn.grn_lines.filter((l) => {
-    const placed = l.grn_putaways.reduce((s, p) => s + p.qty, 0)
-    return l.qc_status !== 'REJECT' && placed < l.qty_received
+    const placed = sumQty(l.grn_putaways, (p) => p.qty)
+    return l.qc_status !== 'REJECT' && placed < num(l.qty_received)
   })
 
   const putaway = useMutation({
@@ -522,8 +523,8 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
         <p className="font-semibold">Putaway — place each item on its shelf</p>
       </div>
       {pendingLines.map((line) => {
-        const placed = line.grn_putaways.reduce((s, p) => s + p.qty, 0)
-        const remaining = line.qty_received - placed
+        const placed = sumQty(line.grn_putaways, (p) => p.qty)
+        const remaining = num(line.qty_received) - placed
         const active = activeLine === line.id
         return (
           <div key={line.id} className="rounded-xl border border-tan/30 p-3">

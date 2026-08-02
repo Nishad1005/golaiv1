@@ -278,6 +278,7 @@ Recorded because the *patterns* repeat.
 | **Item label duplicated the code** | The *product name itself* contained the code — `nameWithoutCode()`. |
 | **Camera wouldn't read Code128** | Added native `BarcodeDetector` + **QR on every label**. |
 | **0017 re-run would wrap a wrapper** | Guarded with `to_regprocedure` checks. Every migration must be idempotent. |
+| **Item totals were garbage** — `reduce((s,b)=>s+b.qty_on_hand,0)` gave `"0105 20"`, not `35` | Postgres `numeric` comes back from supabase-js as a **string**, so `+`-sums concatenate. Only *totals* broke; per-location values (never summed) looked fine, which hid it until items spread across many locations mid-stock-take. Fixed with `num()`/`sumQty()` in `src/lib/qty.ts` at every quantity sum. **Any client-side sum of a DB quantity must coerce first.** |
 
 ---
 

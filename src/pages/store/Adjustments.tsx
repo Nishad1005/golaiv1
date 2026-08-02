@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
+import { num } from '../../lib/qty'
 import { ScanInput } from '../../components/ScanInput'
 import { LocationPicker } from '../../components/LocationPicker'
 import { UomPicker } from '../../components/UomPicker'
@@ -244,7 +245,7 @@ function ByLocation({ onPick }: { onPick: (t: Target) => void }) {
             <li key={r.items.id}>
               <button
                 className="flex min-h-tap w-full items-center gap-3 px-4 text-left hover:bg-cream"
-                onClick={() => onPick({ item: r.items, shelf, currentQty: r.qty_on_hand })}
+                onClick={() => onPick({ item: r.items, shelf, currentQty: num(r.qty_on_hand) })}
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{r.items.name}</span>
@@ -344,7 +345,7 @@ function ByProduct({ onPick }: { onPick: (t: Target) => void }) {
             <li key={r.shelves!.id}>
               <button
                 className="flex min-h-tap w-full items-center gap-3 px-4 text-left hover:bg-cream"
-                onClick={() => onPick({ item, shelf: r.shelves!, currentQty: r.qty_on_hand })}
+                onClick={() => onPick({ item, shelf: r.shelves!, currentQty: num(r.qty_on_hand) })}
               >
                 <MapPin className="h-4 w-4 shrink-0 text-brand-500" />
                 <span className="min-w-0 flex-1">

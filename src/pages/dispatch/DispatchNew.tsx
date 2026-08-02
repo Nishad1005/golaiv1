@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
+import { num } from '../../lib/qty'
 import { generateCartonLabelsPdf } from '../../lib/labels'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
@@ -98,9 +99,9 @@ export function DispatchNew() {
     }
     const alreadyPicked = lines
       .filter((l) => l.item.id === pickingItem!.id && l.shelfId === loc.shelf_id)
-      .reduce((s, l) => s + l.qty, 0)
-    if (!amount || amount <= 0 || amount + alreadyPicked > loc.qty_on_hand) {
-      setError(`Only ${loc.qty_on_hand - alreadyPicked} available on ${shelfCode}.`)
+      .reduce((s, l) => s + num(l.qty), 0)
+    if (!amount || amount <= 0 || amount + alreadyPicked > num(loc.qty_on_hand)) {
+      setError(`Only ${num(loc.qty_on_hand) - alreadyPicked} available on ${shelfCode}.`)
       return
     }
     setLines([

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
+import { sumQty } from '../../lib/qty'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
 
@@ -68,13 +69,14 @@ export function Returns() {
 
   const outstanding = (itemId: string) => {
     if (!issuance) return 0
-    const issued = issuance.issuance_lines
-      .filter((l) => l.item_id === itemId)
-      .reduce((s, l) => s + l.qty, 0)
-    const returned = issuance.returns
-      .flatMap((r) => r.return_lines)
-      .filter((l) => l.item_id === itemId)
-      .reduce((s, l) => s + l.qty, 0)
+    const issued = sumQty(
+      issuance.issuance_lines.filter((l) => l.item_id === itemId),
+      (l) => l.qty,
+    )
+    const returned = sumQty(
+      issuance.returns.flatMap((r) => r.return_lines).filter((l) => l.item_id === itemId),
+      (l) => l.qty,
+    )
     return issued - returned
   }
 

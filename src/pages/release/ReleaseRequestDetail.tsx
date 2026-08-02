@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
+import { num } from '../../lib/qty'
 import { generateIssuanceLabelsPdf } from '../../lib/labels'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
@@ -224,8 +225,8 @@ function FulfillPanel({
 
   const remainingFor = (lineId: string) => {
     const line = rr.release_request_lines.find((l) => l.id === lineId)!
-    const stagedQty = staged.filter((s) => s.rrLineId === lineId).reduce((sum, s) => sum + s.qty, 0)
-    return line.qty_requested - line.qty_issued - stagedQty
+    const stagedQty = staged.filter((s) => s.rrLineId === lineId).reduce((sum, s) => sum + num(s.qty), 0)
+    return num(line.qty_requested) - num(line.qty_issued) - stagedQty
   }
 
   // Where does this item live? (helps the storekeeper walk to the right shelf)

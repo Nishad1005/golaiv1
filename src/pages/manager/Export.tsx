@@ -3,6 +3,24 @@ import { Download, FileBarChart, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
+import { sumQty } from '../../lib/qty'
+
+/**
+ * Page through every row — an ERP reconciliation file must be complete, and a
+ * single unbounded request can be truncated by the server's row cap.
+ */
+async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
+  const page = 1000
+  const all: T[] = []
+  for (let from = 0; ; from += page) {
+    const { data, error } = await build(from, from + page - 1)
+    if (error) throw error
+    const rows = data ?? []
+    all.push(...rows)
+    if (rows.length < page) break
+  }
+  return all
+}
 
 function downloadCsv(rows: string[][], fileName: string) {
   const csv = rows
@@ -35,15 +53,18 @@ export function Export() {
     setBusy('stock')
     setError(null)
     try {
-      const { data, error } = await supabase
-        .from('stock_balances')
-        .select('qty_on_hand, qty_on_hold, last_movement_at, items(code, name, category, uom), shelves(code, zones(code, name))')
-        .or('qty_on_hand.gt.0,qty_on_hold.gt.0')
-      if (error) throw error
+      const data = await fetchAll<any>((from, to) =>
+        supabase
+          .from('stock_balances')
+          .select('qty_on_hand, qty_on_hold, last_movement_at, items(code, name, category, uom), shelves(code, zones(code, name))')
+          .or('qty_on_hand.gt.0,qty_on_hold.gt.0')
+          .order('item_id')
+          .range(from, to),
+      )
       const rows: string[][] = [
         ['item_code', 'item_name', 'category', 'uom', 'zone', 'shelf', 'qty_on_hand', 'qty_on_hold', 'last_movement'],
       ]
-      for (const b of (data ?? []) as any[]) {
+      for (const b of data) {
         rows.push([
           b.items.code, b.items.name, b.items.category ?? '', b.items.uom,
           b.shelves?.zones?.code ?? '', b.shelves?.code ?? '',
@@ -63,16 +84,19 @@ export function Export() {
     setBusy('totals')
     setError(null)
     try {
-      const { data, error } = await supabase
-        .from('items')
-        .select('code, name, category, uom, stock_balances(qty_on_hand, qty_on_hold)')
-        .is('deleted_at', null)
-        .eq('status', 'active')
-      if (error) throw error
+      const data = await fetchAll<any>((from, to) =>
+        supabase
+          .from('items')
+          .select('code, name, category, uom, stock_balances(qty_on_hand, qty_on_hold)')
+          .is('deleted_at', null)
+          .eq('status', 'active')
+          .order('code')
+          .range(from, to),
+      )
       const rows: string[][] = [['item_code', 'item_name', 'category', 'uom', 'total_qty', 'qty_on_hold']]
-      for (const it of (data ?? []) as any[]) {
-        const onHand = (it.stock_balances ?? []).reduce((s: number, b: any) => s + b.qty_on_hand, 0)
-        const onHold = (it.stock_balances ?? []).reduce((s: number, b: any) => s + b.qty_on_hold, 0)
+      for (const it of data) {
+        const onHand = sumQty(it.stock_balances ?? [], (b: any) => b.qty_on_hand)
+        const onHold = sumQty(it.stock_balances ?? [], (b: any) => b.qty_on_hold)
         rows.push([it.code, it.name, it.category ?? '', it.uom, String(onHand), String(onHold)])
       }
       downloadCsv(rows, `golai-item-totals-${new Date().toISOString().slice(0, 10)}.csv`)

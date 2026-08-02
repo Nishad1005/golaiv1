@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, ClipboardCheck, Loader2, MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { locationLabel } from '../lib/places'
+import { num, sumQty } from '../lib/qty'
 import { MOVEMENTS } from '../lib/movements'
 import { PageHeader } from '../components/PageHeader'
 
@@ -105,8 +106,8 @@ export function ItemMovement() {
     },
   })
 
-  const onHand = (item?.stock_balances ?? []).reduce((s, b) => s + b.qty_on_hand, 0)
-  const onHold = (item?.stock_balances ?? []).reduce((s, b) => s + b.qty_on_hold, 0)
+  const onHand = sumQty(item?.stock_balances ?? [], (b) => b.qty_on_hand)
+  const onHold = sumQty(item?.stock_balances ?? [], (b) => b.qty_on_hold)
   const locations = (item?.stock_balances ?? []).filter((b) => b.shelves)
 
   // Walk backwards from the live balance so the top row is always the truth.
@@ -114,7 +115,7 @@ export function ItemMovement() {
     let running = onHand
     return (movements ?? []).map((m) => {
       const balanceAfter = running
-      running -= m.qty
+      running -= num(m.qty)
       return { ...m, balanceAfter }
     })
   }, [movements, onHand])
