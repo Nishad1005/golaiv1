@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Loader2, Truck } from 'lucide-react'
+import { Hand, Loader2, Truck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -9,17 +9,23 @@ import { uploadPhoto } from '../../lib/photos'
 import { useOffline } from '../../lib/offline/queue'
 import { PhotoInput } from '../../components/PhotoInput'
 
-const MATERIAL_TYPES = ['Fabric', 'Foam', 'Wood', 'Hardware', 'Packing Material', 'Other']
+const MATERIAL_TYPES = ['Fabric', 'Foam', 'Wood', 'Leather', 'Hardware', 'Packing Material', 'Other']
 
 /**
  * GRN Stage 1 — Security gate entry (PRD 4.3). Photo-heavy, big buttons.
- * Mandatory: vehicle plate+photos, driver details+photos, supplier,
- * material type, cartons, and at least one document photo.
+ *
+ * Two ways in:
+ * - **By vehicle** (default): vehicle plate+photos, driver details+photos.
+ * - **Hand delivery**: someone walks in with just a PO — no vehicle or driver
+ *   to photograph, so those sections drop away. A document photo is still
+ *   required as proof of what arrived.
+ * Both need a supplier, material type, cartons, and ≥1 document photo.
  */
 export function GateEntry() {
   const { profile } = useAuth()
   const navigate = useNavigate()
 
+  const [mode, setMode] = useState<'vehicle' | 'hand'>('vehicle')
   const [vehicleNumber, setVehicleNumber] = useState('')
   const [vehiclePhotos, setVehiclePhotos] = useState<File[]>([])
   const [driverName, setDriverName] = useState('')
@@ -49,12 +55,20 @@ export function GateEntry() {
 
   const submit = useMutation({
     mutationFn: async () => {
+      const hand = mode === 'hand'
       if (documentPhotos.length === 0) {
-        throw new Error('At least one document photo (invoice / e-way bill / LR) is mandatory.')
+        throw new Error('At least one document photo (invoice / e-way bill / LR / PO) is mandatory.')
       }
-      if (vehiclePhotos.length === 0) throw new Error('Vehicle photo is mandatory.')
-      if (driverPhotos.length === 0) throw new Error('Driver photo is mandatory.')
+      if (!hand && vehiclePhotos.length === 0) throw new Error('Vehicle photo is mandatory.')
+      if (!hand && driverPhotos.length === 0) throw new Error('Driver photo is mandatory.')
       if (!supplierId && !supplierFreetext.trim()) throw new Error('Select or type the supplier.')
+
+      // Hand delivery has no vehicle/driver to record — send empty values for
+      // those NOT NULL columns and no vehicle/driver photos.
+      const vehNo = hand ? '' : vehicleNumber.trim().toUpperCase()
+      const license = hand ? '' : driverLicense.trim()
+      const vehFiles = hand ? [] : vehiclePhotos
+      const drvFiles = hand ? [] : driverPhotos
 
       // Offline: queue the whole gate entry, photos included (PRD 7.5 —
       // GRN Stage 1 is one of the five screens that must work offline)
@@ -67,15 +81,15 @@ export function GateEntry() {
             p_po_ref: poRef.trim() || null,
             p_material_type: materialType,
             p_cartons: Number(cartons),
-            p_vehicle_number: vehicleNumber.trim().toUpperCase(),
+            p_vehicle_number: vehNo,
             p_driver_name: driverName.trim(),
             p_driver_phone: driverPhone.trim(),
-            p_driver_license: driverLicense.trim(),
+            p_driver_license: license,
             p_transporter: transporter.trim() || null,
           },
           {
-            p_vehicle_photos: vehiclePhotos,
-            p_driver_photos: driverPhotos,
+            p_vehicle_photos: vehFiles,
+            p_driver_photos: drvFiles,
             p_document_photos: documentPhotos,
           },
           'grn',
@@ -88,8 +102,8 @@ export function GateEntry() {
         Promise.all(files.map((f) => uploadPhoto(f, profile!.tenant_id, 'grn')))
 
       const [vp, dp, docp] = await Promise.all([
-        upload(vehiclePhotos),
-        upload(driverPhotos),
+        upload(vehFiles),
+        upload(drvFiles),
         upload(documentPhotos),
       ])
 
@@ -99,11 +113,11 @@ export function GateEntry() {
         p_po_ref: poRef.trim() || null,
         p_material_type: materialType,
         p_cartons: Number(cartons),
-        p_vehicle_number: vehicleNumber.trim().toUpperCase(),
+        p_vehicle_number: vehNo,
         p_vehicle_photos: vp,
         p_driver_name: driverName.trim(),
         p_driver_phone: driverPhone.trim(),
-        p_driver_license: driverLicense.trim(),
+        p_driver_license: license,
         p_driver_photos: dp,
         p_transporter: transporter.trim() || null,
         p_document_photos: docp,
@@ -117,7 +131,7 @@ export function GateEntry() {
         action: 'create.grn_gate_entry',
         entityType: 'grn',
         entityId: row.grn_id,
-        after: { grn_number: row.grn_number, vehicle: vehicleNumber, material: materialType },
+        after: { grn_number: row.grn_number, mode, vehicle: vehNo, material: materialType },
       })
       return row
     },
@@ -135,6 +149,20 @@ export function GateEntry() {
         <h1 className="text-xl font-bold">New Gate Entry</h1>
       </div>
 
+      {/* How did it arrive? A vehicle at the gate, or someone by hand with a PO. */}
+      <div className="inline-flex rounded-xl bg-ink-100 p-1 text-sm font-semibold">
+        <button type="button"
+          className={`inline-flex min-h-tap items-center gap-1.5 rounded-lg px-4 ${mode === 'vehicle' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+          onClick={() => setMode('vehicle')}>
+          <Truck className="h-4 w-4" /> By vehicle
+        </button>
+        <button type="button"
+          className={`inline-flex min-h-tap items-center gap-1.5 rounded-lg px-4 ${mode === 'hand' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+          onClick={() => setMode('hand')}>
+          <Hand className="h-4 w-4" /> Hand delivery
+        </button>
+      </div>
+
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -142,44 +170,53 @@ export function GateEntry() {
           submit.mutate()
         }}
       >
-        <div className="card space-y-3">
-          <p className="font-semibold">Vehicle</p>
-          <div>
-            <label className="label-text">Number plate</label>
-            <input
-              className="input-field font-mono uppercase"
-              value={vehicleNumber}
-              onChange={(e) => setVehicleNumber(e.target.value)}
-              placeholder="RJ19 AB 1234"
-              required
-            />
+        {mode === 'vehicle' && (
+          <div className="card space-y-3">
+            <p className="font-semibold">Vehicle</p>
+            <div>
+              <label className="label-text">Number plate</label>
+              <input
+                className="input-field font-mono uppercase"
+                value={vehicleNumber}
+                onChange={(e) => setVehicleNumber(e.target.value)}
+                placeholder="RJ19 AB 1234"
+                required
+              />
+            </div>
+            <div>
+              <label className="label-text">Vehicle photos (front + back) — mandatory</label>
+              <PhotoInput files={vehiclePhotos} onChange={setVehiclePhotos} label="Vehicle" />
+            </div>
           </div>
-          <div>
-            <label className="label-text">Vehicle photos (front + back) — mandatory</label>
-            <PhotoInput files={vehiclePhotos} onChange={setVehiclePhotos} label="Vehicle" />
-          </div>
-        </div>
+        )}
 
         <div className="card space-y-3">
-          <p className="font-semibold">Driver</p>
+          <p className="font-semibold">{mode === 'hand' ? 'Delivered by' : 'Driver'}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="label-text">Name</label>
-              <input className="input-field" value={driverName} onChange={(e) => setDriverName(e.target.value)} required />
+              <label className="label-text">Name{mode === 'hand' ? ' (optional)' : ''}</label>
+              <input className="input-field" value={driverName} onChange={(e) => setDriverName(e.target.value)}
+                placeholder={mode === 'hand' ? "person who brought it" : undefined}
+                required={mode === 'vehicle'} />
             </div>
             <div>
-              <label className="label-text">Phone</label>
-              <input className="input-field" inputMode="tel" value={driverPhone} onChange={(e) => setDriverPhone(e.target.value)} required />
+              <label className="label-text">Phone{mode === 'hand' ? ' (optional)' : ''}</label>
+              <input className="input-field" inputMode="tel" value={driverPhone} onChange={(e) => setDriverPhone(e.target.value)}
+                required={mode === 'vehicle'} />
             </div>
-            <div className="sm:col-span-2">
-              <label className="label-text">License number</label>
-              <input className="input-field font-mono" value={driverLicense} onChange={(e) => setDriverLicense(e.target.value)} required />
+            {mode === 'vehicle' && (
+              <div className="sm:col-span-2">
+                <label className="label-text">License number</label>
+                <input className="input-field font-mono" value={driverLicense} onChange={(e) => setDriverLicense(e.target.value)} required />
+              </div>
+            )}
+          </div>
+          {mode === 'vehicle' && (
+            <div>
+              <label className="label-text">Driver photos (face + license) — mandatory</label>
+              <PhotoInput files={driverPhotos} onChange={setDriverPhotos} label="Driver" />
             </div>
-          </div>
-          <div>
-            <label className="label-text">Driver photos (face + license) — mandatory</label>
-            <PhotoInput files={driverPhotos} onChange={setDriverPhotos} label="Driver" />
-          </div>
+          )}
         </div>
 
         <div className="card space-y-3">
@@ -222,7 +259,7 @@ export function GateEntry() {
             </div>
           </div>
           <div>
-            <label className="label-text">Document photos (invoice, e-way bill, LR) — at least one</label>
+            <label className="label-text">Document photos (invoice, e-way bill, LR, PO) — at least one</label>
             <PhotoInput files={documentPhotos} onChange={setDocumentPhotos} label="Document" />
           </div>
         </div>

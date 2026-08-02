@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, Loader2, PackageCheck, Printer, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Hand, Loader2, PackageCheck, Printer, Trash2, Truck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
@@ -101,20 +101,7 @@ export function GrnDetail() {
         </p>
       </div>
 
-      {gate && (
-        <div className="card space-y-3">
-          <p className="font-semibold">Gate entry</p>
-          <p className="text-sm">
-            <span className="font-mono font-semibold">{gate.vehicle_number}</span> · driver{' '}
-            {gate.driver_name} ({gate.driver_phone}) · DL {gate.driver_license}
-            {gate.transporter ? ` · via ${gate.transporter}` : ''} · arrived{' '}
-            {new Date(gate.arrival_at).toLocaleString()}
-          </p>
-          <PhotoGallery
-            paths={[...gate.vehicle_photos, ...gate.driver_photos, ...gate.document_photos]}
-          />
-        </div>
-      )}
+      {gate && <GateEntryCard gate={gate} />}
 
       {grn.status === 'DRAFT' && canVerify && <VerifyPanel grn={grn} />}
       {grn.status !== 'DRAFT' && <LinesView grn={grn} />}
@@ -124,6 +111,71 @@ export function GrnDetail() {
           <CheckCircle2 className="h-5 w-5" /> Receiving completed — all stock placed on shelves.
         </div>
       )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Gate entry (read) — grouped fields + photos split by kind. A blank vehicle
+// number means it came by hand, so the vehicle/driver rows are dropped.
+// ---------------------------------------------------------------------------
+function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <p className="label-text mb-0.5">{label}</p>
+      <p className={'text-sm text-ink-800 ' + (mono ? 'font-mono' : '')}>{value || '—'}</p>
+    </div>
+  )
+}
+
+function PhotoSection({ title, paths }: { title: string; paths: string[] }) {
+  if (paths.length === 0) return null
+  return (
+    <div>
+      <p className="label-text mb-1">{title}</p>
+      <PhotoGallery paths={paths} />
+    </div>
+  )
+}
+
+function GateEntryCard({ gate }: { gate: GrnDetailData['grn_gate_entries'][number] }) {
+  const handDelivery = !gate.vehicle_number?.trim()
+  const arrived = new Date(gate.arrival_at).toLocaleString()
+
+  return (
+    <div className="card space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="font-semibold">Gate entry</p>
+        <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-xs font-medium text-ink-600">
+          {handDelivery ? <Hand className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}
+          {handDelivery ? 'Hand delivery' : 'By vehicle'}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+        {handDelivery ? (
+          <>
+            <Field label="Delivered by" value={gate.driver_name} />
+            {gate.driver_phone?.trim() && <Field label="Phone" value={gate.driver_phone} />}
+            {gate.transporter?.trim() && <Field label="Transporter" value={gate.transporter} />}
+          </>
+        ) : (
+          <>
+            <Field label="Vehicle" value={gate.vehicle_number} mono />
+            <Field label="Driver" value={gate.driver_name} />
+            <Field label="Phone" value={gate.driver_phone} />
+            <Field label="Licence" value={gate.driver_license} mono />
+            {gate.transporter?.trim() && <Field label="Transporter" value={gate.transporter} />}
+          </>
+        )}
+        <Field label="Arrived" value={arrived} />
+      </div>
+
+      <div className="space-y-3 border-t border-ink-200/70 pt-3">
+        <PhotoSection title="Vehicle" paths={gate.vehicle_photos} />
+        <PhotoSection title="Driver" paths={gate.driver_photos} />
+        <PhotoSection title="Documents" paths={gate.document_photos} />
+      </div>
     </div>
   )
 }

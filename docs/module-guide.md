@@ -207,8 +207,14 @@ add both show on the product's **stock card**, so the history explains itself.
 
 1. **Gate Entry** (security) — vehicle number and photos, driver name/phone/
    licence and photos, supplier, PO reference, material type, cartons, and at
-   least one **document photo** (invoice / e-way bill / LR). Creates
-   `GRN/2026-07/0001` and alerts the storekeeper.
+   least one **document photo** (invoice / e-way bill / LR / PO). Creates
+   `GRN/2026-07/0001` and alerts the storekeeper. Material types include Fabric,
+   Foam, Wood, **Leather**, Hardware and Packing Material.
+   **Hand delivery:** if goods are walked in with just a PO — no vehicle, no
+   driver — switch the toggle at the top to **Hand delivery**; the vehicle and
+   driver-licence sections drop away, you note who brought it (optional) and
+   still snap the document photo. The GRN detail then shows a *Hand delivery*
+   badge instead of vehicle/driver details.
 2. **Verify** (storekeeper) — scan each product, enter **PO qty / Invoice qty /
    Received qty**. Any difference demands a written reason. Mark each line
    **OK / Hold for QC / Reject**, with photos for damage.

@@ -71,7 +71,9 @@ admin password printed in section 1** before it leaves your hands.
   shelf → product → stock card), same source as the ERP stock-by-shelf export.
 
 ### Workflows
-Receiving (gate → verify → putaway) · Release Requests → Issuance (formal) ·
+Receiving (gate → verify → putaway; gate entry supports **by-vehicle or
+hand-delivery**, and a redesigned gate-entry detail view) · Release Requests →
+Issuance (formal) ·
 **Issuance (direct/counter, 0031) — with a History tab** to look up products
 issued under a work order · Returns ·
 Dispatch (pick → approve → gate-out) · QC Hold · Stock Counts · Transfer ·
