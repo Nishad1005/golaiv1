@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Search, MapPin, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { locationLabel } from '../lib/places'
+import { ItemThumb } from './ItemThumb'
 
 interface LocatorRow {
   id: string
@@ -11,6 +12,7 @@ interface LocatorRow {
   name: string
   item_type: string | null
   uom: string
+  photo_url: string | null
   stock_balances: {
     qty_on_hand: number
     qty_on_hold: number
@@ -45,7 +47,7 @@ export function ItemLocator({ initialQuery = '' }: { initialQuery?: string } = {
       const { data, error } = await supabase
         .from('items')
         .select(
-          'id, code, name, item_type, uom, stock_balances(qty_on_hand, qty_on_hold, shelves(code, fixture_type, description, zones(code, name)))',
+          'id, code, name, item_type, uom, photo_url, stock_balances(qty_on_hand, qty_on_hold, shelves(code, fixture_type, description, zones(code, name)))',
         )
         .or(`name.ilike.%${trimmed}%,code.ilike.%${trimmed}%,item_type.ilike.%${trimmed}%,barcode.eq.${trimmed}`)
         .eq('status', 'active')
@@ -81,7 +83,9 @@ export function ItemLocator({ initialQuery = '' }: { initialQuery?: string } = {
             // valid state during the mapping walk, and still answers "where is it".
             const locations = item.stock_balances.filter((b) => b.shelves)
             return (
-              <li key={item.id} className="py-3">
+              <li key={item.id} className="flex gap-3 py-3">
+                <ItemThumb path={item.photo_url} name={item.name} size="md" />
+                <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <Link
                     to={`/item/${item.id}`}
@@ -126,6 +130,7 @@ export function ItemLocator({ initialQuery = '' }: { initialQuery?: string } = {
                     ))}
                   </ul>
                 )}
+                </div>
               </li>
             )
           })}

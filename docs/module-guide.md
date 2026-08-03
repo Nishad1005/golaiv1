@@ -125,6 +125,14 @@ name. That's what makes it possible before any product labels are printed. If th
 **Can't scan? Pick location**, choose the zone, and tap the pallet on its
 car-park map. The same option is on Capture and on Adjust's *By location*.
 
+**Product photos.** To end "which one is this?" confusion, every product can carry
+a **photo**. Its thumbnail shows in every product list — Find, Assign, Stock
+Counts, Adjust, Issuance, Transfer — and full-size on the stock card. Staff add or
+replace it **right where they work**: the camera button on a staged product in
+Assign Location, on the item being counted in Stock Counts, or on the product's
+stock card (tap any product name). Products with no photo show a neutral
+placeholder.
+
 ---
 
 ## Capture

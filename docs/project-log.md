@@ -39,8 +39,8 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0035, all applied to production |
-| **Tests** | 91 unit tests, typecheck clean, build green |
+| **Migrations** | 0001 → 0036, all applied to production |
+| **Tests** | 97 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
 | **Regression pass** | Stages 0–3 **passed**. Stages 4–9 outstanding. |
@@ -518,7 +518,13 @@ tenant_modules** · **0026 company-level module access** · **0027 costing schem
 template fixes (Hassain rename, wood length in feet, cft) · **0031 direct
 Issuance + custom roles** · **0032 movement notes on the stock card** ·
 **0033 pallet grid (car-park layout)** · **0034 pallet aisle markers (superseded)** ·
-**0035 pallet blocks**.
+**0035 pallet blocks** · 0036 product photo + `set_item_photo`.
+
+**Front-end since (no migration beyond 0036):** a **Current stock** ERP export
+(recorded items only); the **numeric-as-string totals fix** (`src/lib/qty.ts`);
+GRN gate entry redesign + hand-delivery mode + Leather; **product identification
+photos** — a thumbnail in every product list and a full photo on the stock card,
+added in the stock-take flow via the guarded `set_item_photo`.
 
 **Front-end changes since (no migration):** Adjust now takes a delta via an
 add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to

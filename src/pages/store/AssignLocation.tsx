@@ -9,6 +9,8 @@ import { ScanInput } from '../../components/ScanInput'
 import { LocationPicker } from '../../components/LocationPicker'
 import { PageHeader } from '../../components/PageHeader'
 import { UomPicker } from '../../components/UomPicker'
+import { ItemThumb } from '../../components/ItemThumb'
+import { ItemPhotoButton } from '../../components/ItemPhotoButton'
 import type { Item, Shelf, Zone } from '../../lib/types'
 
 type PlaceWithZone = Shelf & { zones: Pick<Zone, 'code' | 'name'> | null }
@@ -66,7 +68,7 @@ export function AssignLocation() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stock_balances')
-        .select('qty_on_hand, items(id, code, name, uom)')
+        .select('qty_on_hand, items(id, code, name, uom, photo_url)')
         .eq('shelf_id', place!.id)
       if (error) throw error
       return data as unknown as { qty_on_hand: number; items: Item }[]
@@ -198,10 +200,13 @@ export function AssignLocation() {
               <p className="mb-2 text-sm font-semibold text-ink-500">Already recorded here</p>
               <div className="flex flex-wrap gap-2">
                 {(existing ?? []).map((e) => (
-                  <span key={e.items.id} className="rounded-lg bg-cream-dark px-3 py-1.5 text-sm">
-                    {e.items.name}
-                    <span className="ml-1.5 text-ink-400">
-                      {e.qty_on_hand > 0 ? `${e.qty_on_hand} ${e.items.uom}` : 'not counted'}
+                  <span key={e.items.id} className="flex items-center gap-2 rounded-lg bg-cream-dark py-1 pl-1 pr-3 text-sm">
+                    <ItemThumb path={e.items.photo_url} name={e.items.name} />
+                    <span className="min-w-0">
+                      {e.items.name}
+                      <span className="ml-1.5 text-ink-400">
+                        {e.qty_on_hand > 0 ? `${e.qty_on_hand} ${e.items.uom}` : 'not counted'}
+                      </span>
                     </span>
                   </span>
                 ))}
@@ -240,6 +245,7 @@ export function AssignLocation() {
                           setSearch('')
                         }}
                       >
+                        <ItemThumb path={m.photo_url} name={m.name} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{m.name}</p>
                           <p className="text-xs text-ink-400">{m.code}</p>
@@ -262,11 +268,21 @@ export function AssignLocation() {
             )}
 
             {staged.map((s, i) => (
-              <div key={s.item.id} className="flex items-center gap-2 rounded-xl bg-cream px-3 py-2">
+              <div key={s.item.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-cream px-3 py-2">
+                <ItemThumb path={s.item.photo_url} name={s.item.name} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{s.item.name}</p>
                   <p className="text-xs text-ink-400">{s.item.code}</p>
                 </div>
+                <ItemPhotoButton
+                  itemId={s.item.id}
+                  hasPhoto={!!s.item.photo_url}
+                  name={s.item.name}
+                  compact
+                  onChanged={(path) =>
+                    setStaged(staged.map((x, idx) => (idx === i ? { ...x, item: { ...x.item, photo_url: path } } : x)))
+                  }
+                />
                 <input
                   type="number"
                   inputMode="decimal"

@@ -77,6 +77,8 @@ export interface Item {
   reorder_qty: number | null
   default_zone_id: string | null
   status: 'active' | 'inactive'
+  /** Storage path of an identification photo (photos bucket); null = none. */
+  photo_url?: string | null
 }
 
 export interface StockBalance {

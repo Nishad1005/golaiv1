@@ -1,12 +1,15 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ClipboardCheck, Loader2, MapPin } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../stores/auth'
 import { locationLabel } from '../lib/places'
 import { num, sumQty } from '../lib/qty'
 import { MOVEMENTS } from '../lib/movements'
 import { PageHeader } from '../components/PageHeader'
+import { ItemThumb } from '../components/ItemThumb'
+import { ItemPhotoButton } from '../components/ItemPhotoButton'
 
 interface Movement {
   item_id: string
@@ -38,6 +41,9 @@ interface ShelfRow {
  */
 export function ItemMovement() {
   const { id } = useParams<{ id: string }>()
+  const { profile } = useAuth()
+  const queryClient = useQueryClient()
+  const canEditPhoto = ['storekeeper', 'manager', 'admin'].includes(profile!.role)
 
   const { data: item } = useQuery({
     queryKey: ['item-card', id],
@@ -45,13 +51,13 @@ export function ItemMovement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, code, name, item_type, uom, code_auto_assigned, stock_balances(qty_on_hand, qty_on_hold, shelf_id, shelves(code, fixture_type, description, zones(code, name)))')
+        .select('id, code, name, item_type, uom, photo_url, code_auto_assigned, stock_balances(qty_on_hand, qty_on_hold, shelf_id, shelves(code, fixture_type, description, zones(code, name)))')
         .eq('id', id!)
         .single()
       if (error) throw error
       return data as never as {
         id: string; code: string; name: string; item_type: string | null; uom: string
-        code_auto_assigned: boolean
+        photo_url: string | null; code_auto_assigned: boolean
         stock_balances: {
           qty_on_hand: number; qty_on_hold: number; shelf_id: string
           shelves: ShelfRow | null
@@ -131,6 +137,29 @@ export function ItemMovement() {
       </Link>
 
       <PageHeader title={item.name} subtitle={`${item.code}${item.item_type ? ` · ${item.item_type}` : ''}`} />
+
+      {/* ---------- Identification photo ---------- */}
+      <div className="card mb-4 flex items-center gap-4">
+        <ItemThumb path={item.photo_url} name={item.name} size="lg" />
+        <div className="min-w-0">
+          <p className="font-semibold text-ink-900">Product photo</p>
+          <p className="mt-0.5 text-sm text-ink-400">
+            {item.photo_url ? 'Tap the photo to view it full size.' : 'No photo yet — add one so the floor can identify this product at a glance.'}
+          </p>
+          {canEditPhoto && (
+            <div className="mt-2">
+              <ItemPhotoButton
+                itemId={item.id}
+                hasPhoto={!!item.photo_url}
+                name={item.name}
+                onChanged={(path) =>
+                  queryClient.setQueryData(['item-card', id], (old: any) => (old ? { ...old, photo_url: path } : old))
+                }
+              />
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ---------- Where it stands right now ---------- */}
       <div className="grid gap-3 sm:grid-cols-3">

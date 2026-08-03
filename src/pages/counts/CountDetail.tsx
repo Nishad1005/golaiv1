@@ -7,6 +7,8 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { ScanInput } from '../../components/ScanInput'
 import { UomPicker } from '../../components/UomPicker'
+import { ItemThumb } from '../../components/ItemThumb'
+import { ItemPhotoButton } from '../../components/ItemPhotoButton'
 import { COUNT_STATUS_STYLES } from './CountList'
 import type { Shelf } from '../../lib/types'
 
@@ -181,6 +183,7 @@ interface CountItem {
   code: string
   name: string
   uom: string
+  photo_url?: string | null
 }
 
 interface ExpectedRow {
@@ -214,7 +217,7 @@ function ExecutePanel({ countId }: { countId: string }) {
       const [balances, lines] = await Promise.all([
         supabase
           .from('stock_balances')
-          .select('qty_on_hand, items(id, code, name, uom)')
+          .select('qty_on_hand, items(id, code, name, uom, photo_url)')
           .eq('shelf_id', shelf!.id),
         supabase
           .from('stock_count_lines')
@@ -258,7 +261,7 @@ function ExecutePanel({ countId }: { countId: string }) {
     setError(null)
     const { data: found } = await supabase
       .from('items')
-      .select('id, code, name, uom')
+      .select('id, code, name, uom, photo_url')
       .or(`code.eq.${scan},barcode.eq.${scan}`)
       .maybeSingle()
     if (!found) return setError(`Product "${scan}" not found.`)
@@ -332,9 +335,27 @@ function ExecutePanel({ countId }: { countId: string }) {
                 record.mutate()
               }}
             >
-              <p className="font-medium">
-                {item.name} <span className="text-sm font-normal text-ink-400">{item.code}</span>
-              </p>
+              <div className="flex items-center gap-3">
+                <ItemThumb path={item.photo_url} name={item.name} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {item.name} <span className="text-sm font-normal text-ink-400">{item.code}</span>
+                  </p>
+                  <p className="text-xs text-ink-400">
+                    {item.photo_url ? 'Photo attached — tap it to check.' : 'No photo — add one so it is easy to identify.'}
+                  </p>
+                </div>
+                <ItemPhotoButton
+                  itemId={item.id}
+                  hasPhoto={!!item.photo_url}
+                  name={item.name}
+                  compact
+                  onChanged={(path) => {
+                    setItem({ ...item, photo_url: path })
+                    void queryClient.invalidateQueries({ queryKey: ['count-expected', countId, shelf?.id] })
+                  }}
+                />
+              </div>
               <div>
                 <label className="label-text" htmlFor="physical-qty">
                   Physical quantity (system shows {systemQty} {item.uom})
@@ -406,6 +427,7 @@ function ExecutePanel({ countId }: { countId: string }) {
                         >
                           {row.countedQty != null && <Check className="h-3.5 w-3.5" aria-hidden />}
                         </span>
+                        <ItemThumb path={row.item.photo_url} name={row.item.name} />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-medium">{row.item.name}</span>
                           <span className="block text-xs text-ink-400">

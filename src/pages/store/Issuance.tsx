@@ -8,10 +8,11 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { PageHeader } from '../../components/PageHeader'
+import { ItemThumb } from '../../components/ItemThumb'
 import type { Item, Shelf } from '../../lib/types'
 
 interface IssueLine {
-  item: Pick<Item, 'id' | 'code' | 'name' | 'uom'>
+  item: Pick<Item, 'id' | 'code' | 'name' | 'uom' | 'photo_url'>
   shelf: Pick<Shelf, 'id' | 'code'>
   available: number
   qty: string
@@ -334,7 +335,7 @@ function ProductPicker({ onPick, onCancel }: {
     queryFn: async () => {
       const q = search.trim()
       const { data } = await supabase
-        .from('items').select('id, code, name, uom')
+        .from('items').select('id, code, name, uom, photo_url')
         .or(`name.ilike.%${q}%,code.ilike.%${q}%,item_type.ilike.%${q}%,barcode.eq.${q}`)
         .eq('status', 'active').is('deleted_at', null).limit(10)
       return (data ?? []) as IssueLine['item'][]
@@ -376,8 +377,9 @@ function ProductPicker({ onPick, onCancel }: {
             <ul className="divide-y divide-ink-100 rounded-xl border border-ink-200">
               {(matches ?? []).map((m) => (
                 <li key={m.id}>
-                  <button className="flex min-h-tap w-full items-center px-4 text-left hover:bg-cream"
+                  <button className="flex min-h-tap w-full items-center gap-2 px-3 text-left hover:bg-cream"
                     onClick={() => { setItem(m); setSearch('') }}>
+                    <ItemThumb path={m.photo_url} name={m.name} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{m.name}</span>
                       <span className="block text-xs text-ink-400">{m.code}</span>

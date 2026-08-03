@@ -11,6 +11,7 @@ import { num } from '../../lib/qty'
 import { ScanInput } from '../../components/ScanInput'
 import { LocationPicker } from '../../components/LocationPicker'
 import { UomPicker } from '../../components/UomPicker'
+import { ItemThumb } from '../../components/ItemThumb'
 import { PageHeader } from '../../components/PageHeader'
 import type { Item, Shelf } from '../../lib/types'
 
@@ -18,7 +19,7 @@ const REASONS = ['miscount', 'damage', 'theft', 'system_error', 'unknown', 'othe
 
 /** Product + location + the quantity Golai currently believes is there. */
 interface Target {
-  item: Pick<Item, 'id' | 'code' | 'name' | 'uom'>
+  item: Pick<Item, 'id' | 'code' | 'name' | 'uom' | 'photo_url'>
   shelf: Pick<Shelf, 'id' | 'code'>
   currentQty: number
 }
@@ -190,7 +191,7 @@ function ByLocation({ onPick }: { onPick: (t: Target) => void }) {
     queryFn: async () => {
       const { data } = await supabase
         .from('stock_balances')
-        .select('qty_on_hand, items(id, code, name, uom)')
+        .select('qty_on_hand, items(id, code, name, uom, photo_url)')
         .eq('shelf_id', shelf!.id)
       return ((data ?? []) as never as { qty_on_hand: number; items: Target['item'] }[])
         .filter((r) => r.items)
@@ -244,9 +245,10 @@ function ByLocation({ onPick }: { onPick: (t: Target) => void }) {
           {onShelf.map((r) => (
             <li key={r.items.id}>
               <button
-                className="flex min-h-tap w-full items-center gap-3 px-4 text-left hover:bg-cream"
+                className="flex min-h-tap w-full items-center gap-3 px-3 text-left hover:bg-cream"
                 onClick={() => onPick({ item: r.items, shelf, currentQty: num(r.qty_on_hand) })}
               >
+                <ItemThumb path={r.items.photo_url} name={r.items.name} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{r.items.name}</span>
                   <span className="block text-xs text-ink-400">{r.items.code}</span>
@@ -551,7 +553,7 @@ function useItemSearch(search: string) {
     queryFn: async (): Promise<Target['item'][]> => {
       const { data, error } = await supabase
         .from('items')
-        .select('id, code, name, uom')
+        .select('id, code, name, uom, photo_url')
         .or(`name.ilike.%${q}%,code.ilike.%${q}%,item_type.ilike.%${q}%,barcode.eq.${q}`)
         .eq('status', 'active')
         .is('deleted_at', null)
@@ -589,9 +591,10 @@ function ResultList({ matches, busy, onPick }: {
       {(matches ?? []).map((m) => (
         <li key={m.id}>
           <button
-            className="flex min-h-tap w-full items-center gap-2 px-4 text-left hover:bg-cream"
+            className="flex min-h-tap w-full items-center gap-2 px-3 text-left hover:bg-cream"
             onClick={() => onPick(m)}
           >
+            <ItemThumb path={m.photo_url} name={m.name} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium">{m.name}</span>
               <span className="block text-xs text-ink-400">{m.code}</span>

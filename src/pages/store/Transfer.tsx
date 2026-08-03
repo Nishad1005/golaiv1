@@ -7,6 +7,7 @@ import { logActivity } from '../../lib/audit'
 import { useOffline } from '../../lib/offline/queue'
 import { findShelfOffline, findItemOffline } from '../../lib/offline/masters'
 import { ScanInput } from '../../components/ScanInput'
+import { ItemThumb } from '../../components/ItemThumb'
 import type { Item, Shelf, Zone } from '../../lib/types'
 
 type ShelfWithZone = Shelf & { zones: Pick<Zone, 'code' | 'name'> | null }
@@ -234,9 +235,10 @@ export function Transfer() {
                     {matches.map((r) => (
                       <li key={r.items.id}>
                         <button
-                          className="flex min-h-tap w-full items-center gap-3 px-4 text-left hover:bg-cream"
+                          className="flex min-h-tap w-full items-center gap-3 px-3 text-left hover:bg-cream"
                           onClick={() => { setItem(r.items); setItemSearch('') }}
                         >
+                          <ItemThumb path={r.items.photo_url} name={r.items.name} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium">{r.items.name}</span>
                             <span className="block text-xs text-ink-400">{r.items.code}</span>
