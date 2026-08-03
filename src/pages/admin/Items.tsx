@@ -52,6 +52,23 @@ export function Items() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showPrint, setShowPrint] = useState(false)
 
+  // Fetch the selected items by ID, NOT by filtering the on-screen list — the
+  // list is capped at 100 and narrowed by search, so selections made across
+  // different searches would otherwise be dropped and only some labels printed.
+  const { data: labelRows } = useQuery({
+    queryKey: ['label-rows', [...selected].sort()],
+    enabled: showPrint && selected.size > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('items')
+        .select('code, name, uom, category')
+        .in('id', [...selected])
+        .order('name')
+      if (error) throw error
+      return data as { code: string; name: string; uom: string; category: string | null }[]
+    },
+  })
+
   const [onlyAuto, setOnlyAuto] = useState(false)
   const [editingCode, setEditingCode] = useState<{ id: string; value: string } | null>(null)
 
@@ -433,15 +450,17 @@ export function Items() {
         </div>
       )}
 
-      {showPrint && (
+      {showPrint && (labelRows ? (
         <ItemLabelDialog
-          rows={(items ?? [])
-            .filter((it) => selected.has(it.id))
-            .map((it) => ({ code: it.code, name: it.name, uom: it.uom, category: it.category }))}
+          rows={labelRows}
           source="admin_items"
           onClose={() => setShowPrint(false)}
         />
-      )}
+      ) : (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+        </div>
+      ))}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-64 flex-1">
