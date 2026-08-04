@@ -266,11 +266,13 @@ stock card.
 > formal request.
 
 **Requisitions tab.** For requisitions raised in the client's *own* ERP, the
-**Requisitions** tab brings that pick-list into Golai. **Upload just the
-requisition PDF — Golai reads the lines straight out of it** (product, requested
-qty, PR no., work order, department); a CSV export works too. You get a quick
-review screen (fix a quantity, change a product, delete a stray row) before
-saving. Golai matches each product to your master and pulls **where it sits
+**Requisitions** tab brings that pick-list into Golai. **Upload the requisition as
+an Excel or CSV file** (export it from the ERP, or Save-As from the PDF); Golai
+reads the columns — it needs a **Product** and a **Requested Qty** column, and
+also uses **Requisition No.**, **Work Order** and **Department** if present. You
+can optionally attach the **PDF** too, kept as the reference. A quick review
+screen lets you fix a quantity, change/match a product, or delete a stray row
+before saving. Golai matches each product to your master and pulls **where it sits
 (zone · shelf)**; anything it can't match, you map by hand. The issuer then works a **"To issue"
 list** of everything still pending — with a photo, its location, department,
 type, category and work order — and can **filter by department, type, category

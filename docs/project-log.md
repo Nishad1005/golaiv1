@@ -538,12 +538,13 @@ section can be cleared in one pass. Tapping **Issue** runs `issue_requisition_li
 work order) so it shows on the stock card / History and advances fulfilment.
 Additive: new `requisitions`/`requisition_lines` tables, a nullable
 `stock_issues.requisition_id`, one RPC, and a new **Requisitions** tab — the Issue
-and History flows are untouched. **The lines are read straight out of the uploaded
-PDF** (`src/lib/pdfRequisition.ts`, pdf.js lazy-loaded like jsPDF) — a
-coordinate-based table parser tuned to their fixed ERP layout (columns detected
-from the header x-positions, wrapped product cells rejoined, superscript-decimal
-quantities merged), with an **editable review** (fix qty / product / delete)
-before save; CSV import remains as a fallback.
+and History flows are untouched. **Lines are imported from an Excel or CSV file**
+(`src/lib/spreadsheet.ts` — `read-excel-file`, lazy-loaded — plus the existing
+`parseCsv`), header columns matched by `findColumn`, with an **editable review**
+(fix qty / product / delete) before save; an optional PDF can be attached as the
+reference. *(A PDF-table auto-parser was attempted and abandoned — pdf.js
+extraction of this ERP's fixed layout proved too unreliable to trust; the client
+exports Excel instead, which is structured and exact.)*
 
 **Front-end changes since (no migration):** Adjust now takes a delta via an
 add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to

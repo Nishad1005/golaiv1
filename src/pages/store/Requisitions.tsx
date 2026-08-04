@@ -6,8 +6,8 @@ import {
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
-import { parseCsv, findColumn, downloadCsv } from '../../lib/csv'
-import { extractRequisitionLines, type RawReqLine } from '../../lib/pdfRequisition'
+import { findColumn, downloadCsv } from '../../lib/csv'
+import { parseSpreadsheet } from '../../lib/spreadsheet'
 import { uploadFile } from '../../lib/files'
 import { signedPhotoUrl } from '../../lib/photos'
 import { num } from '../../lib/qty'
@@ -382,14 +382,17 @@ function RequisitionList() {
 }
 
 // ===========================================================================
-// New requisition — upload the PDF + CSV, match products, fix the rest, save.
+// New requisition — upload the Excel/CSV of lines (+ optional PDF reference),
+// match products, fix the rest, save.
 // ===========================================================================
-interface ImportLine {
+interface RawLine {
   raw_product: string
   requested_qty: number
   pr_no: string | null
   department: string | null
   work_order_no: string | null
+}
+interface ImportLine extends RawLine {
   item: PickItem | null
 }
 
@@ -402,9 +405,9 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Match raw lines (from the PDF or a CSV) to the product master by code, then
-  // by normalized name; the rest are left for a manual pick in the review below.
-  const matchToMaster = async (parsed: RawReqLine[]): Promise<ImportLine[]> => {
+  // Match raw lines to the product master by code, then by normalized name; the
+  // rest are left for a manual pick in the review below.
+  const matchToMaster = async (parsed: RawLine[]): Promise<ImportLine[]> => {
     const master: PickItem[] = []
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
@@ -422,47 +425,40 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
     }))
   }
 
-  const ingest = async (load: () => Promise<RawReqLine[]>, defaultRef: string) => {
-    setParsing(true)
-    setError(null)
-    try {
-      const parsed = (await load()).filter((l) => l.raw_product && l.requested_qty > 0)
-      if (parsed.length === 0) throw new Error('No usable lines found (each needs a product and a quantity).')
-      setImportLines(await matchToMaster(parsed))
-      if (!refName) setRefName(defaultRef)
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setParsing(false)
-    }
-  }
-
-  const handlePdf = (file: File) => {
-    setPdf(file)
-    void ingest(() => extractRequisitionLines(file), `Requisition — ${new Date().toLocaleDateString()}`)
-  }
-
-  const handleCsv = (file: File) => {
-    void ingest(async () => {
-      const rows = parseCsv(await file.text())
-      if (rows.length < 2) throw new Error('CSV looks empty (need a header row plus data).')
-      const h = rows[0]
-      const cProd = findColumn(h, ['product', 'productname', 'item', 'itemname', 'particulars', 'particular', 'material', 'materialname', 'description'])
-      const cQty = findColumn(h, ['requestedqty', 'pendingqty', 'quantity', 'qty', 'reqqty', 'requiredqty'])
-      const cPr = findColumn(h, ['requisitionno', 'requisitionnumber', 'prno', 'prnumber', 'requisition'])
-      const cWo = findColumn(h, ['workorder', 'workorderno', 'wono', 'wo'])
-      const cDept = findColumn(h, ['requestingdepartment', 'requesteddepartment', 'department', 'dept'])
-      if (cProd === -1 || cQty === -1) {
-        throw new Error(`Need a Product and a Requested Qty column. Headers seen: ${h.join(', ')}`)
+  // Read the requisition spreadsheet (Excel or CSV), find the columns by header,
+  // and match each product to the master.
+  const handleData = (file: File) => {
+    void (async () => {
+      setParsing(true)
+      setError(null)
+      try {
+        const rows = await parseSpreadsheet(file)
+        if (rows.length < 2) throw new Error('The file looks empty (need a header row plus data).')
+        const h = rows[0]
+        const cProd = findColumn(h, ['product', 'productname', 'item', 'itemname', 'particulars', 'particular', 'material', 'materialname', 'description'])
+        const cQty = findColumn(h, ['requestedqty', 'pendingqty', 'quantity', 'qty', 'reqqty', 'requiredqty'])
+        const cPr = findColumn(h, ['requisitionno', 'requisitionnumber', 'prno', 'prnumber', 'requisition'])
+        const cWo = findColumn(h, ['workorder', 'workorderno', 'wono', 'wo'])
+        const cDept = findColumn(h, ['requestingdepartment', 'requesteddepartment', 'department', 'dept'])
+        if (cProd === -1 || cQty === -1) {
+          throw new Error(`Need a Product and a Requested Qty column. Headers seen: ${h.join(', ')}`)
+        }
+        const parsed: RawLine[] = rows.slice(1).map((r) => ({
+          raw_product: (r[cProd] ?? '').trim(),
+          requested_qty: num((r[cQty] ?? '').replace(/[^0-9.\-]/g, '')),
+          pr_no: cPr !== -1 ? (r[cPr] ?? '').trim() || null : null,
+          department: cDept !== -1 ? (r[cDept] ?? '').trim() || null : null,
+          work_order_no: cWo !== -1 ? (r[cWo] ?? '').trim() || null : null,
+        })).filter((l) => l.raw_product && l.requested_qty > 0)
+        if (parsed.length === 0) throw new Error('No usable lines found (each needs a product and a quantity greater than zero).')
+        setImportLines(await matchToMaster(parsed))
+        if (!refName) setRefName(`Requisition — ${new Date().toLocaleDateString()}`)
+      } catch (e) {
+        setError((e as Error).message)
+      } finally {
+        setParsing(false)
       }
-      return rows.slice(1).map((r) => ({
-        raw_product: (r[cProd] ?? '').trim(),
-        requested_qty: num((r[cQty] ?? '').replace(/[^0-9.\-]/g, '')),
-        pr_no: cPr !== -1 ? (r[cPr] ?? '').trim() || null : null,
-        department: cDept !== -1 ? (r[cDept] ?? '').trim() || null : null,
-        work_order_no: cWo !== -1 ? (r[cWo] ?? '').trim() || null : null,
-      }))
-    }, `PR batch — ${new Date().toLocaleDateString()}`)
+    })()
   }
 
   const patch = (i: number, p: Partial<ImportLine>) =>
@@ -473,7 +469,7 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!importLines || importLines.length === 0) throw new Error('Load a PDF or CSV first.')
+      if (!importLines || importLines.length === 0) throw new Error('Load the requisition file first.')
       const pdf_url = pdf ? await uploadFile(pdf, profile!.tenant_id, 'requisitions') : null
       const { data: req, error: reqErr } = await supabase
         .from('requisitions')
@@ -512,19 +508,26 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
           placeholder="e.g. PR batch 04-Aug" />
       </div>
 
-      <div>
-        <label className="label-text">Requisition PDF — Golai reads the lines out of it</label>
-        <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
-          <FileText className="h-5 w-5 text-brand-500" />
-          <span className="min-w-0 truncate">{pdf ? pdf.name : 'Choose the requisition PDF…'}</span>
-          <input type="file" accept="application/pdf,.pdf" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdf(f); e.target.value = '' }} />
-        </label>
-        <label className="mt-1 inline-flex cursor-pointer items-center gap-1.5 text-xs text-ink-400 hover:text-brand-600">
-          <Upload className="h-3.5 w-3.5" /> …or load a CSV instead
-          <input type="file" accept=".csv,text/csv" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsv(f); e.target.value = '' }} />
-        </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label-text">Requisition file — Excel or CSV</label>
+          <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
+            <Upload className="h-5 w-5 text-brand-500" />
+            <span className="min-w-0 truncate">{importLines ? `${importLines.length} lines loaded` : 'Choose the Excel / CSV file…'}</span>
+            <input type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleData(f); e.target.value = '' }} />
+          </label>
+          <p className="mt-1 text-xs text-ink-400">Needs a <b>Product</b> and a <b>Requested Qty</b> column; it also uses Requisition No., Work Order and Department if present.</p>
+        </div>
+        <div>
+          <label className="label-text">PDF (optional — kept as the reference)</label>
+          <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
+            <FileText className="h-5 w-5 text-brand-500" />
+            <span className="min-w-0 truncate">{pdf ? pdf.name : 'Attach the PDF…'}</span>
+            <input type="file" accept="application/pdf,.pdf" className="hidden"
+              onChange={(e) => setPdf(e.target.files?.[0] ?? null)} />
+          </label>
+        </div>
       </div>
 
       {parsing && <p className="flex items-center gap-2 text-sm text-ink-500"><Loader2 className="h-4 w-4 animate-spin" /> Reading the file & matching products…</p>}
