@@ -14,11 +14,17 @@ export async function parseSpreadsheet(file: File): Promise<string[][]> {
   }
   // read-excel-file exposes subpaths (no root export); use the browser build.
   const readXlsxFile = (await import('read-excel-file/browser')).default
-  const sheet = (await readXlsxFile(file)) as unknown as unknown[][]
+  const result = (await readXlsxFile(file)) as unknown
+  // v9 returns an array of sheets [{ sheet, data }]; older versions return the
+  // rows directly. Take the first sheet's rows either way.
+  const first = Array.isArray(result) ? (result[0] as unknown) : result
+  const rows = (first && typeof first === 'object' && 'data' in (first as object)
+    ? (first as { data: unknown[] }).data
+    : result) as unknown[][]
   const cell = (c: unknown): string => {
     if (c == null) return ''
     if (c instanceof Date) return c.toLocaleDateString()
     return String(c).trim()
   }
-  return sheet.map((r) => r.map(cell))
+  return (rows ?? []).map((r) => (Array.isArray(r) ? r : []).map(cell))
 }
