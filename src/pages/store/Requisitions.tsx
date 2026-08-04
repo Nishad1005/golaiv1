@@ -69,12 +69,13 @@ interface PendingLine {
   department: string | null
   work_order_no: string | null
   items: PickItem | null
-  requisitions: { ref_no: string | null } | null
+  requisitions: { id: string; ref_no: string | null } | null
 }
 
 function PendingWorklist() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
+  const [req, setReq] = useState('')
   const [dept, setDept] = useState('')
   const [type, setType] = useState('')
   const [category, setCategory] = useState('')
@@ -86,7 +87,7 @@ function PendingWorklist() {
     queryFn: async (): Promise<PendingLine[]> => {
       const { data, error } = await supabase
         .from('requisition_lines')
-        .select('id, requisition_id, item_id, raw_product, requested_qty, issued_qty, pr_no, department, work_order_no, items(id, code, name, uom, item_type, category, photo_url), requisitions!inner(ref_no, status)')
+        .select('id, requisition_id, item_id, raw_product, requested_qty, issued_qty, pr_no, department, work_order_no, items(id, code, name, uom, item_type, category, photo_url), requisitions!inner(id, ref_no, status)')
         .eq('requisitions.status', 'open')
         .limit(3000)
       if (error) throw error
@@ -156,8 +157,15 @@ function PendingWorklist() {
     for (const l of lines ?? []) for (const loc of locByItem?.get(l.item_id ?? '') ?? []) if (loc.zoneName) s.add(loc.zoneName)
     return [...s].sort()
   }, [lines, locByItem])
+  // Each open requisition, so the issuer can focus on one when several are loaded.
+  const reqOptions = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const l of lines ?? []) if (l.requisition_id) m.set(l.requisition_id, l.requisitions?.ref_no || 'Requisition')
+    return [...m.entries()].map(([id, ref]) => ({ id, ref })).sort((a, b) => a.ref.localeCompare(b.ref))
+  }, [lines])
 
   const filtered = (lines ?? []).filter((l) => {
+    if (req && l.requisition_id !== req) return false
     if (dept && l.department !== dept) return false
     if (type && l.items?.item_type !== type) return false
     if (category && l.items?.category !== category) return false
@@ -180,6 +188,12 @@ function PendingWorklist() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        {reqOptions.length > 1 && (
+          <select className="input-field h-10 min-w-40 flex-1 text-sm font-medium" value={req} onChange={(e) => setReq(e.target.value)}>
+            <option value="">All requisitions ({reqOptions.length})</option>
+            {reqOptions.map((o) => <option key={o.id} value={o.id}>{o.ref}</option>)}
+          </select>
+        )}
         <Sel value={dept} onChange={setDept} all="All departments" list={departments} />
         <Sel value={type} onChange={setType} all="All types" list={types} />
         <Sel value={category} onChange={setCategory} all="All categories" list={categories} />
@@ -213,6 +227,7 @@ function PendingWorklist() {
                       ) : <span className="text-amber-600">not matched to a product</span>}
                     </p>
                     <p className="text-xs text-ink-400">
+                      {l.requisitions?.ref_no ? <span className="font-medium text-ink-500">{l.requisitions.ref_no} · </span> : ''}
                       {l.department ? `${l.department} · ` : ''}{l.work_order_no ? `WO ${l.work_order_no} · ` : ''}{l.pr_no ? `PR ${l.pr_no}` : ''}
                     </p>
                   </div>
@@ -292,7 +307,12 @@ interface ReqRow {
 function RequisitionList() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const toggle = (id: string) => setExpanded((prev) => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
 
   const { data: reqs } = useQuery({
     queryKey: ['requisitions'],
@@ -353,11 +373,11 @@ function RequisitionList() {
       {reqs.map((r) => {
         const total = r.requisition_lines.length
         const done = r.requisition_lines.filter((l) => num(l.issued_qty) >= num(l.requested_qty)).length
-        const open = expanded === r.id
+        const open = expanded.has(r.id)
         return (
           <div key={r.id} className="card">
             <div className="flex flex-wrap items-center gap-3">
-              <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setExpanded(open ? null : r.id)}>
+              <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => toggle(r.id)}>
                 {open ? <ChevronDown className="h-5 w-5 shrink-0 text-ink-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-ink-400" />}
                 <span className="min-w-0">
                   <span className="block font-medium">
