@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, CheckCircle2, Download, FileText, Loader2, MapPin, Plus, Search, Trash2, Upload,
+  ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Download, FileText, Loader2, MapPin,
+  Plus, Search, Trash2, Upload,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
@@ -139,7 +140,7 @@ function PendingWorklist() {
     },
     onSuccess: () => {
       setActive(null)
-      for (const k of [['requisition-pending'], ['requisitions'], ['item-locator'], ['stock-overview'], ['stock-by-zone'], ['issuance-history']]) {
+      for (const k of [['requisition-pending'], ['requisitions'], ['requisition-issued'], ['item-locator'], ['stock-overview'], ['stock-by-zone'], ['issuance-history']]) {
         void queryClient.invalidateQueries({ queryKey: k })
       }
     },
@@ -291,6 +292,7 @@ interface ReqRow {
 function RequisitionList() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   const { data: reqs } = useQuery({
     queryKey: ['requisitions'],
@@ -351,33 +353,119 @@ function RequisitionList() {
       {reqs.map((r) => {
         const total = r.requisition_lines.length
         const done = r.requisition_lines.filter((l) => num(l.issued_qty) >= num(l.requested_qty)).length
+        const open = expanded === r.id
         return (
-          <div key={r.id} className="card flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">
-                {r.ref_no || 'Requisition'}
-                {r.status === 'completed' && <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">completed</span>}
-              </p>
-              <p className="text-xs text-ink-400">
-                {done} of {total} lines issued · {new Date(r.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            {r.pdf_url && (
-              <button className="btn-secondary" onClick={() => void openPdf(r.pdf_url!)}>
-                <FileText className="h-5 w-5" /> View PDF
+          <div key={r.id} className="card">
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setExpanded(open ? null : r.id)}>
+                {open ? <ChevronDown className="h-5 w-5 shrink-0 text-ink-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-ink-400" />}
+                <span className="min-w-0">
+                  <span className="block font-medium">
+                    {r.ref_no || 'Requisition'}
+                    {r.status === 'completed' && <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">completed</span>}
+                  </span>
+                  <span className="block text-xs text-ink-400">
+                    {done} of {total} lines issued · {new Date(r.created_at).toLocaleDateString()}
+                  </span>
+                </span>
               </button>
-            )}
-            <button className="btn-secondary" onClick={() => void exportIssued(r.id, r.ref_no)}>
-              <Download className="h-5 w-5" /> Export
-            </button>
-            <button className="btn-secondary" disabled={complete.isPending}
-              onClick={() => complete.mutate({ id: r.id, status: r.status === 'open' ? 'completed' : 'open' })}>
-              {r.status === 'open' ? 'Mark complete' : 'Reopen'}
-            </button>
+              {r.pdf_url && (
+                <button className="btn-secondary" onClick={() => void openPdf(r.pdf_url!)}>
+                  <FileText className="h-5 w-5" /> View PDF
+                </button>
+              )}
+              <button className="btn-secondary" onClick={() => void exportIssued(r.id, r.ref_no)}>
+                <Download className="h-5 w-5" /> Export
+              </button>
+              <button className="btn-secondary" disabled={complete.isPending}
+                onClick={() => complete.mutate({ id: r.id, status: r.status === 'open' ? 'completed' : 'open' })}>
+                {r.status === 'open' ? 'Mark complete' : 'Reopen'}
+              </button>
+            </div>
+            {open && <IssuedLog reqId={r.id} refNo={r.ref_no} />}
           </div>
         )
       })}
     </section>
+  )
+}
+
+// What has been issued against a requisition, and by whom — each tick is a stock
+// issue linked back to the requisition (0037), so this reads them with the issuer.
+interface IssuedRow {
+  issue_number: string
+  created_at: string
+  work_order_no: string | null
+  issued_by_profile: { full_name: string } | null
+  stock_issue_lines: {
+    qty: number
+    items: { code: string; name: string; uom: string; photo_url: string | null } | null
+    shelves: { code: string; zones: { name: string } | null } | null
+  }[]
+}
+
+function IssuedLog({ reqId, refNo }: { reqId: string; refNo: string | null }) {
+  const { data: issues } = useQuery({
+    queryKey: ['requisition-issued', reqId],
+    queryFn: async (): Promise<IssuedRow[]> => {
+      const { data, error } = await supabase
+        .from('stock_issues')
+        .select('issue_number, created_at, work_order_no, issued_by_profile:profiles!stock_issues_issued_by_fkey(full_name), stock_issue_lines(qty, items(code, name, uom, photo_url), shelves(code, zones(name)))')
+        .eq('requisition_id', reqId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as unknown as IssuedRow[]
+    },
+  })
+
+  const flat = (issues ?? []).flatMap((iss) =>
+    iss.stock_issue_lines.map((l) => ({ iss, l })))
+
+  const exportLog = () => {
+    const rows: string[][] = [['date_time', 'issue_no', 'work_order', 'item_code', 'product', 'qty', 'from_location', 'issued_by']]
+    for (const { iss, l } of flat) {
+      rows.push([
+        new Date(iss.created_at).toLocaleString(), iss.issue_number, iss.work_order_no ?? '',
+        l.items?.code ?? '', l.items?.name ?? '', String(num(l.qty)),
+        (l.shelves?.zones?.name ? `${l.shelves.zones.name} · ` : '') + (l.shelves?.code ?? ''),
+        iss.issued_by_profile?.full_name ?? '',
+      ])
+    }
+    downloadCsv(rows, `requisition-${(refNo ?? reqId).replace(/[^\w.-]+/g, '_')}-issued.csv`)
+  }
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-ink-200/70 pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-ink-500">Issued ({flat.length})</p>
+        {flat.length > 0 && (
+          <button className="btn-secondary px-3 py-1 text-xs" onClick={exportLog}>
+            <Download className="h-4 w-4" /> Export issued log
+          </button>
+        )}
+      </div>
+      {issues == null ? (
+        <Loader2 className="mx-auto my-3 h-5 w-5 animate-spin text-brand-500" />
+      ) : flat.length === 0 ? (
+        <p className="rounded-lg bg-ink-50 px-3 py-3 text-center text-sm text-ink-400">Nothing issued from this requisition yet.</p>
+      ) : (
+        <ul className="divide-y divide-ink-100 rounded-xl border border-ink-200">
+          {flat.map(({ iss, l }, i) => (
+            <li key={i} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <ItemThumb path={l.items?.photo_url} name={l.items?.name} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{l.items?.name ?? '—'}</p>
+                <p className="truncate text-xs text-ink-400">
+                  by {iss.issued_by_profile?.full_name ?? '—'} · {new Date(iss.created_at).toLocaleString()}
+                  {l.shelves ? ` · from ${l.shelves.zones?.name ? `${l.shelves.zones.name} · ` : ''}${l.shelves.code}` : ''}
+                </p>
+              </div>
+              <span className="shrink-0 font-semibold tabular-nums text-ink-700">{num(l.qty)} {l.items?.uom ?? ''}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
