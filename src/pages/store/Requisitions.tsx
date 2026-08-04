@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, CheckCircle2, Download, FileText, Loader2, MapPin, Plus, Search, Upload,
+  ArrowLeft, CheckCircle2, Download, FileText, Loader2, MapPin, Plus, Search, Trash2, Upload,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { parseCsv, findColumn, downloadCsv } from '../../lib/csv'
+import { extractRequisitionLines, type RawReqLine } from '../../lib/pdfRequisition'
 import { uploadFile } from '../../lib/files'
 import { signedPhotoUrl } from '../../lib/photos'
 import { num } from '../../lib/qty'
@@ -401,10 +402,48 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
   const [parsing, setParsing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleCsv = async (file: File) => {
+  // Match raw lines (from the PDF or a CSV) to the product master by code, then
+  // by normalized name; the rest are left for a manual pick in the review below.
+  const matchToMaster = async (parsed: RawReqLine[]): Promise<ImportLine[]> => {
+    const master: PickItem[] = []
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from('items').select('id, code, name, uom, item_type, category, photo_url')
+        .is('deleted_at', null).eq('status', 'active').order('code').range(from, from + 999)
+      if (error) throw error
+      master.push(...((data ?? []) as PickItem[]))
+      if (!data || data.length < 1000) break
+    }
+    const byCode = new Map(master.map((i) => [i.code.toLowerCase().trim(), i]))
+    const byName = new Map(master.map((i) => [normalizeName(i.name), i]))
+    return parsed.map((l) => ({
+      ...l,
+      item: byCode.get(l.raw_product.toLowerCase().trim()) ?? byName.get(normalizeName(l.raw_product)) ?? null,
+    }))
+  }
+
+  const ingest = async (load: () => Promise<RawReqLine[]>, defaultRef: string) => {
     setParsing(true)
     setError(null)
     try {
+      const parsed = (await load()).filter((l) => l.raw_product && l.requested_qty > 0)
+      if (parsed.length === 0) throw new Error('No usable lines found (each needs a product and a quantity).')
+      setImportLines(await matchToMaster(parsed))
+      if (!refName) setRefName(defaultRef)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setParsing(false)
+    }
+  }
+
+  const handlePdf = (file: File) => {
+    setPdf(file)
+    void ingest(() => extractRequisitionLines(file), `Requisition — ${new Date().toLocaleDateString()}`)
+  }
+
+  const handleCsv = (file: File) => {
+    void ingest(async () => {
       const rows = parseCsv(await file.text())
       if (rows.length < 2) throw new Error('CSV looks empty (need a header row plus data).')
       const h = rows[0]
@@ -416,45 +455,25 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
       if (cProd === -1 || cQty === -1) {
         throw new Error(`Need a Product and a Requested Qty column. Headers seen: ${h.join(', ')}`)
       }
-      const parsed = rows.slice(1).map((r) => ({
+      return rows.slice(1).map((r) => ({
         raw_product: (r[cProd] ?? '').trim(),
         requested_qty: num((r[cQty] ?? '').replace(/[^0-9.\-]/g, '')),
         pr_no: cPr !== -1 ? (r[cPr] ?? '').trim() || null : null,
         department: cDept !== -1 ? (r[cDept] ?? '').trim() || null : null,
         work_order_no: cWo !== -1 ? (r[cWo] ?? '').trim() || null : null,
-      })).filter((l) => l.raw_product && l.requested_qty > 0)
-      if (parsed.length === 0) throw new Error('No usable rows (each needs a product and a quantity > 0).')
-
-      // Match against the whole item master (paged), by code then normalized name.
-      const master: PickItem[] = []
-      for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase
-          .from('items').select('id, code, name, uom, item_type, category, photo_url')
-          .is('deleted_at', null).eq('status', 'active').order('code').range(from, from + 999)
-        if (error) throw error
-        master.push(...((data ?? []) as PickItem[]))
-        if (!data || data.length < 1000) break
-      }
-      const byCode = new Map(master.map((i) => [i.code.toLowerCase().trim(), i]))
-      const byName = new Map(master.map((i) => [normalizeName(i.name), i]))
-      const matched: ImportLine[] = parsed.map((l) => ({
-        ...l,
-        item: byCode.get(l.raw_product.toLowerCase().trim()) ?? byName.get(normalizeName(l.raw_product)) ?? null,
       }))
-      setImportLines(matched)
-      if (!refName) setRefName(matched[0]?.pr_no ? `PR batch — ${new Date().toLocaleDateString()}` : `Requisition — ${new Date().toLocaleDateString()}`)
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setParsing(false)
-    }
+    }, `PR batch — ${new Date().toLocaleDateString()}`)
   }
+
+  const patch = (i: number, p: Partial<ImportLine>) =>
+    setImportLines((prev) => (prev ?? []).map((x, idx) => idx === i ? { ...x, ...p } : x))
+  const removeLine = (i: number) => setImportLines((prev) => (prev ?? []).filter((_, idx) => idx !== i))
 
   const matchedCount = (importLines ?? []).filter((l) => l.item).length
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!importLines || importLines.length === 0) throw new Error('Import a CSV first.')
+      if (!importLines || importLines.length === 0) throw new Error('Load a PDF or CSV first.')
       const pdf_url = pdf ? await uploadFile(pdf, profile!.tenant_id, 'requisitions') : null
       const { data: req, error: reqErr } = await supabase
         .from('requisitions')
@@ -493,51 +512,52 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
           placeholder="e.g. PR batch 04-Aug" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="label-text">Requisition PDF (the reference)</label>
-          <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
-            <FileText className="h-5 w-5 text-brand-500" />
-            <span className="min-w-0 truncate">{pdf ? pdf.name : 'Choose the PDF…'}</span>
-            <input type="file" accept="application/pdf,.pdf" className="hidden"
-              onChange={(e) => setPdf(e.target.files?.[0] ?? null)} />
-          </label>
-        </div>
-        <div>
-          <label className="label-text">Requisition lines (CSV from your ERP)</label>
-          <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
-            <Upload className="h-5 w-5 text-brand-500" />
-            <span className="min-w-0 truncate">{importLines ? `${importLines.length} lines loaded` : 'Choose the CSV…'}</span>
-            <input type="file" accept=".csv,text/csv" className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleCsv(f); e.target.value = '' }} />
-          </label>
-        </div>
+      <div>
+        <label className="label-text">Requisition PDF — Golai reads the lines out of it</label>
+        <label className="flex min-h-tap cursor-pointer items-center gap-2 rounded-xl border border-dashed border-ink-300 px-3 py-2 text-sm hover:bg-cream">
+          <FileText className="h-5 w-5 text-brand-500" />
+          <span className="min-w-0 truncate">{pdf ? pdf.name : 'Choose the requisition PDF…'}</span>
+          <input type="file" accept="application/pdf,.pdf" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdf(f); e.target.value = '' }} />
+        </label>
+        <label className="mt-1 inline-flex cursor-pointer items-center gap-1.5 text-xs text-ink-400 hover:text-brand-600">
+          <Upload className="h-3.5 w-3.5" /> …or load a CSV instead
+          <input type="file" accept=".csv,text/csv" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsv(f); e.target.value = '' }} />
+        </label>
       </div>
 
-      {parsing && <p className="flex items-center gap-2 text-sm text-ink-500"><Loader2 className="h-4 w-4 animate-spin" /> Matching products…</p>}
+      {parsing && <p className="flex items-center gap-2 text-sm text-ink-500"><Loader2 className="h-4 w-4 animate-spin" /> Reading the file & matching products…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {importLines && (
         <div className="space-y-2">
           <p className="text-sm text-ink-500">
-            <b>{matchedCount}</b> of {importLines.length} matched to your product master
-            {matchedCount < importLines.length && <> · <b className="text-amber-700">{importLines.length - matchedCount}</b> need a manual pick below</>}.
+            <b>{importLines.length}</b> lines · <b className="text-green-700">{matchedCount}</b> matched
+            {matchedCount < importLines.length && <> · <b className="text-amber-700">{importLines.length - matchedCount}</b> need a pick</>}.
+            Check the quantities, fix any product, delete anything wrong.
           </p>
-          <ul className="max-h-80 divide-y divide-ink-100 overflow-y-auto rounded-xl border border-ink-200">
+          <ul className="max-h-96 divide-y divide-ink-100 overflow-y-auto rounded-xl border border-ink-200">
             {importLines.map((l, i) => (
-              <li key={i} className="flex items-center gap-2 px-3 py-2 text-sm">
+              <li key={i} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
                 <ItemThumb path={l.item?.photo_url} name={l.item?.name} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{l.item?.name ?? l.raw_product}</p>
                   <p className="text-xs text-ink-400">
-                    req {l.requested_qty}{l.pr_no ? ` · PR ${l.pr_no}` : ''}{l.work_order_no ? ` · WO ${l.work_order_no}` : ''}
+                    {l.item ? l.item.code : <span className="text-amber-700">not matched</span>}
+                    {l.pr_no ? ` · PR ${l.pr_no}` : ''}{l.work_order_no ? ` · WO ${l.work_order_no}` : ''}
+                    {l.department ? ` · ${l.department}` : ''}
                   </p>
                 </div>
-                {l.item ? (
-                  <span className="shrink-0 text-xs font-medium text-green-700">matched</span>
-                ) : (
-                  <ProductSearch onPick={(it) => setImportLines(importLines.map((x, idx) => idx === i ? { ...x, item: it } : x))} />
-                )}
+                <input type="number" inputMode="decimal" min="0" step="any" aria-label="Requested quantity"
+                  className="h-9 w-20 rounded-lg border border-ink-200 px-2 text-right text-sm tabular-nums"
+                  value={l.requested_qty} onChange={(e) => patch(i, { requested_qty: num(e.target.value) })} />
+                <ProductSearch label={l.item ? 'Change' : 'Match…'}
+                  onPick={(it) => patch(i, { item: it })} />
+                <button className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => removeLine(i)} aria-label="Remove line">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </li>
             ))}
           </ul>
@@ -557,8 +577,8 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Compact product picker for mapping an unmatched requisition line. */
-function ProductSearch({ onPick }: { onPick: (item: PickItem) => void }) {
+/** Compact product picker for mapping/changing a requisition line's product. */
+function ProductSearch({ onPick, label = 'Match…' }: { onPick: (item: PickItem) => void; label?: string }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const { data: matches, isFetching } = useQuery({
@@ -575,7 +595,7 @@ function ProductSearch({ onPick }: { onPick: (item: PickItem) => void }) {
   })
 
   if (!open) {
-    return <button className="btn-secondary shrink-0 px-3 py-1 text-xs" onClick={() => setOpen(true)}>Match…</button>
+    return <button className="btn-secondary shrink-0 px-3 py-1 text-xs" onClick={() => setOpen(true)}>{label}</button>
   }
   return (
     <div className="relative shrink-0">

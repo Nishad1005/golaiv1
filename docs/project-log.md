@@ -538,7 +538,12 @@ section can be cleared in one pass. Tapping **Issue** runs `issue_requisition_li
 work order) so it shows on the stock card / History and advances fulfilment.
 Additive: new `requisitions`/`requisition_lines` tables, a nullable
 `stock_issues.requisition_id`, one RPC, and a new **Requisitions** tab — the Issue
-and History flows are untouched.
+and History flows are untouched. **The lines are read straight out of the uploaded
+PDF** (`src/lib/pdfRequisition.ts`, pdf.js lazy-loaded like jsPDF) — a
+coordinate-based table parser tuned to their fixed ERP layout (columns detected
+from the header x-positions, wrapped product cells rejoined, superscript-decimal
+quantities merged), with an **editable review** (fix qty / product / delete)
+before save; CSV import remains as a fallback.
 
 **Front-end changes since (no migration):** Adjust now takes a delta via an
 add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to
