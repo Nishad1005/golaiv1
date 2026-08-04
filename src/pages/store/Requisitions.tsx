@@ -434,21 +434,30 @@ function NewRequisition({ onClose }: { onClose: () => void }) {
       try {
         const rows = await parseSpreadsheet(file)
         if (rows.length < 2) throw new Error('The file looks empty (need a header row plus data).')
-        const h = rows[0]
-        const cProd = findColumn(h, ['product', 'productname', 'item', 'itemname', 'particulars', 'particular', 'material', 'materialname', 'description'])
-        const cQty = findColumn(h, ['requestedqty', 'pendingqty', 'quantity', 'qty', 'reqqty', 'requiredqty'])
+        const PROD = ['product', 'productname', 'item', 'itemname', 'particulars', 'particular', 'material', 'materialname', 'description']
+        const QTY = ['requestedqty', 'pendingqty', 'quantity', 'qty', 'reqqty', 'requiredqty']
+        // The header row isn't always the first — the ERP export has a title row
+        // above it. Find the first row that has both a Product and a Qty column.
+        let hi = -1
+        for (let i = 0; i < Math.min(rows.length, 15); i++) {
+          if (findColumn(rows[i], PROD) !== -1 && findColumn(rows[i], QTY) !== -1) { hi = i; break }
+        }
+        if (hi === -1) {
+          throw new Error(`Need a Product and a Requested Qty column. Headers seen: ${rows[0].filter(Boolean).join(', ')}`)
+        }
+        const h = rows[hi]
+        const cProd = findColumn(h, PROD)
+        const cQty = findColumn(h, QTY)
         const cPr = findColumn(h, ['requisitionno', 'requisitionnumber', 'prno', 'prnumber', 'requisition'])
         const cWo = findColumn(h, ['workorder', 'workorderno', 'wono', 'wo'])
         const cDept = findColumn(h, ['requestingdepartment', 'requesteddepartment', 'department', 'dept'])
-        if (cProd === -1 || cQty === -1) {
-          throw new Error(`Need a Product and a Requested Qty column. Headers seen: ${h.join(', ')}`)
-        }
-        const parsed: RawLine[] = rows.slice(1).map((r) => ({
-          raw_product: (r[cProd] ?? '').trim(),
+        const code = (s: string) => s.replace(/\s+/g, '') || null // codes shouldn't carry the conversion's stray spaces
+        const parsed: RawLine[] = rows.slice(hi + 1).map((r) => ({
+          raw_product: (r[cProd] ?? '').replace(/\s+/g, ' ').trim(),
           requested_qty: num((r[cQty] ?? '').replace(/[^0-9.\-]/g, '')),
-          pr_no: cPr !== -1 ? (r[cPr] ?? '').trim() || null : null,
-          department: cDept !== -1 ? (r[cDept] ?? '').trim() || null : null,
-          work_order_no: cWo !== -1 ? (r[cWo] ?? '').trim() || null : null,
+          pr_no: cPr !== -1 ? code(r[cPr] ?? '') : null,
+          department: cDept !== -1 ? (r[cDept] ?? '').replace(/\s+/g, ' ').trim() || null : null,
+          work_order_no: cWo !== -1 ? code(r[cWo] ?? '') : null,
         })).filter((l) => l.raw_product && l.requested_qty > 0)
         if (parsed.length === 0) throw new Error('No usable lines found (each needs a product and a quantity greater than zero).')
         setImportLines(await matchToMaster(parsed))
