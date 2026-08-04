@@ -9,6 +9,7 @@ import { logActivity } from '../../lib/audit'
 import { locationLabel } from '../../lib/places'
 import { PageHeader } from '../../components/PageHeader'
 import { ItemThumb } from '../../components/ItemThumb'
+import { Requisitions } from './Requisitions'
 import type { Item, Shelf } from '../../lib/types'
 
 interface IssueLine {
@@ -31,7 +32,7 @@ export function Issuance() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
 
-  const [tab, setTab] = useState<'issue' | 'history'>('issue')
+  const [tab, setTab] = useState<'issue' | 'requisitions' | 'history'>('issue')
   const [workOrder, setWorkOrder] = useState('')
   const [departmentId, setDepartmentId] = useState('')
   const [issuedTo, setIssuedTo] = useState('')
@@ -92,6 +93,12 @@ export function Issuance() {
           Issue
         </button>
         <button
+          className={`min-h-tap rounded-lg px-4 ${tab === 'requisitions' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
+          onClick={() => setTab('requisitions')}
+        >
+          Requisitions
+        </button>
+        <button
           className={`min-h-tap rounded-lg px-4 ${tab === 'history' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'}`}
           onClick={() => setTab('history')}
         >
@@ -99,7 +106,9 @@ export function Issuance() {
         </button>
       </div>
 
-      {tab === 'history' ? (
+      {tab === 'requisitions' ? (
+        <Requisitions />
+      ) : tab === 'history' ? (
         <IssuanceHistory />
       ) : (
       <>

@@ -81,6 +81,27 @@ export interface Item {
   photo_url?: string | null
 }
 
+export interface Requisition {
+  id: string
+  ref_no: string | null
+  pdf_url: string | null
+  note: string | null
+  status: 'open' | 'completed'
+  created_at: string
+}
+
+export interface RequisitionLine {
+  id: string
+  requisition_id: string
+  item_id: string | null
+  raw_product: string | null
+  requested_qty: number
+  issued_qty: number
+  pr_no: string | null
+  department: string | null
+  work_order_no: string | null
+}
+
 export interface StockBalance {
   tenant_id: string
   item_id: string

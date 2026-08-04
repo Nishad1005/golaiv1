@@ -39,7 +39,7 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0036, all applied to production |
+| **Migrations** | 0001 → 0037, all applied to production |
 | **Tests** | 97 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
@@ -524,7 +524,21 @@ Issuance + custom roles** · **0032 movement notes on the stock card** ·
 (recorded items only); the **numeric-as-string totals fix** (`src/lib/qty.ts`);
 GRN gate entry redesign + hand-delivery mode + Leather; **product identification
 photos** — a thumbnail in every product list and a full photo on the stock card,
-added in the stock-take flow via the guarded `set_item_photo`.
+added in the stock-take flow via the guarded `set_item_photo`; the **item-label
+print fix** (fetch selected items by id, not the on-screen list); the **admin home**
+now also shows the manager dashboard (shared `TodayActivity`).
+
+**0037 — Requisitions in Issuance.** The client's ERP raises requisitions (PRs);
+Golai now imports one as a **PDF (reference) + CSV (lines)**, matches each line to
+the master (manual pick for the rest), and gives the issuer a **filterable "to
+issue" worklist** — every pending line with its **zone·shelf**, photo, department,
+type, category and work order, filterable by department/type/category/zone so a
+section can be cleared in one pass. Tapping **Issue** runs `issue_requisition_line`
+(a guarded RPC that reuses `move_stock` + the issuance ledger, carrying the line's
+work order) so it shows on the stock card / History and advances fulfilment.
+Additive: new `requisitions`/`requisition_lines` tables, a nullable
+`stock_issues.requisition_id`, one RPC, and a new **Requisitions** tab — the Issue
+and History flows are untouched.
 
 **Front-end changes since (no migration):** Adjust now takes a delta via an
 add / remove / set-total toggle (2026-07-30); Issuance gained a History tab to
