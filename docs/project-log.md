@@ -39,7 +39,7 @@ shape of it, and each has been argued at least once:
 | | |
 |---|---|
 | **Build** | All 7 PRD phases complete, plus everything in §3 |
-| **Migrations** | 0001 → 0037, all applied to production |
+| **Migrations** | 0001 → 0039, all applied to production |
 | **Tests** | 97 unit tests, typecheck clean, build green |
 | **Deploy** | Netlify, auto-deploys from `main`. PWA installable. |
 | **First client** | U&M Designs — provisioned, 13 zones, **3,328 products imported** |
@@ -536,6 +536,12 @@ type, category and work order, filterable by department/type/category/zone so a
 section can be cleared in one pass. Tapping **Issue** runs `issue_requisition_line`
 (a guarded RPC that reuses `move_stock` + the issuance ledger, carrying the line's
 work order) so it shows on the stock card / History and advances fulfilment.
+**Delete a location (0039).** Bulk generators over-create locations; the Zones &
+Locations chips now have a trash button. Deleting soft-deletes the shelf and
+clears its `stock_balances` via the guarded `delete_location` RPC (stock_balances
+has no client write policy) — a modal warns and lists what's on it first; ledger
+history is preserved.
+
 Additive: new `requisitions`/`requisition_lines` tables, a nullable
 `stock_issues.requisition_id`, one RPC, and a new **Requisitions** tab — the Issue
 and History flows are untouched. **Lines are imported from an Excel or CSV file**

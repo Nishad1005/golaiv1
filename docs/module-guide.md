@@ -537,7 +537,10 @@ scan: the floor finds a pallet by its coordinate on the map.
 > "Zone 5 · Block B · Row 3 · Col 2", and the storekeeper walks straight to it.
 
 **Good to know:** many zones at once can be imported from a CSV (a template is
-provided), and any zone can be renamed later.
+provided), and any zone can be renamed later. **Delete a location** with the
+trash icon on its chip — if it still has stock, a warning lists exactly what's on
+it and you can remove it anyway (the location and its recorded stock go; the
+movement history stays). Handy for cleaning up over-generated shelves or pallets.
 
 ---
 

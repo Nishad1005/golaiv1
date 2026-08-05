@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Trash2, Upload } from 'lucide-react'
 import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
@@ -8,6 +8,7 @@ import { logActivity } from '../../lib/audit'
 import { generateShelfLabelsPdf, SHELF_LABEL_SIZES, type ShelfLabelSize } from '../../lib/labels'
 import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
 import { locationLabel, palletLabel, prefixFor } from '../../lib/places'
+import { num } from '../../lib/qty'
 import { PageHeader } from '../../components/PageHeader'
 import { PalletMap } from '../../components/PalletMap'
 import type { Shelf, Zone } from '../../lib/types'
@@ -30,6 +31,7 @@ export function ZonesShelves() {
   const [printZone, setPrintZone] = useState<ZoneRow | null>(null)
   const [labelSize, setLabelSize] = useState<ShelfLabelSize>('thermal-100x50')
   const [printing, setPrinting] = useState(false)
+  const [deleteShelf, setDeleteShelf] = useState<Shelf | null>(null)
 
   const { data: tenant } = useQuery({
     queryKey: ['tenant'],
@@ -233,6 +235,38 @@ export function ZonesShelves() {
     },
   })
 
+  // --- Delete a location ------------------------------------------------------
+  // What's recorded on the shelf being deleted, so we can warn before removing it.
+  const { data: deleteContents } = useQuery({
+    queryKey: ['shelf-contents', deleteShelf?.id],
+    enabled: !!deleteShelf,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stock_balances')
+        .select('qty_on_hand, qty_on_hold, items(name, uom)')
+        .eq('shelf_id', deleteShelf!.id)
+      if (error) throw error
+      return (data ?? []) as unknown as { qty_on_hand: number; qty_on_hold: number; items: { name: string; uom: string } | null }[]
+    },
+  })
+
+  const deleteLocation = useMutation({
+    mutationFn: async (shelf: Shelf) => {
+      const { error } = await supabase.rpc('delete_location', { p_shelf_id: shelf.id })
+      if (error) throw new Error(error.message)
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'delete.location', entityType: 'shelf', entityId: shelf.id, after: { code: shelf.code },
+      })
+    },
+    onSuccess: () => {
+      setDeleteShelf(null)
+      for (const k of [['shelves'], ['item-locator'], ['stock-overview'], ['stock-by-zone']]) {
+        void queryClient.invalidateQueries({ queryKey: k })
+      }
+    },
+  })
+
   const shelvesByZone = (zoneId: string) => (shelves ?? []).filter((s) => s.zone_id === zoneId)
 
   const printZoneLabels = async (zone: ZoneRow, size: ShelfLabelSize) => {
@@ -353,6 +387,55 @@ export function ZonesShelves() {
         </div>
       )}
 
+      {deleteShelf && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
+          onClick={() => !deleteLocation.isPending && setDeleteShelf(null)}>
+          <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <p className="text-lg font-bold">Delete this location?</p>
+              <p className="mt-1 text-sm text-ink-500">
+                <span className="font-mono font-semibold">{deleteShelf.code}</span> · {locationLabel(deleteShelf)}
+              </p>
+            </div>
+
+            {deleteContents == null ? (
+              <Loader2 className="mx-auto my-2 h-5 w-5 animate-spin text-brand-500" />
+            ) : deleteContents.length === 0 ? (
+              <p className="rounded-xl bg-ink-50 px-4 py-3 text-sm text-ink-500">This location is empty — safe to remove.</p>
+            ) : (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="h-4 w-4 shrink-0" /> This location still has stock recorded on it:
+                </p>
+                <ul className="mt-2 space-y-0.5">
+                  {deleteContents.map((c, i) => (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span className="min-w-0 truncate">{c.items?.name ?? 'Unknown item'}</span>
+                      <span className="shrink-0 font-medium tabular-nums">
+                        {num(c.qty_on_hand)}{num(c.qty_on_hold) > 0 ? ` (+${num(c.qty_on_hold)} hold)` : ''} {c.items?.uom ?? ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs">Deleting removes the location <b>and clears this recorded stock</b>. This can't be undone.</p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                className="inline-flex min-h-tap items-center justify-center gap-2 rounded-xl bg-red-600 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                disabled={deleteLocation.isPending || deleteContents == null}
+                onClick={() => deleteLocation.mutate(deleteShelf)}>
+                {deleteLocation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                {deleteContents && deleteContents.length > 0 ? 'Delete anyway' : 'Delete location'}
+              </button>
+              <button className="btn-secondary" disabled={deleteLocation.isPending} onClick={() => setDeleteShelf(null)}>Cancel</button>
+            </div>
+            {deleteLocation.isError && <p className="text-sm text-red-600">{(deleteLocation.error as Error).message}</p>}
+          </div>
+        </div>
+      )}
+
       {showZoneForm && (
         <form className="card flex flex-wrap items-end gap-3"
           onSubmit={(e) => { e.preventDefault(); saveZone.mutate(null) }}>
@@ -432,9 +515,14 @@ export function ZonesShelves() {
               <div className="mt-4 space-y-3 border-t border-ink-100 pt-4">
                 <div className="flex flex-wrap gap-2">
                   {zoneShelves.map((s) => (
-                    <span key={s.id} className="rounded-lg bg-cream-dark px-3 py-1.5 text-sm">
+                    <span key={s.id} className="inline-flex items-center gap-1.5 rounded-lg bg-cream-dark py-1 pl-3 pr-1 text-sm">
                       <span className="font-mono">{s.code}</span>
-                      <span className="ml-1.5 text-ink-400">{locationLabel(s)}</span>
+                      <span className="text-ink-400">{locationLabel(s)}</span>
+                      <button
+                        className="flex h-6 w-6 items-center justify-center rounded text-ink-300 hover:bg-red-100 hover:text-red-600"
+                        onClick={() => setDeleteShelf(s)} aria-label={`Delete ${s.code}`} title="Delete this location">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </span>
                   ))}
                   {zoneShelves.length === 0 && (
