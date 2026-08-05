@@ -63,6 +63,22 @@ export function ZonesShelves() {
     },
   })
 
+  // Which locations have products recorded on them — so filled ones show green.
+  const { data: filledShelves } = useQuery({
+    queryKey: ['shelves-with-stock'],
+    queryFn: async () => {
+      const ids = new Set<string>()
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from('stock_balances').select('shelf_id').order('shelf_id').range(from, from + 999)
+        if (error) throw error
+        for (const r of data ?? []) ids.add((r as { shelf_id: string }).shelf_id)
+        if (!data || data.length < 1000) break
+      }
+      return ids
+    },
+  })
+
   // --- Create / edit zone ----------------------------------------------------
   const emptyZone = { number: '', name: '', category: '', notes: '' }
   const [zoneForm, setZoneForm] = useState(emptyZone)
@@ -261,7 +277,7 @@ export function ZonesShelves() {
     },
     onSuccess: () => {
       setDeleteShelf(null)
-      for (const k of [['shelves'], ['item-locator'], ['stock-overview'], ['stock-by-zone']]) {
+      for (const k of [['shelves'], ['shelves-with-stock'], ['item-locator'], ['stock-overview'], ['stock-by-zone']]) {
         void queryClient.invalidateQueries({ queryKey: k })
       }
     },
@@ -513,18 +529,29 @@ export function ZonesShelves() {
 
             {expanded && (
               <div className="mt-4 space-y-3 border-t border-ink-100 pt-4">
+                {zoneShelves.length > 0 && (
+                  <p className="flex items-center gap-3 text-xs text-ink-400">
+                    <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-green-200" /> has stock</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-cream-dark" /> empty</span>
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  {zoneShelves.map((s) => (
-                    <span key={s.id} className="inline-flex items-center gap-1.5 rounded-lg bg-cream-dark py-1 pl-3 pr-1 text-sm">
-                      <span className="font-mono">{s.code}</span>
-                      <span className="text-ink-400">{locationLabel(s)}</span>
-                      <button
-                        className="flex h-6 w-6 items-center justify-center rounded text-ink-300 hover:bg-red-100 hover:text-red-600"
-                        onClick={() => setDeleteShelf(s)} aria-label={`Delete ${s.code}`} title="Delete this location">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
+                  {zoneShelves.map((s) => {
+                    const filled = filledShelves?.has(s.id) ?? false
+                    return (
+                      <span key={s.id}
+                        className={'inline-flex items-center gap-1.5 rounded-lg py-1 pl-3 pr-1 text-sm ' +
+                          (filled ? 'bg-green-100 text-green-900' : 'bg-cream-dark')}>
+                        <span className="font-mono">{s.code}</span>
+                        <span className={filled ? 'text-green-700' : 'text-ink-400'}>{locationLabel(s)}</span>
+                        <button
+                          className="flex h-6 w-6 items-center justify-center rounded text-ink-300 hover:bg-red-100 hover:text-red-600"
+                          onClick={() => setDeleteShelf(s)} aria-label={`Delete ${s.code}`} title="Delete this location">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    )
+                  })}
                   {zoneShelves.length === 0 && (
                     <span className="text-sm text-ink-400">
                       No locations in this zone yet — add them using whatever your team calls them.
