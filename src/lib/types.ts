@@ -79,6 +79,25 @@ export interface Item {
   status: 'active' | 'inactive'
   /** Storage path of an identification photo (photos bucket); null = none. */
   photo_url?: string | null
+  /** True for perishables tracked by the expiry module (batches + expiry). */
+  tracks_expiry?: boolean
+}
+
+/** A received lot of a perishable item — expiry module (migration 0043). */
+export interface ItemBatch {
+  id: string
+  tenant_id: string
+  item_id: string
+  batch_no: string | null
+  mfg_date: string | null
+  expiry_date: string
+  received_qty: number | string | null
+  shelf_id: string | null
+  status: 'active' | 'finished' | 'removed'
+  note: string | null
+  received_by: string | null
+  received_at: string
+  created_at: string
 }
 
 export interface Requisition {

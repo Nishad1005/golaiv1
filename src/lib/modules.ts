@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Search, MapPin, ScanBarcode, ArrowLeftRight, PencilRuler,
   PackageCheck, PackageOpen, Undo2, Send, ShieldAlert, ListChecks, FileBarChart,
   Map, Boxes, Building2, Building, Users, Bell, Settings, Calculator, HandCoins,
-  DoorOpen,
+  DoorOpen, CalendarClock,
 } from 'lucide-react'
 import type { Profile, UserRole } from './types'
 
@@ -47,6 +47,7 @@ export const MODULES: AppModule[] = [
   { key: 'returns', label: 'Returns', to: '/returns', icon: Undo2, defaultRoles: ['storekeeper', 'planner', 'manager', 'admin'] },
   { key: 'dispatch', label: 'Dispatch', to: '/dispatch', icon: Send, defaultRoles: ['security', 'storekeeper', 'manager', 'admin'] },
   { key: 'gate_out', label: 'Gate Out', to: '/gate-out', icon: DoorOpen, defaultRoles: ['security', 'storekeeper', 'manager', 'admin'], requiresLicense: true },
+  { key: 'expiry', label: 'Perishables', to: '/perishables', icon: CalendarClock, defaultRoles: ['storekeeper', 'manager', 'admin'], requiresLicense: true },
   { key: 'qc', label: 'QC Hold', to: '/qc', icon: ShieldAlert, defaultRoles: ['storekeeper', 'manager', 'admin'] },
   { key: 'counts', label: 'Stock Counts', to: '/counts', icon: ListChecks, defaultRoles: ['storekeeper', 'manager', 'admin'] },
   { key: 'so_movement', label: 'SO Movement', to: '/so-movement', icon: Search, defaultRoles: ['manager', 'admin'] },

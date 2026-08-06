@@ -9,9 +9,14 @@ export interface TenantSettings {
   working_hours_start: string
   working_hours_end: string
   photo_retention_days: number
+  /** Near-expiry window (days) for the Perishables module. */
+  expiry_warn_days: number
   /** Schema-flexible extras — currently just the sample-data marker. */
   settings: Record<string, unknown> | null
 }
+
+/** Fallback matching the database default when no settings row exists. */
+export const DEFAULT_EXPIRY_WARN_DAYS = 7
 
 /** Same fallback the database uses when a tenant has no settings row yet. */
 export const DEFAULT_EDIT_LOCK_HOURS = 24
@@ -35,7 +40,7 @@ export function useSettings() {
     queryFn: async (): Promise<TenantSettings | null> => {
       const { data, error } = await supabase
         .from('tenant_settings')
-        .select('tenant_id, edit_lock_hours, approval_qty_threshold, working_hours_start, working_hours_end, photo_retention_days, settings')
+        .select('tenant_id, edit_lock_hours, approval_qty_threshold, working_hours_start, working_hours_end, photo_retention_days, expiry_warn_days, settings')
         .eq('tenant_id', tenantId!)
         .maybeSingle()
       if (error) throw error

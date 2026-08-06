@@ -60,6 +60,8 @@ const QcHolds = lazy(() => import('./pages/dispatch/QcHolds').then((m) => ({ def
 const GateOutList = lazy(() => import('./pages/gateout/GateOutList').then((m) => ({ default: m.GateOutList })))
 const GateOut = lazy(() => import('./pages/gateout/GateOut').then((m) => ({ default: m.GateOut })))
 const GateOutDetail = lazy(() => import('./pages/gateout/GateOutDetail').then((m) => ({ default: m.GateOutDetail })))
+const PerishablesHome = lazy(() => import('./pages/perishables/PerishablesHome').then((m) => ({ default: m.PerishablesHome })))
+const PerishableInward = lazy(() => import('./pages/perishables/PerishableInward').then((m) => ({ default: m.PerishableInward })))
 const CountList = lazy(() => import('./pages/counts/CountList').then((m) => ({ default: m.CountList })))
 const CountDetail = lazy(() => import('./pages/counts/CountDetail').then((m) => ({ default: m.CountDetail })))
 const Alerts = lazy(() => import('./pages/manager/Alerts').then((m) => ({ default: m.Alerts })))
@@ -204,6 +206,12 @@ export default function App() {
               {(profile.role === 'security' || profile.role === 'manager' || profile.role === 'admin') && (
                 <Route path="/gate-out/new" element={<GateOut />} />
               )}
+            </>
+          )}
+          {can('expiry') && (
+            <>
+              <Route path="/perishables" element={<PerishablesHome />} />
+              <Route path="/perishables/inward" element={<PerishableInward />} />
             </>
           )}
           {can('qc') && <Route path="/qc" element={<QcHolds />} />}

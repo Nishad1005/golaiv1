@@ -9,6 +9,7 @@ import { resolveItemCode, allocateItemCodes } from '../../lib/itemCode'
 import { parseCsv, findColumn, downloadItemTemplate } from '../../lib/csv'
 import { ItemLabelDialog } from '../../components/ItemLabelDialog'
 import { UomPicker } from '../../components/UomPicker'
+import { BarcodeCell } from '../../components/BarcodeCell'
 import { UOM_GROUPS, UOM_UNITS, normalizeUom } from '../../lib/uom'
 import type { Item } from '../../lib/types'
 
@@ -120,6 +121,7 @@ export function Items() {
   // Item code policy: if the client provides a code, it is stored VERBATIM.
   // A new ITM-NNNNN code is allocated ONLY when the code field is left empty.
   const [form, setForm] = useState({ code: '', barcode: '', name: '', item_type: '', category: '', uom: 'pcs' })
+  const [perishable, setPerishable] = useState(false)
 
   const createItem = useMutation({
     mutationFn: async () => {
@@ -135,6 +137,7 @@ export function Items() {
           item_type: form.item_type.trim() || null,
           category: form.category.trim() || null,
           uom: form.uom.trim() || 'pcs',
+          tracks_expiry: perishable,
         })
         .select()
         .single()
@@ -152,6 +155,7 @@ export function Items() {
     },
     onSuccess: () => {
       setForm({ code: '', barcode: '', name: '', item_type: '', category: '', uom: 'pcs' })
+      setPerishable(false)
       setShowForm(false)
       void queryClient.invalidateQueries({ queryKey: ['items'] })
     },
@@ -426,6 +430,15 @@ export function Items() {
               ))}
             </select>
           </div>
+          <label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-brand-500"
+              checked={perishable}
+              onChange={(e) => setPerishable(e.target.checked)}
+            />
+            <span className="text-sm text-ink-700">Perishable — track batches &amp; expiry</span>
+          </label>
           <div className="flex gap-2 sm:col-span-2">
             <button type="submit" className="btn-primary" disabled={createItem.isPending}>
               {createItem.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
@@ -497,6 +510,7 @@ export function Items() {
                   />
                 </th>
                 <th className="px-4 py-3 font-medium">Code</th>
+                <th className="px-4 py-3 font-medium">Barcode</th>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Category</th>
@@ -563,6 +577,9 @@ export function Items() {
                       </div>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    <BarcodeCell itemId={item.id} value={item.barcode} />
+                  </td>
                   <td className="px-4 py-3 font-medium">
                     <Link
                       to={`/item/${item.id}`}
@@ -571,6 +588,11 @@ export function Items() {
                     >
                       {item.name}
                     </Link>
+                    {item.tracks_expiry && (
+                      <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
+                        perishable
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-ink-400">{item.item_type ?? '—'}</td>
                   <td className="px-4 py-3 text-ink-400">{item.category ?? '—'}</td>
@@ -581,7 +603,7 @@ export function Items() {
               ))}
               {(items ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center">
+                  <td colSpan={7} className="px-4 py-10 text-center">
                     <p className="font-semibold text-ink-800">
                       {search || onlyAuto ? 'Nothing matches that' : 'No products yet'}
                     </p>

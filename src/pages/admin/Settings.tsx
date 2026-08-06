@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Clock, Image as ImageIcon, Loader2, Settings as SettingsIcon, TriangleAlert } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Clock, Image as ImageIcon, Loader2, Settings as SettingsIcon, TriangleAlert } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
-import { useSettings, EDIT_LOCK_CHOICES, DEFAULT_EDIT_LOCK_HOURS } from '../../lib/settings'
+import { useSettings, EDIT_LOCK_CHOICES, DEFAULT_EDIT_LOCK_HOURS, DEFAULT_EXPIRY_WARN_DAYS } from '../../lib/settings'
+import { useCompanyModules } from '../../lib/platform'
 import { PageHeader } from '../../components/PageHeader'
 
 /**
@@ -18,6 +19,8 @@ export function Settings() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const { data: settings, isLoading } = useSettings()
+  const companyModules = useCompanyModules()
+  const hasExpiry = companyModules?.['expiry'] === true
   const [form, setForm] = useState<Record<string, string> | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -26,6 +29,7 @@ export function Settings() {
     photo_retention_days: String(settings?.photo_retention_days ?? 730),
     working_hours_start: (settings?.working_hours_start ?? '09:00').slice(0, 5),
     working_hours_end: (settings?.working_hours_end ?? '19:00').slice(0, 5),
+    expiry_warn_days: String(settings?.expiry_warn_days ?? DEFAULT_EXPIRY_WARN_DAYS),
   }
   const set = (k: string, v: string) => {
     setSaved(false)
@@ -38,6 +42,10 @@ export function Settings() {
       if (!Number.isFinite(retention) || retention < 30) {
         throw new Error('Photo retention must be at least 30 days.')
       }
+      const warnDays = Number(f.expiry_warn_days)
+      if (!Number.isFinite(warnDays) || warnDays < 1) {
+        throw new Error('Expiry warning window must be at least 1 day.')
+      }
       const { error } = await supabase
         .from('tenant_settings')
         .upsert({
@@ -46,6 +54,7 @@ export function Settings() {
           photo_retention_days: retention,
           working_hours_start: f.working_hours_start,
           working_hours_end: f.working_hours_end,
+          expiry_warn_days: warnDays,
           updated_at: new Date().toISOString(),
         })
       if (error) throw error
@@ -171,6 +180,33 @@ export function Settings() {
             />
           </div>
         </section>
+
+        {/* ---------- Expiry warning window (Perishables module only) ---------- */}
+        {hasExpiry && (
+          <section className="card">
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                <CalendarClock className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-ink-900">Flag perishables expiring within</h2>
+                <p className="text-sm text-ink-400">
+                  Batches with an expiry date this close are listed under <strong>Expiring
+                  soon</strong> and counted on the home screen.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 max-w-xs">
+              <label className="label-text" htmlFor="expiry-warn">Days</label>
+              <input
+                id="expiry-warn" type="number" min="1" step="1" className="input-field tabular-nums"
+                value={f.expiry_warn_days}
+                onChange={(e) => set('expiry_warn_days', e.target.value)}
+              />
+            </div>
+          </section>
+        )}
 
         {save.isError && (
           <p role="alert" className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">

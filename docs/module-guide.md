@@ -382,6 +382,38 @@ Gate Out shows.
 
 ---
 
+## Perishables *(opt-in module)*
+**Who:** storekeeper / manager / admin
+
+For clients with **perishables** (butter, fruit — with mfg/expiry dates) beside
+non-perishables (forks, spoons). It plugs into the shared core: a perishable is an
+ordinary **item** (flagged *perishable*), inward adds to the **same stock** as
+everything else, and near-expiry raises a normal **alert**.
+
+- **Register the barcode.** In **Items**, each product row has a **Scan** button —
+  scan its manufacturer barcode once and it's saved on the item, so a scan finds it
+  everywhere after.
+- **Inward.** `Perishables → New inward`: scan the barcode (or register a new
+  product), enter **batch, mfg & expiry dates, quantity**, and a location. It
+  records the batch **and adds to stock** (shows in Find Item).
+- **Scan to see everything.** On the Perishables home, scan/search a product to see
+  its **live batches** — mfg, expiry, days left (green/amber/red), quantity,
+  location. Mark a batch **finished** when it's used up.
+- **Near-expiry flag.** Batches within the **warning window** (set in **Settings**,
+  default 7 days) show under **Expiring soon**, are counted on the home dashboard,
+  and raise an alert at inward if already close.
+
+> **Log vs stock.** Inward increases on-hand stock, but per-batch *remaining* isn't
+> reduced automatically as stock is consumed — mark a batch finished when it's gone.
+> There is no scheduler, so a batch that crosses the window **later** appears in the
+> live *Expiring soon* list and home count rather than a fresh push alert (a daily
+> sweep is future work).
+
+**Turning it on.** Opt-in — off until DBBS grants **Perishables** to a company in
+the Platform Console.
+
+---
+
 # Keeping stock accurate
 
 ## QC Hold
