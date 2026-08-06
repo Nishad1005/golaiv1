@@ -11,10 +11,23 @@ export async function invokeError(error: { message: string; context?: unknown })
   if (ctx && typeof ctx.json === 'function') {
     try {
       const body = await ctx.json()
-      if (body?.error) return body.error as string
+      // Our functions return { error }. The functions gateway itself (e.g. a
+      // function that isn't deployed) returns { message }/{ msg } — surface
+      // those too, otherwise the caller only ever sees the opaque
+      // "Edge Function returned a non-2xx status code".
+      const msg = body?.error ?? body?.message ?? body?.msg
+      if (typeof msg === 'string' && msg) {
+        if (ctx.status === 404 && /not\s*found/i.test(msg)) {
+          return 'This feature is not deployed yet — its edge function needs deploying on Supabase, then try again.'
+        }
+        return msg
+      }
     } catch {
       /* fall through */
     }
+  }
+  if ((ctx as Response | undefined)?.status === 404) {
+    return 'This feature is not deployed yet — its edge function needs deploying on Supabase, then try again.'
   }
   return error.message
 }
