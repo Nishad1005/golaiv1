@@ -57,6 +57,9 @@ const DispatchList = lazy(() => import('./pages/dispatch/DispatchList').then((m)
 const DispatchNew = lazy(() => import('./pages/dispatch/DispatchNew').then((m) => ({ default: m.DispatchNew })))
 const DispatchDetail = lazy(() => import('./pages/dispatch/DispatchDetail').then((m) => ({ default: m.DispatchDetail })))
 const QcHolds = lazy(() => import('./pages/dispatch/QcHolds').then((m) => ({ default: m.QcHolds })))
+const GateOutList = lazy(() => import('./pages/gateout/GateOutList').then((m) => ({ default: m.GateOutList })))
+const GateOut = lazy(() => import('./pages/gateout/GateOut').then((m) => ({ default: m.GateOut })))
+const GateOutDetail = lazy(() => import('./pages/gateout/GateOutDetail').then((m) => ({ default: m.GateOutDetail })))
 const CountList = lazy(() => import('./pages/counts/CountList').then((m) => ({ default: m.CountList })))
 const CountDetail = lazy(() => import('./pages/counts/CountDetail').then((m) => ({ default: m.CountDetail })))
 const Alerts = lazy(() => import('./pages/manager/Alerts').then((m) => ({ default: m.Alerts })))
@@ -192,6 +195,15 @@ export default function App() {
               <Route path="/dispatch" element={<DispatchList />} />
               <Route path="/dispatch/:id" element={<DispatchDetail />} />
               {profile.role !== 'security' && <Route path="/dispatch/new" element={<DispatchNew />} />}
+            </>
+          )}
+          {can('gate_out') && (
+            <>
+              <Route path="/gate-out" element={<GateOutList />} />
+              <Route path="/gate-out/:id" element={<GateOutDetail />} />
+              {(profile.role === 'security' || profile.role === 'manager' || profile.role === 'admin') && (
+                <Route path="/gate-out/new" element={<GateOut />} />
+              )}
             </>
           )}
           {can('qc') && <Route path="/qc" element={<QcHolds />} />}

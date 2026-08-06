@@ -359,6 +359,29 @@ Golai tracks the outstanding balance per product.
 
 ---
 
+## Gate Out *(opt-in module)*
+**Who:** security / storekeeper / manager / admin · **One standalone form.**
+
+For clients who don't want the three-stage DC flow, **Gate Out** is the outbound
+mirror of Receiving's gate entry: a guard logs goods leaving in a single screen —
+**by vehicle or collected by hand**, driver name/phone/licence + driver photos,
+vehicle photos, customer, reference (SO/DC/invoice), transporter, declared
+material and cartons, LR number, a **document photo gallery** (invoice / e-way /
+LR) and a departure photo. At least one document photo is required. Each gets a
+`GO/YYYY-MM/NNNN` number and shows back as grouped fields with split photo
+galleries.
+
+> **Log only.** Gate Out records the departure with proof photos; it does **not**
+> change stock and has no item picking. Use the full **Dispatch (DC)** flow when
+> you need carton scanning and automatic stock deduction.
+
+**Turning it on.** Gate Out is an **opt-in module** — off until DBBS grants it to a
+company in the Platform Console. Enable it for the clients who want the simple
+gate log; you can also switch the heavier **Dispatch** module off for them so only
+Gate Out shows.
+
+---
+
 # Keeping stock accurate
 
 ## QC Hold
