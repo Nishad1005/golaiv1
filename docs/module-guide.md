@@ -345,9 +345,13 @@ Golai tracks the outstanding balance per product.
    Carton labels print for sealing.
 2. **Approve** — the manager reviews and approves, or rejects with a reason
    (which puts the stock back on the shelves automatically).
-3. **Gate-out** — security captures vehicle, driver, LR number, e-way bill and
-   departure photos, then **scans every carton**. A carton from another DC is
-   refused outright, and the gate-out won't complete until all cartons match.
+3. **Gate-out** — security captures the departure with **the same fields as the
+   receiving gate entry**: by-vehicle or **collected by hand**, driver name /
+   phone / licence + driver photos, vehicle photos, transporter, material type,
+   LR number, a **document photo gallery** (invoice / e-way / LR) and a departure
+   photo — then **scans every carton**. At least one document photo is required; a
+   carton from another DC is refused outright, and the gate-out won't complete
+   until all cartons match.
 
 > **Use case.** Two finished sofas leave for ESPL Mumbai. At the gate the guard
 > scans three cartons but one belongs to a different order — Golai rejects it on

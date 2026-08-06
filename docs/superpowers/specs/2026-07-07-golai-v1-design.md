@@ -72,3 +72,4 @@ The historical body above describes the v1.0 build (as "Aksure"). Since then:
 - **Bulk imports**: zone CSV import + item CSV import, both with downloadable fill-in templates; inline zone editing.
 - **Multi-tenant onboarding**: seed pattern `supabase/seeds/uandm_tenant.sql` (first client: U&M Designs, 13 zones, admin merchant@uandm.co.in).
 - **Docs**: `docs/demo-guide.md` (sales demo script) and `docs/uandm-client-guide.md` (client self-service guide).
+

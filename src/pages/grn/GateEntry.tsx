@@ -7,9 +7,8 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { uploadPhoto } from '../../lib/photos'
 import { useOffline } from '../../lib/offline/queue'
+import { MATERIAL_TYPES } from '../../lib/materials'
 import { PhotoInput } from '../../components/PhotoInput'
-
-const MATERIAL_TYPES = ['Fabric', 'Foam', 'Wood', 'Leather', 'Hardware', 'Packing Material', 'Other']
 
 /**
  * GRN Stage 1 — Security gate entry (PRD 4.3). Photo-heavy, big buttons.
