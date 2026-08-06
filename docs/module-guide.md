@@ -696,6 +696,12 @@ and when they were last active. From here DBBS can **onboard a new client**
 (company and its first admin created together), **grant or revoke modules** for
 a company, and **suspend or reactivate** an account.
 
+Expand a company to see its **Admin logins**. If an admin is locked out — e.g.
+the temp password from onboarding was lost — click **Reset password** to set a
+new one (type your own or let Golai generate it). The new password is shown once
+to hand over; no email or SMS is needed. This is DBBS-only and works across every
+company.
+
 > **Two layers of access.** DBBS decides what a *company* has; that company's own
 > admin then decides who *inside* it may open each part. Both must pass — so
 > turning a module off for a company removes it for all of their people, whatever

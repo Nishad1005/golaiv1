@@ -93,6 +93,33 @@ export function useTenantModuleGrid(tenantId: string | null) {
   })
 }
 
+/** One admin login of a company, as the console shows it (for password reset). */
+export interface PlatformTenantAdmin {
+  id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+  status: 'active' | 'inactive'
+}
+
+/**
+ * The admin logins of one company — DBBS only (RPC refuses others). Used by the
+ * console to reset a locked-out admin's password. Loaded only when a row is open.
+ */
+export function usePlatformTenantAdmins(tenantId: string | null) {
+  return useQuery({
+    queryKey: ['platform-tenant-admins', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<PlatformTenantAdmin[]> => {
+      const { data, error } = await supabase.rpc('platform_tenant_admins', {
+        p_tenant_id: tenantId,
+      })
+      if (error) throw new Error(error.message)
+      return (data ?? []) as PlatformTenantAdmin[]
+    },
+  })
+}
+
 /**
  * What the signed-in user's own COMPANY holds — `{ dispatch: false }`.
  *

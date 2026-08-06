@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Activity, Building2, ChevronDown, Loader2, Package, PauseCircle,
-  PlayCircle, Rocket, TriangleAlert, Users,
+  Activity, Building2, CheckCircle2, ChevronDown, Copy, IdCard, KeyRound,
+  Loader2, Package, PauseCircle, PlayCircle, Rocket, TriangleAlert, Users,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../stores/auth'
 import { logActivity } from '../lib/audit'
+import { invokeError } from '../lib/functions'
 import {
   moduleLabel, onboardingProgress, usePlatformSummary, usePlatformTenants,
-  useTenantModuleGrid, type PlatformTenant,
+  usePlatformTenantAdmins, useTenantModuleGrid,
+  type PlatformTenant, type PlatformTenantAdmin,
 } from '../lib/platform'
 import { PageHeader } from '../components/PageHeader'
 
@@ -287,6 +289,8 @@ function TenantRow({ t, open, onToggle, onSetModule, onResetModule, onSetStatus,
             </p>
           </div>
 
+          <AdminLogins tenant={t} />
+
           <div className="flex flex-wrap items-center gap-3 border-t border-ink-200/70 pt-4">
             {suspended ? (
               <button className="btn-primary" disabled={busy} onClick={() => onSetStatus('active')}>
@@ -317,6 +321,141 @@ function Detail({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="text-xs font-medium uppercase tracking-wide text-ink-400">{label}</dt>
       <dd className="truncate font-medium text-ink-800">{value}</dd>
+    </div>
+  )
+}
+
+/**
+ * A company's admin logins, with a password reset for each. This is how DBBS
+ * rescues a locked-out company: the provisioning temp password is shown once, so
+ * if it's lost there is otherwise no way back in. The new password is shown once
+ * here to hand over — the same no-email/no-SMS flow tenant admins use for staff.
+ */
+function AdminLogins({ tenant }: { tenant: PlatformTenant }) {
+  const { profile } = useAuth()
+  const { data: admins, isLoading } = usePlatformTenantAdmins(tenant.id)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [result, setResult] = useState<{ login_id: string; password: string } | null>(null)
+
+  const reset = useMutation({
+    mutationFn: async (admin: PlatformTenantAdmin) => {
+      const { data, error } = await supabase.functions.invoke('platform-reset-password', {
+        body: { user_id: admin.id, password: password.trim() || null },
+      })
+      if (error) throw new Error(await invokeError(error))
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'platform.reset_admin_password', entityType: 'tenant', entityId: tenant.id,
+        after: { company: tenant.name, admin: admin.full_name, login: admin.phone ?? admin.email },
+      })
+      return data as { login_id: string; password: string }
+    },
+    onSuccess: (r) => {
+      setResult(r)
+      setOpenId(null)
+      setPassword('')
+    },
+  })
+
+  const start = (id: string) => {
+    setResult(null)
+    setPassword('')
+    reset.reset()
+    setOpenId(openId === id ? null : id)
+  }
+
+  return (
+    <div className="border-t border-ink-200/70 pt-4">
+      <p className="label-text !mb-0">Admin logins</p>
+      <p className="text-xs text-ink-400">
+        Reset a password if a company admin is locked out — the new one is shown once to hand over.
+      </p>
+
+      {isLoading ? (
+        <Loader2 className="mx-auto my-6 h-5 w-5 animate-spin text-brand-500" />
+      ) : (admins ?? []).length === 0 ? (
+        <p className="mt-2 text-sm text-ink-400">This company has no admin account.</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {admins!.map((a) => (
+            <li key={a.id} className="rounded-xl border border-ink-200 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <IdCard className="h-5 w-5 shrink-0 text-ink-400" aria-hidden />
+                <span className="font-semibold text-ink-800">{a.full_name}</span>
+                <span className="text-sm text-ink-400">{a.phone ?? a.email ?? '—'}</span>
+                {a.status !== 'active' && (
+                  <span className="badge bg-ink-100 text-ink-600">Inactive</span>
+                )}
+                <button
+                  className="ml-auto inline-flex min-h-tap items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 text-sm font-medium text-ink-700 hover:bg-ink-50"
+                  onClick={() => start(a.id)}
+                >
+                  <KeyRound className="h-4 w-4" aria-hidden /> Reset password
+                </button>
+              </div>
+
+              {openId === a.id && (
+                <div className="mt-3 space-y-2 border-t border-ink-200/70 pt-3">
+                  <label className="label-text" htmlFor={`pw-${a.id}`}>New password</label>
+                  <input
+                    id={`pw-${a.id}`}
+                    className="input-field"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Leave blank to generate one"
+                    autoComplete="off"
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      className="btn-primary"
+                      disabled={reset.isPending}
+                      onClick={() => reset.mutate(a)}
+                    >
+                      {reset.isPending
+                        ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                        : <KeyRound className="h-5 w-5" aria-hidden />}
+                      Set password
+                    </button>
+                    <button className="btn-secondary" onClick={() => setOpenId(null)}>Cancel</button>
+                  </div>
+                  {reset.isError && (
+                    <p role="alert" className="text-sm text-red-700">{(reset.error as Error).message}</p>
+                  )}
+                </div>
+              )}
+
+              {result && openId === null && reset.variables?.id === a.id && (
+                <div className="mt-3 space-y-1 rounded-xl border border-brand-200 bg-brand-50 p-3">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <CheckCircle2 className="h-5 w-5" aria-hidden />
+                    <p className="font-semibold">Password reset for {a.full_name}</p>
+                  </div>
+                  <p className="text-sm text-ink-600">
+                    Shown once — copy it now and hand both to the admin.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <span><span className="text-ink-400">Login: </span><b>{result.login_id}</b></span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-ink-400">Password: </span>
+                      <b className="font-mono">{result.password}</b>
+                      <button
+                        className="text-ink-400 hover:text-ink-600"
+                        onClick={() => navigator.clipboard?.writeText(
+                          `${result.login_id}  ${result.password}`,
+                        )}
+                        title="Copy login + password"
+                      >
+                        <Copy className="h-4 w-4" aria-hidden />
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

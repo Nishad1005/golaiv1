@@ -6,21 +6,9 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { canAccess, MODULES, TOGGLEABLE_MODULES } from '../../lib/modules'
 import { useCompanyModules } from '../../lib/platform'
+import { invokeError } from '../../lib/functions'
 import { RolesManager, type TenantRole } from '../../components/RolesManager'
 import type { Profile, UserRole } from '../../lib/types'
-
-async function invokeError(error: { message: string; context?: unknown }): Promise<string> {
-  const ctx = (error as { context?: Response }).context
-  if (ctx && typeof ctx.json === 'function') {
-    try {
-      const body = await ctx.json()
-      if (body?.error) return body.error as string
-    } catch {
-      /* fall through */
-    }
-  }
-  return error.message
-}
 
 const ROLES: UserRole[] = ['security', 'storekeeper', 'planner', 'manager', 'admin']
 

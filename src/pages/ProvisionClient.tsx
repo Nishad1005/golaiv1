@@ -76,7 +76,9 @@ export function ProvisionClient() {
             <p className="font-semibold">{result.company_name} created</p>
           </div>
           <p className="text-sm text-ink-600">
-            Hand these to the client's admin — they can change the password after signing in.
+            <b>This password is shown once — copy it now</b> and hand both to the client's admin
+            (they can change it after signing in). If it's lost, reset it any time from the
+            Platform Console.
           </p>
           <div className="flex flex-wrap gap-4 text-sm">
             <span><span className="text-ink-400">Login: </span><b>{result.admin_login}</b></span>
@@ -91,7 +93,15 @@ export function ProvisionClient() {
               </button>
             </span>
           </div>
-          <button className="btn-secondary mt-1 w-fit" onClick={() => setResult(null)}>Create another</button>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <button
+              className="btn-secondary w-fit"
+              onClick={() => navigator.clipboard?.writeText(`${result.admin_login}  ${result.temp_password}`)}
+            >
+              <Copy className="h-4 w-4" /> Copy login + password
+            </button>
+            <button className="btn-secondary w-fit" onClick={() => setResult(null)}>Create another</button>
+          </div>
         </div>
       )}
 
