@@ -20,6 +20,32 @@ type ZoneRow = Zone & { description: string | null; default_category: string | n
 const pad2 = (n: number) => String(n).padStart(2, '0')
 const pad3 = (n: number) => String(n).padStart(3, '0')
 
+/**
+ * Add generated locations, reviving any that were previously deleted.
+ *
+ * Deleting a location soft-deletes it (delete_location, 0039) — the row stays,
+ * so its code still occupies the (tenant_id, code) unique constraint. A plain
+ * `upsert(..., { ignoreDuplicates: true })` (ON CONFLICT DO NOTHING) would then
+ * silently skip that code, so re-adding a location after deleting it added
+ * nothing. So first un-delete any soft-deleted rows whose code is being added
+ * (restores them exactly), then insert the genuinely-new codes.
+ */
+async function addOrReviveShelves(tenantId: string, rows: Record<string, unknown>[]) {
+  const codes = rows.map((r) => r.code as string)
+  const { error: reviveErr } = await supabase
+    .from('shelves')
+    .update({ deleted_at: null, updated_at: new Date().toISOString() })
+    .eq('tenant_id', tenantId)
+    .in('code', codes)
+    .not('deleted_at', 'is', null)
+  if (reviveErr) throw reviveErr
+
+  const { error } = await supabase
+    .from('shelves')
+    .upsert(rows, { onConflict: 'tenant_id,code', ignoreDuplicates: true })
+  if (error) throw error
+}
+
 export function ZonesShelves() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
@@ -194,10 +220,7 @@ export function ZonesShelves() {
           fixture_type: fixtureName.trim() || 'Shelf',
         })
       }
-      const { error } = await supabase
-        .from('shelves')
-        .upsert(rows, { onConflict: 'tenant_id,code', ignoreDuplicates: true })
-      if (error) throw error
+      await addOrReviveShelves(profile!.tenant_id, rows)
       await logActivity({
         tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
         action: 'create.shelves_bulk', entityType: 'shelf',
@@ -235,10 +258,7 @@ export function ZonesShelves() {
         }
       })
       if (rows.length === 0) throw new Error('Add at least one block with rows and columns.')
-      const { error } = await supabase
-        .from('shelves')
-        .upsert(rows, { onConflict: 'tenant_id,code', ignoreDuplicates: true })
-      if (error) throw error
+      await addOrReviveShelves(profile!.tenant_id, rows)
       await logActivity({
         tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
         action: 'create.pallets_bulk', entityType: 'shelf',
