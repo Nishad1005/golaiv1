@@ -300,43 +300,53 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
 
   return (
     <div className="card space-y-4">
-      <p className="font-semibold">Verification — scan or search each item, enter quantities</p>
-      <ScanInput placeholder="Scan item barcode" onScan={(v) => void addItem(v)} autoFocus={false} />
+      <p className="font-semibold">Verification — enter quantities for each item</p>
 
-      <div>
-        <input
-          className="input-field"
-          placeholder="…or search products by name or code"
-          value={itemSearch}
-          onChange={(e) => setItemSearch(e.target.value)}
-        />
-        {itemSearch.trim().length >= 2 && (
-          (matches ?? []).length > 0 ? (
-            <div className="mt-1 divide-y divide-tan/20 overflow-hidden rounded-xl border border-tan/30">
-              {matches!.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className="flex w-full items-center gap-2 bg-white px-3 py-2 text-left hover:bg-cream"
-                  onClick={() => { addLine(m); setItemSearch('') }}
-                >
-                  <ItemThumb path={m.photo_url ?? null} name={m.name} size="sm" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{m.name}</span>
-                    <span className="block font-mono text-xs text-ink-400">
-                      {m.code}{m.barcode ? ` · ${m.barcode}` : ''}
+      <div className="space-y-2 rounded-xl border border-tan/30 bg-cream/40 p-3">
+        <p className="text-sm font-semibold text-ink-700">
+          Add products
+          <span className="font-normal text-ink-400"> — add every item on the invoice, one after another</span>
+        </p>
+        <ScanInput placeholder="Scan item barcode" onScan={(v) => void addItem(v)} autoFocus={false} />
+        <div>
+          <input
+            className="input-field"
+            placeholder="…or search products by name or code"
+            value={itemSearch}
+            onChange={(e) => setItemSearch(e.target.value)}
+          />
+          {itemSearch.trim().length >= 2 && (
+            (matches ?? []).length > 0 ? (
+              <div className="mt-1 divide-y divide-tan/20 overflow-hidden rounded-xl border border-tan/30">
+                {matches!.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="flex w-full items-center gap-2 bg-white px-3 py-2 text-left hover:bg-cream"
+                    onClick={() => { addLine(m); setItemSearch('') }}
+                  >
+                    <ItemThumb path={m.photo_url ?? null} name={m.name} size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{m.name}</span>
+                      <span className="block font-mono text-xs text-ink-400">
+                        {m.code}{m.barcode ? ` · ${m.barcode}` : ''}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-1 text-xs text-ink-400">No products match — check spelling, or add it in Items.</p>
-          )
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-ink-400">No products match — check spelling, or add it in Items.</p>
+            )
+          )}
+        </div>
+        {scanError && <p className="text-sm text-red-600">{scanError}</p>}
+        {lines.length > 0 && (
+          <p className="text-xs font-medium text-brand-700">
+            {lines.length} item{lines.length > 1 ? 's' : ''} added — keep scanning or searching to add more.
+          </p>
         )}
       </div>
-
-      {scanError && <p className="text-sm text-red-600">{scanError}</p>}
 
       {lines.map((line, i) => (
         <div key={line.item.id} className="space-y-3 rounded-xl border border-tan/30 p-3">
@@ -586,6 +596,14 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
         const placed = sumQty(line.grn_putaways, (p) => p.qty)
         const remaining = num(line.qty_received) - placed
         const active = activeLine === line.id
+        const place = (code: string) => {
+          const amount = Number(qty)
+          if (!amount || amount <= 0 || amount > remaining) {
+            setError(`Quantity must be between 0 and ${remaining}.`)
+            return
+          }
+          putaway.mutate({ lineId: line.id, shelfCode: code, amount })
+        }
         return (
           <div key={line.id} className="rounded-xl border border-tan/30 p-3">
             <div className="flex items-center justify-between gap-2">
@@ -623,17 +641,8 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
                     onChange={(e) => setQty(e.target.value)}
                   />
                 </div>
-                <ScanInput
-                  placeholder="destination shelf"
-                  onScan={(code) => {
-                    const amount = Number(qty)
-                    if (!amount || amount <= 0 || amount > remaining) {
-                      setError(`Quantity must be between 0 and ${remaining}.`)
-                      return
-                    }
-                    putaway.mutate({ lineId: line.id, shelfCode: code, amount })
-                  }}
-                />
+                <ExistingLocations itemId={line.items.id} uom={line.items.uom} onPick={place} />
+                <ScanInput placeholder="…or scan a new shelf" onScan={place} />
               </div>
             )}
           </div>
@@ -641,6 +650,50 @@ function PutawayPanel({ grn }: { grn: GrnDetailData }) {
       })}
       {putaway.isPending && <Loader2 className="h-5 w-5 animate-spin text-brand-500" />}
       {error && <p className="text-sm text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+// Where this item already sits, so the storekeeper can top up the same shelf
+// (consolidate) instead of scattering it — or scan a new shelf below.
+function ExistingLocations({ itemId, uom, onPick }: {
+  itemId: string; uom: string; onPick: (code: string) => void
+}) {
+  const { data: locs } = useQuery({
+    queryKey: ['grn-item-stock', itemId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stock_balances')
+        .select('qty_on_hand, shelves(code)')
+        .eq('item_id', itemId)
+        .gt('qty_on_hand', 0)
+        .order('qty_on_hand', { ascending: false })
+      if (error) throw error
+      return (data as unknown as { qty_on_hand: number | string; shelves: { code: string } | null }[])
+        .filter((r) => r.shelves?.code)
+    },
+  })
+
+  if (!locs || locs.length === 0) return null
+
+  return (
+    <div className="rounded-lg border border-brand-100 bg-brand-50/60 p-2">
+      <p className="mb-1.5 text-xs font-medium text-ink-600">
+        Already in stock — tap to place on the same location:
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {locs.map((l) => (
+          <button
+            key={l.shelves!.code}
+            type="button"
+            className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-sm hover:bg-brand-50"
+            onClick={() => onPick(l.shelves!.code)}
+          >
+            <span className="font-mono font-semibold">{l.shelves!.code}</span>
+            <span className="ml-1.5 text-xs tabular-nums text-ink-400">{num(l.qty_on_hand)} {uom} here</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
