@@ -48,6 +48,8 @@ export const UOM_UNITS: Uom[] = [
   // Volume
   { value: 'L', label: 'Litre', group: 'Volume' },
   { value: 'ml', label: 'Millilitre', group: 'Volume' },
+  { value: 'cft', label: 'Cubic feet', group: 'Volume' },
+  { value: 'cbm', label: 'Cubic metre', group: 'Volume' },
 ]
 
 /** Group order for the picker's optgroups. */
@@ -101,6 +103,8 @@ const SYNONYMS: Record<string, string> = {
   // volume
   l: 'L', ltr: 'L', ltrs: 'L', litre: 'L', litres: 'L', liter: 'L', liters: 'L',
   ml: 'ml', milliliter: 'ml', millilitre: 'ml',
+  cft: 'cft', cuft: 'cft', cubicfeet: 'cft', cubicfoot: 'cft', ft3: 'cft', cfeet: 'cft',
+  cbm: 'cbm', cubm: 'cbm', cubicmetre: 'cbm', cubicmeter: 'cbm', m3: 'cbm',
 }
 
 export function normalizeUom(raw: string | null | undefined): string {

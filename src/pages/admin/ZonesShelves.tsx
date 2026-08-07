@@ -7,7 +7,7 @@ import { useAuth } from '../../stores/auth'
 import { logActivity } from '../../lib/audit'
 import { generateShelfLabelsPdf, SHELF_LABEL_SIZES, type ShelfLabelSize } from '../../lib/labels'
 import { parseCsv, findColumn, downloadZoneTemplate } from '../../lib/csv'
-import { locationLabel, palletLabel, prefixFor } from '../../lib/places'
+import { blockLetter, locationLabel, palletLabel, prefixFor } from '../../lib/places'
 import { num } from '../../lib/qty'
 import { PageHeader } from '../../components/PageHeader'
 import { PalletMap } from '../../components/PalletMap'
@@ -206,6 +206,15 @@ export function ZonesShelves() {
 
   const palletTotal = palletBlocks.reduce((a, b) => a + b.rows * b.cols, 0)
 
+  // Continue block lettering from what the zone already has, so a second pallet
+  // area starts at Block B rather than re-using Block A (which would collide).
+  const blockOffset = (() => {
+    const existing = (shelves ?? [])
+      .filter((s) => s.zone_id === bulkZoneId && s.pallet_block != null)
+      .map((s) => num(s.pallet_block))
+    return existing.length ? Math.max(...existing) : 0
+  })()
+
   const createShelves = useMutation({
     mutationFn: async () => {
       const zone = zones!.find((z) => z.id === bulkZoneId)!
@@ -241,7 +250,7 @@ export function ZonesShelves() {
       const zone = zones!.find((z) => z.id === bulkZoneId)!
       const rows: Record<string, unknown>[] = []
       palletBlocks.forEach((block, bi) => {
-        const b = bi + 1
+        const b = blockOffset + bi + 1
         for (let r = 1; r <= block.rows; r++) {
           for (let c = 1; c <= block.cols; c++) {
             rows.push({
@@ -647,7 +656,7 @@ export function ZonesShelves() {
                         {palletBlocks.map((block, i) => (
                           <div key={i} className="flex flex-wrap items-end gap-2">
                             <span className="flex h-11 w-20 items-center justify-center rounded-lg bg-ink-100 text-sm font-semibold text-ink-600">
-                              Block {String.fromCharCode(65 + i)}
+                              Block {blockLetter(blockOffset + i + 1)}
                             </span>
                             <div className="w-24">
                               <label className="label-text">Rows</label>
@@ -660,7 +669,7 @@ export function ZonesShelves() {
                                 onChange={(e) => setPalletBlocks(palletBlocks.map((b, idx) => idx === i ? { ...b, cols: Math.max(1, Number(e.target.value)) } : b))} />
                             </div>
                             {palletBlocks.length > 1 && (
-                              <button type="button" aria-label={`Remove Block ${String.fromCharCode(65 + i)}`}
+                              <button type="button" aria-label={`Remove Block ${blockLetter(blockOffset + i + 1)}`}
                                 className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-400 hover:bg-red-50 hover:text-red-600"
                                 onClick={() => setPalletBlocks(palletBlocks.filter((_, idx) => idx !== i))}>
                                 <Trash2 className="h-5 w-5" />
@@ -679,9 +688,9 @@ export function ZonesShelves() {
                         <PalletMap pallets={palletBlocks.flatMap((block, bi) =>
                           Array.from({ length: block.rows }, (_, ri) =>
                             Array.from({ length: block.cols }, (_, ci) => ({
-                              id: `b${bi + 1}r${ri + 1}c${ci + 1}`,
-                              code: `${zone.code}-B${pad2(bi + 1)}R${pad2(ri + 1)}C${pad2(ci + 1)}`,
-                              pallet_block: bi + 1, pallet_row: ri + 1, pallet_col: ci + 1,
+                              id: `b${blockOffset + bi + 1}r${ri + 1}c${ci + 1}`,
+                              code: `${zone.code}-B${pad2(blockOffset + bi + 1)}R${pad2(ri + 1)}C${pad2(ci + 1)}`,
+                              pallet_block: blockOffset + bi + 1, pallet_row: ri + 1, pallet_col: ci + 1,
                             })),
                           ).flat(),
                         )} />
