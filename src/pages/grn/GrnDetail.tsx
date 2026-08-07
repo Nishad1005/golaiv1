@@ -39,7 +39,7 @@ interface GrnDetailData {
     id: string
     qty_received: number
     qty_invoice: number | null
-    qty_po: number | null
+    po_ref: string | null
     variance_reason: string | null
     qc_status: 'OK' | 'HOLD' | 'REJECT'
     damage_photos: string[]
@@ -53,7 +53,7 @@ interface DraftLine {
   item: Item
   qty_received: string
   qty_invoice: string
-  qty_po: string
+  po_ref: string
   variance_reason: string
   qc_status: 'OK' | 'HOLD' | 'REJECT'
   damage_photos: File[]
@@ -75,7 +75,7 @@ export function GrnDetail() {
            created_at, supplier_name_freetext, suppliers(name),
            grn_gate_entries(vehicle_number, vehicle_photos, driver_name, driver_phone,
              driver_license, driver_photos, transporter, document_photos, arrival_at),
-           grn_lines(id, qty_received, qty_invoice, qty_po, variance_reason, qc_status,
+           grn_lines(id, qty_received, qty_invoice, po_ref, variance_reason, qc_status,
              damage_photos, notes, items(id, code, name, uom, category),
              grn_putaways(qty, shelves(code)))`,
         )
@@ -223,7 +223,7 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
         item,
         qty_received: '',
         qty_invoice: '',
-        qty_po: '',
+        po_ref: '',
         variance_reason: '',
         qc_status: 'OK',
         damage_photos: [],
@@ -271,7 +271,7 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
           item_id: line.item.id,
           qty_received: Number(line.qty_received),
           qty_invoice: line.qty_invoice || null,
-          qty_po: line.qty_po || null,
+          po_ref: line.po_ref.trim() || null,
           variance_reason: line.variance_reason,
           qc_status: line.qc_status,
           damage_photos: damagePaths,
@@ -373,9 +373,10 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="label-text">PO qty</label>
-              <input type="number" inputMode="decimal" className="input-field" value={line.qty_po}
-                onChange={(e) => update(i, { qty_po: e.target.value })} />
+              <label className="label-text">PO number</label>
+              <input className="input-field font-mono" value={line.po_ref}
+                placeholder="PO-0089"
+                onChange={(e) => update(i, { po_ref: e.target.value })} />
             </div>
             <div>
               <label className="label-text">Invoice qty</label>
@@ -509,6 +510,7 @@ function LinesView({ grn }: { grn: GrnDetailData }) {
               <span className="ml-auto tabular-nums">
                 {line.qty_received} {line.items.uom} received
                 {line.qty_invoice != null && ` · invoice ${line.qty_invoice}`}
+                {line.po_ref && ` · PO ${line.po_ref}`}
               </span>
             </div>
             {line.variance_reason && (
