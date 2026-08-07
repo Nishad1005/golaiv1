@@ -10,6 +10,7 @@ import { num, sumQty } from '../../lib/qty'
 import { ScanInput } from '../../components/ScanInput'
 import { PhotoInput } from '../../components/PhotoInput'
 import { PhotoGallery } from '../../components/PhotoGallery'
+import { ItemThumb } from '../../components/ItemThumb'
 import { ItemLabelDialog } from '../../components/ItemLabelDialog'
 import type { Item } from '../../lib/types'
 
@@ -189,6 +190,47 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
   const queryClient = useQueryClient()
   const [lines, setLines] = useState<DraftLine[]>([])
   const [scanError, setScanError] = useState<string | null>(null)
+  const [itemSearch, setItemSearch] = useState('')
+
+  // Search the product master by name / code / barcode, so items can be added
+  // even when they have no barcode to scan (why receiving looked "empty").
+  const { data: matches } = useQuery({
+    queryKey: ['grn-item-search', itemSearch],
+    enabled: itemSearch.trim().length >= 2,
+    queryFn: async () => {
+      const q = itemSearch.trim()
+      const { data, error } = await supabase
+        .from('items')
+        .select('*')
+        .or(`name.ilike.%${q}%,code.ilike.%${q}%,barcode.eq.${q}`)
+        .eq('status', 'active')
+        .is('deleted_at', null)
+        .limit(8)
+      if (error) throw error
+      return data as Item[]
+    },
+  })
+
+  const addLine = (item: Item) => {
+    if (lines.some((l) => l.item.id === item.id)) {
+      setScanError(`${item.name} is already on this GRN.`)
+      return
+    }
+    setScanError(null)
+    setLines((prev) => [
+      ...prev,
+      {
+        item,
+        qty_received: '',
+        qty_invoice: '',
+        qty_po: '',
+        variance_reason: '',
+        qc_status: 'OK',
+        damage_photos: [],
+        notes: '',
+      },
+    ])
+  }
 
   const addItem = async (scan: string) => {
     setScanError(null)
@@ -199,26 +241,10 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
       .is('deleted_at', null)
       .maybeSingle()
     if (!data) {
-      setScanError(`"${scan}" is not in the item master. Create it in Items (codes are kept verbatim) and scan again.`)
+      setScanError(`"${scan}" is not in the item master. Search by name below, or add it in Items.`)
       return
     }
-    if (lines.some((l) => l.item.id === data.id)) {
-      setScanError(`${data.name} is already on this GRN.`)
-      return
-    }
-    setLines([
-      ...lines,
-      {
-        item: data as Item,
-        qty_received: '',
-        qty_invoice: '',
-        qty_po: '',
-        variance_reason: '',
-        qc_status: 'OK',
-        damage_photos: [],
-        notes: '',
-      },
-    ])
+    addLine(data as Item)
   }
 
   const update = (i: number, patch: Partial<DraftLine>) =>
@@ -274,8 +300,42 @@ function VerifyPanel({ grn }: { grn: GrnDetailData }) {
 
   return (
     <div className="card space-y-4">
-      <p className="font-semibold">Verification — scan each item, enter quantities</p>
-      <ScanInput placeholder="item barcode" onScan={(v) => void addItem(v)} autoFocus={false} />
+      <p className="font-semibold">Verification — scan or search each item, enter quantities</p>
+      <ScanInput placeholder="Scan item barcode" onScan={(v) => void addItem(v)} autoFocus={false} />
+
+      <div>
+        <input
+          className="input-field"
+          placeholder="…or search products by name or code"
+          value={itemSearch}
+          onChange={(e) => setItemSearch(e.target.value)}
+        />
+        {itemSearch.trim().length >= 2 && (
+          (matches ?? []).length > 0 ? (
+            <div className="mt-1 divide-y divide-tan/20 overflow-hidden rounded-xl border border-tan/30">
+              {matches!.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="flex w-full items-center gap-2 bg-white px-3 py-2 text-left hover:bg-cream"
+                  onClick={() => { addLine(m); setItemSearch('') }}
+                >
+                  <ItemThumb path={m.photo_url ?? null} name={m.name} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{m.name}</span>
+                    <span className="block font-mono text-xs text-ink-400">
+                      {m.code}{m.barcode ? ` · ${m.barcode}` : ''}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-ink-400">No products match — check spelling, or add it in Items.</p>
+          )
+        )}
+      </div>
+
       {scanError && <p className="text-sm text-red-600">{scanError}</p>}
 
       {lines.map((line, i) => (
