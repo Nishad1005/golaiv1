@@ -56,17 +56,17 @@ export function Export() {
       const data = await fetchAll<any>((from, to) =>
         supabase
           .from('stock_balances')
-          .select('qty_on_hand, qty_on_hold, last_movement_at, items(code, name, category, uom), shelves(code, zones(code, name))')
+          .select('qty_on_hand, qty_on_hold, last_movement_at, items(code, name, item_type, category, uom), shelves(code, zones(code, name))')
           .or('qty_on_hand.gt.0,qty_on_hold.gt.0')
           .order('item_id')
           .range(from, to),
       )
       const rows: string[][] = [
-        ['item_code', 'item_name', 'category', 'uom', 'zone', 'shelf', 'qty_on_hand', 'qty_on_hold', 'last_movement'],
+        ['item_code', 'item_name', 'type', 'category', 'uom', 'zone', 'shelf', 'qty_on_hand', 'qty_on_hold', 'last_movement'],
       ]
       for (const b of data) {
         rows.push([
-          b.items.code, b.items.name, b.items.category ?? '', b.items.uom,
+          b.items.code, b.items.name, b.items.item_type ?? '', b.items.category ?? '', b.items.uom,
           b.shelves?.zones?.code ?? '', b.shelves?.code ?? '',
           String(b.qty_on_hand), String(b.qty_on_hold), b.last_movement_at,
         ])
@@ -90,7 +90,7 @@ export function Export() {
       const data = await fetchAll<any>((from, to) =>
         supabase
           .from('stock_balances')
-          .select('item_id, qty_on_hand, qty_on_hold, items(code, name, category, uom, status, deleted_at)')
+          .select('item_id, qty_on_hand, qty_on_hold, items(code, name, item_type, category, uom, status, deleted_at)')
           .order('item_id')
           .range(from, to),
       )
@@ -104,9 +104,9 @@ export function Export() {
         g.locations += 1
         byItem.set(b.item_id, g)
       }
-      const rows: string[][] = [['item_code', 'item_name', 'category', 'uom', 'total_qty', 'qty_on_hold', 'locations']]
+      const rows: string[][] = [['item_code', 'item_name', 'type', 'category', 'uom', 'total_qty', 'qty_on_hold', 'locations']]
       for (const g of [...byItem.values()].sort((a, b) => a.item.code.localeCompare(b.item.code))) {
-        rows.push([g.item.code, g.item.name, g.item.category ?? '', g.item.uom,
+        rows.push([g.item.code, g.item.name, g.item.item_type ?? '', g.item.category ?? '', g.item.uom,
           String(g.onHand), String(g.onHold), String(g.locations)])
       }
       downloadCsv(rows, `golai-current-stock-${new Date().toISOString().slice(0, 10)}.csv`)
@@ -125,17 +125,17 @@ export function Export() {
       const data = await fetchAll<any>((from, to) =>
         supabase
           .from('items')
-          .select('code, name, category, uom, stock_balances(qty_on_hand, qty_on_hold)')
+          .select('code, name, item_type, category, uom, stock_balances(qty_on_hand, qty_on_hold)')
           .is('deleted_at', null)
           .eq('status', 'active')
           .order('code')
           .range(from, to),
       )
-      const rows: string[][] = [['item_code', 'item_name', 'category', 'uom', 'total_qty', 'qty_on_hold']]
+      const rows: string[][] = [['item_code', 'item_name', 'type', 'category', 'uom', 'total_qty', 'qty_on_hold']]
       for (const it of data) {
         const onHand = sumQty(it.stock_balances ?? [], (b: any) => b.qty_on_hand)
         const onHold = sumQty(it.stock_balances ?? [], (b: any) => b.qty_on_hold)
-        rows.push([it.code, it.name, it.category ?? '', it.uom, String(onHand), String(onHold)])
+        rows.push([it.code, it.name, it.item_type ?? '', it.category ?? '', it.uom, String(onHand), String(onHold)])
       }
       downloadCsv(rows, `golai-item-totals-${new Date().toISOString().slice(0, 10)}.csv`)
       await log('export.item_totals_csv')
