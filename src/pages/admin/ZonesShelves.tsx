@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ChevronDown, ChevronRight, FileDown, Loader2, Map, Pencil, Plus, Printer, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronRight, FileDown, ListChecks, Loader2, Map, Pencil, Plus, Printer, Trash2, Upload, X } from 'lucide-react'
 import { EmptyState } from '../../components/EmptyState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../stores/auth'
@@ -58,6 +58,10 @@ export function ZonesShelves() {
   const [labelSize, setLabelSize] = useState<ShelfLabelSize>('thermal-100x50')
   const [printing, setPrinting] = useState(false)
   const [deleteShelf, setDeleteShelf] = useState<Shelf | null>(null)
+  // Multi-select delete (scoped to the one expanded zone at a time).
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedShelves, setSelectedShelves] = useState<Set<string>>(new Set())
+  const [bulkDelete, setBulkDelete] = useState<Shelf[] | null>(null)
 
   const { data: tenant } = useQuery({
     queryKey: ['tenant'],
@@ -312,6 +316,39 @@ export function ZonesShelves() {
     },
   })
 
+  // Delete several locations at once — each goes through the same guarded RPC.
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (list: Shelf[]) => {
+      await Promise.all(
+        list.map((s) =>
+          supabase.rpc('delete_location', { p_shelf_id: s.id }).then(({ error }) => {
+            if (error) throw new Error(error.message)
+          }),
+        ),
+      )
+      await logActivity({
+        tenantId: profile!.tenant_id, userId: profile!.id, userRole: profile!.role,
+        action: 'delete.locations_bulk', entityType: 'shelf',
+        after: { count: list.length, codes: list.map((s) => s.code) },
+      })
+    },
+    onSuccess: () => {
+      setBulkDelete(null)
+      setSelectMode(false)
+      setSelectedShelves(new Set())
+      for (const k of [['shelves'], ['shelves-with-stock'], ['item-locator'], ['stock-overview'], ['stock-by-zone']]) {
+        void queryClient.invalidateQueries({ queryKey: k })
+      }
+    },
+  })
+
+  const toggleShelfSel = (id: string) =>
+    setSelectedShelves((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
   const shelvesByZone = (zoneId: string) => (shelves ?? []).filter((s) => s.zone_id === zoneId)
 
   const printZoneLabels = async (zone: ZoneRow, size: ShelfLabelSize) => {
@@ -481,6 +518,46 @@ export function ZonesShelves() {
         </div>
       )}
 
+      {bulkDelete && (() => {
+        const withStock = bulkDelete.filter((s) => filledShelves?.has(s.id))
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
+            onClick={() => !bulkDeleteMut.isPending && setBulkDelete(null)}>
+            <div className="card w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div>
+                <p className="text-lg font-bold">Delete {bulkDelete.length} location{bulkDelete.length === 1 ? '' : 's'}?</p>
+                <p className="mt-1 break-words font-mono text-sm text-ink-500">
+                  {bulkDelete.slice(0, 10).map((s) => s.code).join(', ')}
+                  {bulkDelete.length > 10 ? `, +${bulkDelete.length - 10} more` : ''}
+                </p>
+              </div>
+              {withStock.length > 0 && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="flex items-center gap-2 font-semibold">
+                    <AlertTriangle className="h-4 w-4 shrink-0" /> {withStock.length} of these still have stock recorded
+                  </p>
+                  <p className="mt-1 text-xs">
+                    Deleting removes {withStock.length === 1 ? 'that location' : 'those locations'} <b>and clears
+                    that recorded stock</b>. This can't be undone.
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  className="inline-flex min-h-tap items-center justify-center gap-2 rounded-xl bg-red-600 px-4 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                  disabled={bulkDeleteMut.isPending}
+                  onClick={() => bulkDeleteMut.mutate(bulkDelete)}>
+                  {bulkDeleteMut.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+                  Delete {bulkDelete.length} location{bulkDelete.length === 1 ? '' : 's'}
+                </button>
+                <button className="btn-secondary" disabled={bulkDeleteMut.isPending} onClick={() => setBulkDelete(null)}>Cancel</button>
+              </div>
+              {bulkDeleteMut.isError && <p className="text-sm text-red-600">{(bulkDeleteMut.error as Error).message}</p>}
+            </div>
+          </div>
+        )
+      })()}
+
       {showZoneForm && (
         <form className="card flex flex-wrap items-end gap-3"
           onSubmit={(e) => { e.preventDefault(); saveZone.mutate(null) }}>
@@ -507,22 +584,28 @@ export function ZonesShelves() {
 
       {(zones ?? []).map((zone) => {
         const zoneShelves = shelvesByZone(zone.id)
+        const zoneFilled = zoneShelves.filter((s) => filledShelves?.has(s.id)).length
         const expanded = expandedZone === zone.id
         const editing = editingZone === zone.id
         return (
-          <div key={zone.id} className="card">
+          <div key={zone.id} className={'card transition-shadow ' + (expanded ? 'ring-1 ring-brand-100' : '')}>
             <div className="flex items-center gap-2">
-              <button className="flex min-h-tap flex-1 items-center gap-2 text-left"
-                onClick={() => setExpandedZone(expanded ? null : zone.id)}>
-                {expanded ? <ChevronDown className="h-5 w-5 shrink-0" /> : <ChevronRight className="h-5 w-5 shrink-0" />}
-                <span className="font-mono font-semibold">{zone.code}</span>
-                <span className="min-w-0 truncate font-medium">{zone.name}</span>
-                {zone.default_category && (
-                  <span className="hidden rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-500 sm:inline">
-                    {zone.default_category}
+              <button className="flex min-h-tap flex-1 items-center gap-3 text-left"
+                onClick={() => { setExpandedZone(expanded ? null : zone.id); setSelectMode(false); setSelectedShelves(new Set()) }}>
+                {expanded
+                  ? <ChevronDown className="h-5 w-5 shrink-0 text-ink-400" />
+                  : <ChevronRight className="h-5 w-5 shrink-0 text-ink-400" />}
+                <span className="shrink-0 rounded-lg bg-brand-50 px-2.5 py-1 font-mono text-sm font-bold text-brand-700">
+                  {zone.code}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold text-ink-900">{zone.name}</span>
+                  <span className="block text-xs text-ink-400">
+                    {zoneShelves.length} location{zoneShelves.length === 1 ? '' : 's'}
+                    {zoneFilled > 0 && <> · <span className="font-medium text-green-700">{zoneFilled} with stock</span></>}
+                    {zone.default_category && ` · ${zone.default_category}`}
                   </span>
-                )}
-                <span className="ml-auto shrink-0 text-sm text-ink-400">{zoneShelves.length} locations</span>
+                </span>
               </button>
               <button
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-400 hover:bg-ink-100"
@@ -559,18 +642,65 @@ export function ZonesShelves() {
             {expanded && (
               <div className="mt-4 space-y-3 border-t border-ink-100 pt-4">
                 {zoneShelves.length > 0 && (
-                  <p className="flex items-center gap-3 text-xs text-ink-400">
-                    <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-green-200" /> has stock</span>
-                    <span className="flex items-center gap-1"><span className="inline-block h-3 w-3 rounded bg-cream-dark" /> empty</span>
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {!selectMode ? (
+                      <>
+                        <p className="flex items-center gap-3 text-xs text-ink-400">
+                          <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" /> has stock</span>
+                          <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-ink-300" /> empty</span>
+                        </p>
+                        <button
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-500 hover:bg-ink-100"
+                          onClick={() => { setSelectMode(true); setSelectedShelves(new Set()) }}>
+                          <ListChecks className="h-4 w-4" /> Select
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium text-ink-600">{selectedShelves.size} selected</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button className="text-sm text-ink-500 hover:text-ink-900"
+                            onClick={() => setSelectedShelves(new Set(zoneShelves.map((s) => s.id)))}>Select all</button>
+                          <button className="text-sm text-ink-500 hover:text-ink-900"
+                            onClick={() => setSelectedShelves(new Set())}>Clear</button>
+                          <button
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
+                            disabled={selectedShelves.size === 0}
+                            onClick={() => setBulkDelete(zoneShelves.filter((s) => selectedShelves.has(s.id)))}>
+                            <Trash2 className="h-4 w-4" /> Delete {selectedShelves.size}
+                          </button>
+                          <button className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-ink-500 hover:bg-ink-100"
+                            onClick={() => { setSelectMode(false); setSelectedShelves(new Set()) }}>
+                            <X className="h-4 w-4" /> Done
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
                 <div className="flex flex-wrap gap-2">
                   {zoneShelves.map((s) => {
                     const filled = filledShelves?.has(s.id) ?? false
+                    const sel = selectedShelves.has(s.id)
+                    if (selectMode) {
+                      return (
+                        <button key={s.id} type="button" onClick={() => toggleShelfSel(s.id)}
+                          className={'inline-flex items-center gap-2 rounded-lg border py-1.5 pl-2 pr-3 text-sm transition-colors ' +
+                            (sel ? 'border-brand-500 bg-brand-50 text-ink-900' : 'border-tan/50 bg-cream-dark hover:border-ink-300')}>
+                          <span className={'flex h-4 w-4 items-center justify-center rounded border ' +
+                            (sel ? 'border-brand-500 bg-brand-500 text-white' : 'border-ink-300 bg-white')}>
+                            {sel && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className={'inline-block h-2 w-2 rounded-full ' + (filled ? 'bg-green-500' : 'bg-ink-300')} />
+                          <span className="font-mono">{s.code}</span>
+                        </button>
+                      )
+                    }
                     return (
                       <span key={s.id}
-                        className={'inline-flex items-center gap-1.5 rounded-lg py-1 pl-3 pr-1 text-sm ' +
+                        className={'inline-flex items-center gap-1.5 rounded-lg py-1 pl-2.5 pr-1 text-sm ' +
                           (filled ? 'bg-green-100 text-green-900' : 'bg-cream-dark')}>
+                        <span className={'inline-block h-2 w-2 rounded-full ' + (filled ? 'bg-green-500' : 'bg-ink-300')} />
                         <span className="font-mono">{s.code}</span>
                         <span className={filled ? 'text-green-700' : 'text-ink-400'}>{locationLabel(s)}</span>
                         <button
