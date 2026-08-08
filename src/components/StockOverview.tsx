@@ -75,7 +75,7 @@ export function StockOverview() {
         <Tile
           icon={Boxes} tone="brand" loading={isLoading}
           label="Items in stock" value={o?.items_in_stock ?? 0}
-          hint={o ? `of ${o.items_total} products` : undefined} to="/admin/items?stock=in"
+          hint={o ? `of ${o.items_total} products` : undefined} to="/stock-items/in"
         />
         <Tile
           icon={TrendingDown} tone={(o?.items_low_stock ?? 0) > 0 ? 'amber' : 'slate'} loading={isLoading}
@@ -85,7 +85,7 @@ export function StockOverview() {
         <Tile
           icon={PackageX} tone={(o?.items_out_of_stock ?? 0) > 0 ? 'red' : 'slate'} loading={isLoading}
           label="Nothing on shelf" value={o?.items_out_of_stock ?? 0}
-          hint="Includes never located" to="/admin/items?stock=off"
+          hint="Includes never located" to="/stock-items/off"
         />
         <Tile
           icon={Clock} tone={(o?.items_dead_stock ?? 0) > 0 ? 'amber' : 'slate'} loading={isLoading}

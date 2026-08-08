@@ -28,6 +28,7 @@ const ManagerHome = lazy(() => import('./pages/home/ManagerHome').then((m) => ({
 const AdminHome = lazy(() => import('./pages/home/AdminHome').then((m) => ({ default: m.AdminHome })))
 const ZonesShelves = lazy(() => import('./pages/admin/ZonesShelves').then((m) => ({ default: m.ZonesShelves })))
 const Items = lazy(() => import('./pages/admin/Items').then((m) => ({ default: m.Items })))
+const ItemStockList = lazy(() => import('./pages/stock/ItemStockList').then((m) => ({ default: m.ItemStockList })))
 const Parties = lazy(() => import('./pages/admin/Parties').then((m) => ({ default: m.Parties })))
 const Users = lazy(() => import('./pages/admin/Users').then((m) => ({ default: m.Users })))
 const CompanyProfile = lazy(() => import('./pages/admin/CompanyProfile').then((m) => ({ default: m.CompanyProfile })))
@@ -230,6 +231,7 @@ export default function App() {
           {can('costing') && <Route path="/costing/:id" element={<SheetEditor />} />}
           {can('admin_zones') && <Route path="/admin/zones" element={<ZonesShelves />} />}
           {can('admin_items') && <Route path="/admin/items" element={<Items />} />}
+          {can('admin_items') && <Route path="/stock-items/:status" element={<ItemStockList />} />}
           {can('admin_parties') && <Route path="/admin/parties" element={<Parties />} />}
           {can('admin_users') && <Route path="/admin/users" element={<Users />} />}
           {can('admin_company') && <Route path="/admin/company" element={<CompanyProfile />} />}
