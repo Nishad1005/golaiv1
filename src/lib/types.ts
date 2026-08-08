@@ -142,5 +142,7 @@ export interface ItemLocation {
 
 // Shelf code format: Z<zone>-<fixture prefix><number>, e.g. Z02-S012, Z03-G001.
 // The prefix is derived from the client's own fixture name (any letters).
-// Pallet-block locations use a Block/Row/Col coordinate instead: Z05-B02R03C02.
-export const SHELF_CODE_REGEX = /^Z(\d+)-(?:([A-Z]+)(\d+)|B(\d+)R(\d+)C(\d+))$/i
+// Pallet-block locations use a Block/Row/Col coordinate: Z05-A-R03-C02 (the block
+// is a letter, matching its "Block A" label). Older pallets used Z05-B02R03C02,
+// kept valid here so existing codes still resolve.
+export const SHELF_CODE_REGEX = /^Z(\d+)-(?:([A-Z]+)(\d+)|B(\d+)R(\d+)C(\d+)|([A-Z])-R(\d+)-C(\d+))$/i

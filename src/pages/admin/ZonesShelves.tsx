@@ -256,7 +256,7 @@ export function ZonesShelves() {
             rows.push({
               tenant_id: profile!.tenant_id,
               zone_id: zone.id,
-              code: `${zone.code}-B${pad2(b)}R${pad2(r)}C${pad2(c)}`,
+              code: `${zone.code}-${blockLetter(b)}-R${pad2(r)}-C${pad2(c)}`,
               fixture_type: 'Pallet',
               description: palletLabel(b, r, c),
               pallet_block: b,
@@ -689,7 +689,7 @@ export function ZonesShelves() {
                           Array.from({ length: block.rows }, (_, ri) =>
                             Array.from({ length: block.cols }, (_, ci) => ({
                               id: `b${blockOffset + bi + 1}r${ri + 1}c${ci + 1}`,
-                              code: `${zone.code}-B${pad2(blockOffset + bi + 1)}R${pad2(ri + 1)}C${pad2(ci + 1)}`,
+                              code: `${zone.code}-${blockLetter(blockOffset + bi + 1)}-R${pad2(ri + 1)}-C${pad2(ci + 1)}`,
                               pallet_block: blockOffset + bi + 1, pallet_row: ri + 1, pallet_col: ci + 1,
                             })),
                           ).flat(),
