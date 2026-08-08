@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, FileDown, Pencil, Plus, Printer, Upload, Loader2, Search, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -12,6 +12,9 @@ import { UomPicker } from '../../components/UomPicker'
 import { BarcodeCell } from '../../components/BarcodeCell'
 import { UOM_GROUPS, UOM_UNITS, normalizeUom } from '../../lib/uom'
 import type { Item } from '../../lib/types'
+
+/** An item row from the item_stock view (migration 0045) — adds total on_hand. */
+type ItemRow = Item & { on_hand: number | string | null }
 
 interface CsvPreview {
   total: number
@@ -71,6 +74,7 @@ export function Items() {
   })
 
   const [onlyAuto, setOnlyAuto] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [editingCode, setEditingCode] = useState<{ id: string; value: string } | null>(null)
 
   const toggle = (id: string) =>
@@ -80,17 +84,22 @@ export function Items() {
       return next
     })
 
+  // Stock filter comes from the dashboard tiles: ?stock=in (on shelf) / off (never
+  // located). Backed by the item_stock view (migration 0045), which adds on_hand.
+  const stockFilter = searchParams.get('stock')
   const { data: items, isLoading } = useQuery({
-    queryKey: ['items', search, onlyAuto],
+    queryKey: ['items', search, onlyAuto, stockFilter],
     queryFn: async () => {
-      let q = supabase.from('items').select('*').is('deleted_at', null).order('name').limit(100)
+      let q = supabase.from('item_stock').select('*').is('deleted_at', null).order('name').limit(100)
       if (onlyAuto) q = q.eq('code_auto_assigned', true)
+      if (stockFilter === 'in') q = q.gt('on_hand', 0)
+      else if (stockFilter === 'off') q = q.eq('on_hand', 0)
       if (search.trim()) {
         q = q.or(`name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%,item_type.ilike.%${search.trim()}%`)
       }
       const { data, error } = await q
       if (error) throw error
-      return data as Item[]
+      return data as ItemRow[]
     },
   })
 
@@ -489,6 +498,17 @@ export function Items() {
           <input type="checkbox" className="h-5 w-5" checked={onlyAuto} onChange={(e) => setOnlyAuto(e.target.checked)} />
           Only auto-assigned codes
         </label>
+        {stockFilter && (
+          <button
+            type="button"
+            className="inline-flex min-h-tap items-center gap-1.5 rounded-xl bg-brand-50 px-4 text-sm font-medium text-brand-700 hover:bg-brand-100"
+            onClick={() => { const p = new URLSearchParams(searchParams); p.delete('stock'); setSearchParams(p, { replace: true }) }}
+            title="Clear the stock filter"
+          >
+            {stockFilter === 'in' ? 'In stock only' : 'Not on shelf'}
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -515,6 +535,7 @@ export function Items() {
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">Unit</th>
+                <th className="px-4 py-3 font-medium">In stock</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-tan/20">
@@ -599,11 +620,20 @@ export function Items() {
                   <td className="px-4 py-3">
                     <UomPicker itemId={item.id} value={item.uom} />
                   </td>
+                  <td className="px-4 py-3 tabular-nums">
+                    {Number(item.on_hand ?? 0) > 0 ? (
+                      <span className="font-medium text-ink-900">
+                        {Number(item.on_hand)} <span className="text-xs font-normal text-ink-400">{item.uom}</span>
+                      </span>
+                    ) : (
+                      <span className="text-ink-300">0</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {(items ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center">
+                  <td colSpan={8} className="px-4 py-10 text-center">
                     <p className="font-semibold text-ink-800">
                       {search || onlyAuto ? 'Nothing matches that' : 'No products yet'}
                     </p>
